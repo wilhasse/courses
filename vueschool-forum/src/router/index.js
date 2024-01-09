@@ -5,6 +5,7 @@ import ForumShow from '@/pages/ForumShow.vue'
 import CategoryShow from '@/pages/CategoryShow.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import sourceData from '@/data.json'
+import UserProfile from '@/pages/UserProfile.vue'
 
 const routes = [
   {
@@ -42,6 +43,18 @@ const routes = [
     props: true
   },
   {
+    path: '/me',
+    name: 'Profile',
+    component: UserProfile,
+    meta: { toTop: true, smoothScroll: true }
+  },
+  {
+    path: '/me/edit',
+    name: 'ProfileEdit',
+    component: UserProfile,
+    props: { edit: true }
+  },  
+  {
     path: '/category/:id',
     name: 'Category',
     component: CategoryShow,
@@ -56,5 +69,11 @@ const routes = [
 
 export default createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  scrollBehavior (to) {
+    const scroll = {}
+    if (to.meta.toTop) scroll.top = 0
+    if (to.meta.smoothScroll) scroll.behavior = 'smooth'
+    return scroll
+  }
 })

@@ -10,7 +10,7 @@ forumApp.use(router)
 forumApp.use(store)
 forumApp.mount('#app')
 
-/*
+
 const requireComponent = require.context('./components', true, /App[A-Z]\w+\.(vue|js)$/)
 requireComponent.keys().forEach(function (fileName) {
   let baseComponentConfig = requireComponent(fileName)
@@ -22,5 +22,5 @@ requireComponent.keys().forEach(function (fileName) {
   )
   forumApp.component(baseComponentName, baseComponentConfig)
 })
-  */
+
 

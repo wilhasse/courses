@@ -34,7 +34,14 @@
   </template>
   
   <script>  
+  import AppDate from '@/components/AppDate.vue'
+  
   export default {
+
+      components: {
+        AppDate // registering the component
+      },
+    
       props: {
           posts: {
               required: true,
