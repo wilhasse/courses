@@ -29,7 +29,7 @@ import Config
 #     config :logger, level: :info
 #
 
-config :music_db, :ecto_repos, [MusicDB.Repo]
+config :music_db, ecto_repos: [MusicDB.Repo]
 
 config :music_db, MusicDB.Repo,
   username: "root",
