@@ -13,7 +13,7 @@ config :auction_web, AuctionWeb.Endpoint,
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  secret_key_base: "z937ERr64w2frn39rvOrKncJojKHqTa+4ocuhxeacyacRcsPMUgCNawtWltzbdjw",
+  secret_key_base: "5NbTxTWk6QPSHQeAtBiWBY4jlZY1ka7Z8XdQX1oFr6YR4dFS58nH2D4V5Bx3S1Mk",
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}

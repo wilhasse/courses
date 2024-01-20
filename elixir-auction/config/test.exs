@@ -4,5 +4,5 @@ import Config
 # you can enable the server option below.
 config :auction_web, AuctionWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
-  secret_key_base: "WQ6FTibk+5StmVuw6EWlY6Inb7PHH3lXWK+9HqV/KIaDqCwr4UnCFcto4MzMgsEk",
+  secret_key_base: "RbzAUPXgjEl1HXIjHliq2I7Zey29+BcINctMKxjP5lHpnTEyuzm0qahka4EOtGgx",
   server: false

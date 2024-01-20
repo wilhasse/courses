@@ -6,7 +6,7 @@ defmodule AuctionWeb.MixProject do
       app: :auction_web,
       version: "0.1.0",
       build_path: "../../_build",
-      config_path: "config/config.exs",
+      config_path: "../../config/config.exs",
       deps_path: "../../deps",
       lockfile: "../../mix.lock",
       elixir: "~> 1.14",
@@ -37,6 +37,7 @@ defmodule AuctionWeb.MixProject do
   defp deps do
     [
       {:phoenix, "~> 1.7.10"},
+      {:phoenix_ecto, "~> 4.4"},
       {:phoenix_html, "~> 3.3"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 0.20.1"},
@@ -48,9 +49,7 @@ defmodule AuctionWeb.MixProject do
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
-      {:plug_cowboy, "~> 2.5"},
-      {:phoenix_ecto, "~> 4.4.3"},
-      {:auction, in_umbrella: true}
+      {:plug_cowboy, "~> 2.5"}
     ]
   end
 
@@ -60,6 +59,7 @@ defmodule AuctionWeb.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "assets.setup", "assets.build"],
+      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind default", "esbuild default"],
       "assets.deploy": ["tailwind default --minify", "esbuild default --minify", "phx.digest"]

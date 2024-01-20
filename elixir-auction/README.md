@@ -1,4 +1,4 @@
-# AuctionUmbrella
+# ElixirAuction
 
 **TODO: Add description**
 

@@ -8,7 +8,7 @@ defmodule Auction.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      Auction.Repo,
+      {Auction.Repo, []}
       # Starts a worker by calling: Auction.Worker.start_link(arg)
       # {Auction.Worker, arg}
     ]

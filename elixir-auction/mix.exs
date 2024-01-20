@@ -1,4 +1,4 @@
-defmodule AuctionUmbrella.MixProject do
+defmodule ElixirAuction.MixProject do
   use Mix.Project
 
   def project do

@@ -7,7 +7,7 @@ defmodule AuctionWeb.Endpoint do
   @session_options [
     store: :cookie,
     key: "_auction_web_key",
-    signing_salt: "pJrPPHYT",
+    signing_salt: "YuB8h7OJ",
     same_site: "Lax"
   ]
 
@@ -29,6 +29,7 @@ defmodule AuctionWeb.Endpoint do
     socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
     plug Phoenix.LiveReloader
     plug Phoenix.CodeReloader
+    plug Phoenix.Ecto.CheckRepoStatus, otp_app: :auction_web
   end
 
   plug Phoenix.LiveDashboard.RequestLogger,
