@@ -1,13 +1,22 @@
-# This file is responsible for configuring your umbrella
-# and **all applications** and their dependencies with the
-# help of the Config module.
-#
-# Note that all applications in your umbrella share the
-# same configuration and dependencies, which is why they
-# all use the same configuration file. If you want different
-# configurations or dependencies per app, it is best to
-# move said applications out of the umbrella.
 import Config
+
+config :auction, ecto_repos: [Auction.Repo]
+
+config :auction, Auction.Repo,
+  database: "auction",
+  username: "root",
+  password: "07farm",
+  hostname: "localhost"
+
+config :logger, :console, format: "$time $level $message\n"
+
+# Configures Elixir's Logger
+config :logger, :console,
+  format: "$time $metadata[$level] $message\n",
+  metadata: [:request_id]
+
+# Use Jason for JSON parsing in Phoenix
+config :phoenix, :json_library, Jason
 
 config :auction_web,
   generators: [context_app: false]
@@ -35,7 +44,7 @@ config :esbuild,
 
 # Configure tailwind (the version is required)
 config :tailwind,
-  version: "3.3.2",
+  version: "3.2.7",
   default: [
     args: ~w(
       --config=tailwind.config.js
@@ -44,23 +53,6 @@ config :tailwind,
     ),
     cd: Path.expand("../apps/auction_web/assets", __DIR__)
   ]
-
-# Sample configuration:
-#
-#     config :logger, :console,
-#       level: :info,
-#       format: "$date $time [$level] $metadata$message\n",
-#       metadata: [:user_id]
-#
-import Config
-
-# Configures Elixir's Logger
-config :logger, :console,
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
-
-# Use Jason for JSON parsing in Phoenix
-config :phoenix, :json_library, Jason
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

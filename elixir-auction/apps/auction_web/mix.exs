@@ -6,7 +6,7 @@ defmodule AuctionWeb.MixProject do
       app: :auction_web,
       version: "0.1.0",
       build_path: "../../_build",
-      config_path: "../../config/config.exs",
+      config_path: "config/config.exs",
       deps_path: "../../deps",
       lockfile: "../../mix.lock",
       elixir: "~> 1.14",
@@ -42,6 +42,7 @@ defmodule AuctionWeb.MixProject do
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 0.20.1"},
       {:floki, ">= 0.30.0", only: :test},
+      # {:auction, in_umbrella: true},
       {:phoenix_live_dashboard, "~> 0.8.2"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.2.0", runtime: Mix.env() == :dev},
@@ -49,7 +50,9 @@ defmodule AuctionWeb.MixProject do
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
-      {:plug_cowboy, "~> 2.5"}
+      {:plug_cowboy, "~> 2.5"},
+      {:swoosh, "~> 1.14.4"},
+      {:hackney, "~> 1.20.1"}
     ]
   end
 
