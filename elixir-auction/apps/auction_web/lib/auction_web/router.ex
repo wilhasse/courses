@@ -17,7 +17,15 @@ defmodule AuctionWeb.Router do
   scope "/", AuctionWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    get "/", PageController, :index
+    resources "/items", ItemController, only: [
+      :index,
+      :show,
+      :new,
+      :create,
+      :edit,
+      :update
+    ]
   end
 
   # Other scopes may use custom stacks.

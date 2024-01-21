@@ -21,7 +21,7 @@ defmodule AuctionWeb do
 
   def router do
     quote do
-      use Phoenix.Router, helpers: false
+      use Phoenix.Router
 
       # Import common connection and controller functions to use in pipelines
       import Plug.Conn
@@ -44,6 +44,7 @@ defmodule AuctionWeb do
 
       import Plug.Conn
       import AuctionWeb.Gettext
+      alias AuctionWeb.Router.Helpers, as: Routes
 
       unquote(verified_routes())
     end
