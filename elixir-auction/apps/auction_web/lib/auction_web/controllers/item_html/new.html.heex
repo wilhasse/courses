@@ -1,3 +1,18 @@
-<h1>New Item</h1>
-
-<%= render "form.html", item: @item, action: Routes.item_path(@conn, :create) %>
+<.header>
+    New User
+  </.header>
+  
+  <.simple_form
+    :let={f}
+    for={@changeset}
+    phx-change="validate"
+    action={~p"/items"}>
+  
+    <.input field={f[:title]} label="Title" />
+    <.input field={f[:description]} label="Description" />    
+  
+    <:actions>
+      <.button>Save</.button>
+    </:actions>
+  
+  </.simple_form>

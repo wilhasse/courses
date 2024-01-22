@@ -12,8 +12,8 @@ defmodule AuctionWeb.ItemController do
   end
 
   def new(conn, _params) do
-    item = Auction.new_item()
-    render(conn, "new.html", item: item, action: Routes.item_path(conn, :create))
+    changeset = Auction.new_item
+    render(conn, :new, changeset: changeset)
   end
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
