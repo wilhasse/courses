@@ -1,0 +1,18 @@
+<h1>User Registration</h1>
+
+<.simple_form
+  :let={f}
+  for={@changeset}
+  phx-change="validate"
+  action={~p"/users"}>
+
+  <.input field={f[:username]} label="Username" />
+  <.input field={f[:email_address]} label="Email" />    
+  <.input field={f[:password]} label="Password" />    
+  <.input field={f[:password_confirmation]} label="Password Confirmation" />    
+
+  <:actions>
+    <.button>Save</.button>
+  </:actions>
+
+</.simple_form>

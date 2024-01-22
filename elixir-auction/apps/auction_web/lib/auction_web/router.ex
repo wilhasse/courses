@@ -18,6 +18,11 @@ defmodule AuctionWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
+
+    get "/login", SessionController, :new
+    post "/login", SessionController, :create
+    delete "/logout", SessionController, :delete
+
     resources "/items", ItemController, only: [
       :index,
       :show,
@@ -26,12 +31,9 @@ defmodule AuctionWeb.Router do
       :edit,
       :update
     ]
-  end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", AuctionWeb do
-  #   pipe_through :api
-  # end
+    resources "/users", UserController, only: [:show, :new, :create]
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:auction_web, :dev_routes) do

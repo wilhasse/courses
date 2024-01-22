@@ -1,0 +1,16 @@
+<h1>Log In</h1>
+
+<.simple_form
+  :let={f}
+  for={@changeset}
+  phx-change="validate"
+  action={~p"/login"}>
+
+  <.input field={f[:username]} label="Username" />
+  <.input field={f[:password]} label="Password" />    
+
+  <:actions>
+    <.button>Save</.button>
+  </:actions>
+
+</.simple_form>
