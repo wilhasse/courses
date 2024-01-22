@@ -30,7 +30,7 @@ defmodule AuctionWeb.UserController do
     if current_user == nil || current_user.id != requested_user_id do
       conn
       |> put_flash(:error, "Nice try, friend. That's not a page for you.")
-      |> redirect(to: Routes.item_path(conn, :index))
+      |> redirect(to: ~p"/items")
       |> halt()
     else
       conn
