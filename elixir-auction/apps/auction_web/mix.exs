@@ -52,7 +52,8 @@ defmodule AuctionWeb.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:swoosh, "~> 1.14.4"},
-      {:hackney, "~> 1.20.1"}
+      {:hackney, "~> 1.20.1"},
+      {:timex, "> 0.0.0"}
     ]
   end
 

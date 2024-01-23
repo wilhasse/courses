@@ -77,6 +77,8 @@ defmodule AuctionWeb do
 
       # Include general helpers for rendering HTML
       unquote(html_helpers())
+
+      import AuctionWeb.GlobalHelpers
     end
   end
 
