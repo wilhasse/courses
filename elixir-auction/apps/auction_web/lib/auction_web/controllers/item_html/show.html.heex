@@ -8,9 +8,14 @@
 <div style="display: flex; flex-direction: row;">
   <div style="flex: 1">
     <h2 class="py-5">Current bids</h2>
-    <%= for bid <- @item.bids do %>
-      <p><%= integer_to_currency(bid.amount) %> <em>from <%= bid.user.username %></em></p>
-    <% end %>
+    <div id="bids">
+      <%= for bid <- @item.bids do %>
+      <p>
+        <%= integer_to_currency(bid.amount) %>
+        <em>from <%= Map.get(bid.user, :username) || @username %></em>
+      </p>        
+      <% end %>
+    </div>
 
     <%= if @current_user do %>
       <h2 class="py-5">Place your bid!</h2>
