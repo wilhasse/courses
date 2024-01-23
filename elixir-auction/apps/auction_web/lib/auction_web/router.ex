@@ -8,6 +8,7 @@ defmodule AuctionWeb.Router do
     plug :put_root_layout, html: {AuctionWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :put_user_token
     plug AuctionWeb.Authenticator
   end
 
@@ -24,18 +25,28 @@ defmodule AuctionWeb.Router do
     post "/login", SessionController, :create
     get "/logout", SessionController, :delete
 
-    resources "/items", ItemController, only: [
-      :index,
-      :show,
-      :new,
-      :create,
-      :edit,
-      :update
-    ] do
+    resources "/items", ItemController,
+      only: [
+        :index,
+        :show,
+        :new,
+        :create,
+        :edit,
+        :update
+      ] do
       resources "/bids", BidController, only: [:create]
     end
 
     resources "/users", UserController, only: [:show, :new, :create]
+  end
+
+  defp put_user_token(conn, _) do
+    if current_user = conn.assigns[:current_user] do
+      token = Phoenix.Token.sign(conn, "user socket", current_user.id)
+      assign(conn, :user_token, token)
+    else
+      conn
+    end
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
