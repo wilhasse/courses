@@ -11,13 +11,13 @@ try {
       privateKey: FB_PRIVATE_KEY,
     }),
   });
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 } catch (err: any) {
   if (!/already exists/u.test(err.message)) {
     console.error('Firebase Admin Error: ', err.stack)
   }
 }
+
 
 export const adminDB = getFirestore();
 export const adminAuth = getAuth();
