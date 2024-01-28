@@ -1,5 +1,5 @@
-//import { getAuth } from 'firebase-admin/auth';
-//import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 import { FB_CLIENT_EMAIL, FB_PRIVATE_KEY, FB_PROJECT_ID } from '$env/static/private'
 import pkg from 'firebase-admin';
 
@@ -11,7 +11,6 @@ try {
       privateKey: FB_PRIVATE_KEY,
     }),
   });
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 } catch (err: any) {
   if (!/already exists/u.test(err.message)) {
@@ -19,5 +18,6 @@ try {
   }
 }
 
-//export const adminDB = getFirestore();
-//export const adminAuth = getAuth();
+
+export const adminDB = getFirestore();
+export const adminAuth = getAuth();
