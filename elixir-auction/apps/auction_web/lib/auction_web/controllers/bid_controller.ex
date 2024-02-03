@@ -2,13 +2,24 @@ defmodule AuctionWeb.BidController do
   use AuctionWeb, :controller
   plug :require_logged_in_user
 
+  def index(conn, _params) do
+    render(conn, :bid)
+  end
+
   def create(conn, %{"bid" => %{"amount" => amount}, "item_id" => item_id}) do
-    user_id = conn.assigns.current_user.id
-    case Auction.insert_bid(%{amount: amount, item_id: item_id, user_id: user_id}) do
-      {:ok, bid} -> redirect(conn, to: Routes.item_path(conn, :show, bid.item_id))
+    case Auction.insert_bid(%{amount: amount, item_id: item_id, user_id: conn.assigns.current_user.id}) do
+      {:ok, bid} ->
+
+        # Render the HTML snippet using the appropriate module and template
+        bid_data = %{amount: amount, user: %{username: conn.assigns.current_user.username}}
+        html = Phoenix.Template.render_to_string(AuctionWeb.BidHTML, "bid" , "html", %{bid: bid_data})
+
+        AuctionWeb.Endpoint.broadcast("item:#{item_id}", "new_bid", %{body: html})
+        redirect(conn, to: Routes.item_path(conn, :show, bid.item_id))
+
       {:error, bid} ->
         item = Auction.get_item(item_id)
-        render(conn, AuctionWeb.ItemView, "show.html", item: item, bid: bid)
+        render(conn, "item/show.html", item: item, bid: bid)
     end
   end
 
