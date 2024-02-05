@@ -1,0 +1,26 @@
+<div
+    x-cloak
+    x-data="{teams: [], 'isLoading': true}"
+    x-init="fetch('https://www.thesportsdb.com/api/v1/json/1/lookup_all_teams.php?id=4328')
+    .then(response => response.json())
+    .then(response => { teams = response.teams; isLoading = false; console.log(response.teams); })"
+>
+</div>
+
+<h1 x-show="isLoading">Loading...</h1>
+<table x-show="!isLoading">
+    <tr>
+        <th>Team</th>
+        <th>Founded</th>
+        <th>Stadium</th>
+        <th>Capacity</th>
+    </tr>
+    <template x-for="team in teams" :key="team.idTeam">
+        <tr>
+        <td x-text="team.strTeam"></td>
+        <td x-text="team.intFormedYear"></td>
+        <td x-text="team.strStadium"></td>
+        <td x-text="team.intStadiumCapacity"></td>
+        </tr>
+    </template>
+</table>

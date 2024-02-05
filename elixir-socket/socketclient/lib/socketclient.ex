@@ -2,7 +2,9 @@ defmodule SocketClient do
   use WebSockex
   require Logger
 
-  # Test WebSockex.send_frame(pid, {:text, "\{     \"data\": \{         \"message\": \"1000\"     \} \}"})
+  # Run Test
+  # {:ok, pid} = WebSockex.start_link(url, __MODULE__, args, connect_opts)
+  # WebSockex.send_frame(pid, {:text, "\{     \"data\": \{         \"message\": \"1000\"     \} \}"})
 
   @echo_server "ws://localhost:4000/ws/chat"
   def start_link(opts \\ []) do
