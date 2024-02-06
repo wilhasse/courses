@@ -15,7 +15,7 @@ defmodule SocketServer.MixProject do
   def application do
     [
       mod: {SocketServer, []},
-      extra_applications: [:logger,:observer, :wx, :runtime_tools]
+      extra_applications: [:logger, :observer, :wx, :runtime_tools]
     ]
   end
 
