@@ -1,6 +1,5 @@
 <script>
-import prizes from './prizesStore.js';
-import category from './categoryStore';
+import prizes from './selectedPrizesStore';
 </script>
 
 <div>
@@ -9,7 +8,7 @@ import category from './categoryStore';
 {:else if $prizes.error}
     {$prizes.error}
 {:else}
-    <slot prizes={$prizes.filter(prize => prize.category === $category)} />
+    <slot prizes={$prizes} />
 {/if}
 </div>
 
