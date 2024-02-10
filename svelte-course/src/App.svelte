@@ -1,6 +1,7 @@
 <script>
   import Counter from './lib/Counter.svelte'
   import NobelPrize from './lib/NobelPrize.svelte'
+  import NobelPrizeTable from './lib/NobelPrizeTable.svelte';
 </script>
 
 <main>
@@ -8,8 +9,10 @@
     <Counter />
   </div>
   <div class="card">
-    <NobelPrize />
-  </div>
+    <NobelPrize let:prizes>
+      <NobelPrizeTable {prizes} />
+    </NobelPrize>
+    div>
 </main>
 
 <style>
