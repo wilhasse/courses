@@ -1,5 +1,5 @@
 <script>
-    export let category;
+    export let category = 'chemistry';
 </script>
     
 <select bind:value={category}>
