@@ -1,10 +1,10 @@
 <script>
 import { fetchPrizes } from './prizes.js';
-export let category;
+import category from './categoryStore';
 </script>
 
 <div>
-{#await fetchPrizes(category) }
+{#await fetchPrizes($category) }
     Loading ...
 {:then {prizes} } 
     <h1>Nobel Prize Winners</h1>
