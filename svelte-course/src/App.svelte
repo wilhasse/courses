@@ -3,6 +3,7 @@
   import NobelPrize from './lib/NobelPrize.svelte'
   import NobelPrizeTable from './lib/NobelPrizeTable.svelte';
   import CategorySelect from './lib/CategorySelect.svelte';
+  import Button from './lib/Button.svelte';
 
   let category = 'chemistry';
 </script>
@@ -13,6 +14,7 @@
   </div>
   <div class="card">
     <CategorySelect bind:category/>
+    <Button onClick={() => alert('on Click')}>Add new prize</Button>
     <NobelPrize {category} let:prizes>
       <NobelPrizeTable {prizes} />
     </NobelPrize>
