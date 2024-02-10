@@ -1,16 +1,15 @@
 <script>
-import { fetchPrizes } from './prizes.js';
+import prizes from './prizesStore.js';
 import category from './categoryStore';
 </script>
 
 <div>
-{#await fetchPrizes($category) }
+{#if $prizes === null }
     Loading ...
-{:then {prizes} } 
-    <h1>Nobel Prize Winners</h1>
-    <slot {prizes}></slot>
-{:catch err}
-    Error: {err}
-{/await}
+{:else if $prizes.error}
+    {$prizes.error}
+{:else}
+    <slot prizes={$prizes.filter(prize => prize.category === $category)} />
+{/if}
 </div>
 

@@ -16,7 +16,7 @@
 	
 	function handleSubmit(event) {
 		dispatch('submit', {
-			year, category, firstname, surname, motivation
+			year, category, laureates: [ {firstname, surname, motivation} ]
 		})
 	}
 </script>

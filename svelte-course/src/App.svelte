@@ -7,9 +7,12 @@
   import Button from './lib/Button.svelte';
   import date from './lib/dateStore.js';
   import category from './lib/categoryStore';
+  import prizes from './lib/prizesStore.js';
 
   function handleAddPrize(event) {
+
 		console.log(event.detail);
+    prizes.addPrize(event.detail);
 		showAddPrizeModal = false;
 	}
 
@@ -32,7 +35,7 @@
     />
     {/if}
   
-    <NobelPrize category={$category} let:prizes>
+    <NobelPrize let:prizes>
       <NobelPrizeTable {prizes} />
     </NobelPrize>
     div>
