@@ -28,6 +28,11 @@ h1 {
   padding: 2rem;
 }
 
+select {
+  font-size: 1.5em;
+  padding: 0.3em 0.6em;
+}
+
 button {
   border-radius: 8px;
   border: 1px solid transparent;
