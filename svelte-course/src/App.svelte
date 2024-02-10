@@ -2,6 +2,7 @@
   import Counter from './lib/Counter.svelte'
   import NobelPrize from './lib/NobelPrize.svelte'
   import NobelPrizeTable from './lib/NobelPrizeTable.svelte';
+  import CategorySelect from './lib/CategorySelect.svelte';
 
   let category = 'chemistry';
 </script>
@@ -11,10 +12,7 @@
     <Counter />
   </div>
   <div class="card">
-    <select bind:value={category}>
-      <option>chemistry</option>
-      <option>peace</option>
-    </select>
+    <CategorySelect bind:category/>
     <NobelPrize {category} let:prizes>
       <NobelPrizeTable {prizes} />
     </NobelPrize>
