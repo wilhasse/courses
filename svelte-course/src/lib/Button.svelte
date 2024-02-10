@@ -1,12 +1,3 @@
-<script>
-export let onClick;
-
-function handleClick() {
-
-    onClick();
-}
-</script>
-
 <style>
 	button {
 		background: blue;
@@ -16,6 +7,6 @@ function handleClick() {
 	}
 </style>
 
-<button on:click={handleClick}>
+<button on:click>
 	<slot />
 </button>

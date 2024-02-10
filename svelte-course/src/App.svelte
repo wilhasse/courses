@@ -14,7 +14,7 @@
   </div>
   <div class="card">
     <CategorySelect bind:category/>
-    <Button onClick={() => alert('on Click')}>Add new prize</Button>
+    <Button on:click={() => alert('on Click')}>Add new prize</Button>
     <NobelPrize {category} let:prizes>
       <NobelPrizeTable {prizes} />
     </NobelPrize>
