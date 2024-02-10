@@ -5,11 +5,15 @@
 import { fetchPrizes , fetchPrizesByCategory } from './prizes.js';
 export let category;
 
-$: data = category ? fetchPrizesByCategory(category) : fetchPrizes();
+function fetchData(category) {
+
+    return  category ? fetchPrizesByCategory(category) : fetchPrizes();
+}
+
 </script>
 
 <div>
-{#await data }
+{#await fetchData(category) }
     Loading ...
 {:then {prizes} } 
     <h1>Nobel Prize Winners</h1>
