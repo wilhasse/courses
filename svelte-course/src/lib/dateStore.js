@@ -1,5 +1,7 @@
-export default {
-    subscribe(callback) {
+import { readable } from'svelte/store';
+
+export default readable(new Date, callback => {
+
         callback(new Date);
 
         const interval = setInterval(() => {
@@ -7,5 +9,5 @@ export default {
         }, 1000);
 
         return () => clearInterval(interval);
-    }
-};
+
+});
