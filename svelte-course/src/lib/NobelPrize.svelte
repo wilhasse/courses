@@ -1,19 +1,10 @@
 <script>
-  import App from '../App.svelte';
-
-
-import { fetchPrizes , fetchPrizesByCategory } from './prizes.js';
+import { fetchPrizes } from './prizes.js';
 export let category;
-
-function fetchData(category) {
-
-    return  category ? fetchPrizesByCategory(category) : fetchPrizes();
-}
-
 </script>
 
 <div>
-{#await fetchData(category) }
+{#await fetchPrizes(category) }
     Loading ...
 {:then {prizes} } 
     <h1>Nobel Prize Winners</h1>

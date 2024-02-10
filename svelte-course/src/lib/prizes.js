@@ -1,4 +1,12 @@
-export async function fetchPrizes() {
+export function fetchPrizes(category) {
+	if (category) {
+		return fetchPrizesByCategory(category);
+	} else {
+		return fetchAllPrizes();
+	}
+}
+
+export async function fetchAllPrizes() {
 	const req = await fetch('https://api.nobelprize.org/v1/prize.json');
 	return req.json();
 }
