@@ -5,12 +5,13 @@
   import CategorySelect from './lib/CategorySelect.svelte';
   import AddPrizeModal from './lib/AddPrizeModal.svelte';
   import Button from './lib/Button.svelte';
+  import date from './lib/dateStore.js';
 
   function handleAddPrize(event) {
 		console.log(event.detail);
 		showAddPrizeModal = false;
 	}
-   
+
   let category;
   let showAddPrizeModal = false;
 </script>
@@ -20,6 +21,7 @@
     <Counter />
   </div>
   <div class="card">
+    <p> The current time is {$date.toLocaleTimeString()}</p>
     <CategorySelect bind:category/>
     <Button on:click={() => showAddPrizeModal = true}>Add new prize</Button>
 
