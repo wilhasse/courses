@@ -10,11 +10,12 @@ fetchAllPrizes().then(
 
 export default {
 	subscribe,
-
-    addPrize(prize) {
-        update($prizes => {
-            return [prize, ...$prizes];
-        });
-    }
 };
 
+export async function addPrize(prize) {
+	// TODO: write back to server API
+	// await fetch(...)
+	update($prizes => {
+		return [prize, ...$prizes];
+	});
+}

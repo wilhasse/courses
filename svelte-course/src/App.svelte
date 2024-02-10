@@ -7,12 +7,12 @@
   import Button from './lib/Button.svelte';
   import date from './lib/dateStore.js';
   import category from './lib/categoryStore';
-  import prizes from './lib/prizesStore.js';
+  import { addPrize } from './lib/prizesStore.js';
 
   function handleAddPrize(event) {
 
 		console.log(event.detail);
-    prizes.addPrize(event.detail);
+    addPrize(event.detail);
 		showAddPrizeModal = false;
 	}
 
