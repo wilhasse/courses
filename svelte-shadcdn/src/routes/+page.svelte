@@ -1,2 +1,36 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<script lang="ts">
+    import { Calendar as CalendarIcon } from "lucide-svelte";
+    import {
+      type DateValue,
+      DateFormatter,
+      getLocalTimeZone,
+    } from "@internationalized/date";
+    import { cn } from "$lib/utils";
+    import { Button } from "$lib/components/ui/button";
+    import { Calendar } from "$lib/components/ui/calendar";
+    import * as Popover from "$lib/components/ui/popover";
+
+    const df = new DateFormatter("pt-BR", { 
+      dateStyle: "long"
+    });
+
+    let value: DateValue | undefined = undefined;
+  </script>
+  <Popover.Root openFocus>
+    <Popover.Trigger asChild let:builder>
+      <Button
+        variant="outline"
+        class={cn(
+          "w-[280px] justify-start text-left font-normal",
+          !value && "text-muted-foreground"
+        )}
+        builders={[builder]}
+      >
+        <CalendarIcon class="mr-2 h-4 w-4" />
+        {value ? df.format(value.toDate(getLocalTimeZone())) : "Selecione uma data"}
+      </Button>
+    </Popover.Trigger>
+    <Popover.Content class="w-auto p-0">
+      <Calendar bind:value initialFocus locale="pt-BR" />
+    </Popover.Content>
+  </Popover.Root>
