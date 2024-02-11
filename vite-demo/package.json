@@ -12,6 +12,8 @@
     "vite": "^5.1.0"
   },
   "dependencies": {
-    "lodash-es": "^4.17.21"
+    "lodash-es": "^4.17.21",
+    "postcss-nested": "^6.0.1",
+    "postcss-nesting": "^12.0.2"
   }
 }
