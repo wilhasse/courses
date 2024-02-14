@@ -39,3 +39,36 @@
 		</div>
 	</div>
 </div>
+
+<style>
+	.game {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		font-size: min(1vmin, 0.5em);
+		gap: 1em;
+		height: 100%;
+	}
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(var(--size), 1fr);
+		grid-gap: 1em;
+		width: 80em;
+		aspect-ratio: 1;
+	}
+	.info {
+		display: flex;
+		flex-direction: column;
+		background: #ddd;
+		width: 80em;
+		height: 10em;
+	}
+	span {
+		display: flex;
+		font-size: 4em;
+		justify-content: center;
+		align-items: center;
+		background: #eee;
+	}
+</style>
