@@ -8,4 +8,8 @@ A FrontendMasters course by Anjana Vakil
 
 https://anjana.dev/vanilla-js-projects/
 
-Dark Mode
+
+Quick Wins
+
+Random Clock
+
