@@ -8,6 +8,14 @@ https://anjana.dev/vanilla-js-projects/
 
 # Review
 
+## Exercises
+
+Project **dark-mode** - html/javascript with dark mode switcher
+
+Project **random-clock** - html/javascript clock on the screen changing randomly
+
+## Notes
+
 ![Diagram Javascript Asynchronous](images/js_asynchronous.png)
 
 Browser APIs , look at [MDN Web Docs](https://developer.mozilla.org/pt-BR/)
@@ -69,10 +77,10 @@ add();
 // the counter is now 3
 ```
 
-The variable add is assigned to the return value of a self-invoking function.\
-The self-invoking function only runs once. It sets the counter to zero (0), and returns a function expression.\
-This way add becomes a function. The "wonderful" part is that it can access the counter in the parent scope.\
-This is called a JavaScript closure. It makes it possible for a function to have "private" variables.\
+The variable add is assigned to the return value of a self-invoking function.  
+The self-invoking function only runs once. It sets the counter to zero (0), and returns a function expression.  
+This way add becomes a function. The "wonderful" part is that it can access the counter in the parent scope.  
+This is called a JavaScript closure. It makes it possible for a function to have "private" variables.  
 The counter is protected by the scope of the anonymous function, and can only be changed using the add function.
 
 ## Programming paradigms
@@ -97,7 +105,7 @@ Define and call a function right away
 
 Everything is a object: array, string, function \
 Objects have prototypes\
-Prototype is a object that all of it properties and methods are accessible through this "sub object" with that prototype \
+Prototype is a object that all of it properties and methods are accessible through this "sub object" with that prototype
 
 ```javascript
 Object.getPrototypeOf(example);
@@ -172,6 +180,141 @@ for (let value of generator) {
 
 # Classes & Browser APIs
 
+## Classes using prototypes
+
+```javascript
+function Person(name) {
+  this.name = name;
+}
+
+Person.prototype.sayHello = function () {
+  console.log("Hello, my name is " + this.name + "!");
+};
+
+var person1 = new Person("Alice");
+person1.sayHello(); // Outputs: Hello, my name is Alice!
+```
+
+## Classes using ES6
+
+```javascript
+class Person {
+  constructor(name) {
+    this.name = name;
+  }
+
+  sayHello() {
+    console.log(`Hello, my name is ${this.name}!`);
+  }
+}
+
+const person1 = new Person("Alice");
+person1.sayHello(); // Outputs: Hello, my name is Alice!
+```
+
+## Private Methods using prototypes
+
+```javascript
+function Person(name) {
+  var privateName = name; // Private variable
+
+  this.sayHello = function () {
+    console.log("Hello, my name is " + privateName + "!");
+  };
+}
+
+var person1 = new Person("Alice");
+person1.sayHello(); // Outputs: Hello, my name is Alice!
+// person1.privateName is undefined
+```
+
+## Private Methods using ES6
+
+```javascript
+class Person {
+  #privateName; // Private field
+
+  constructor(name) {
+    this.#privateName = name;
+  }
+
+  sayHello() {
+    console.log(`Hello, my name is ${this.#privateName}!`);
+  }
+}
+
+const person1 = new Person("Alice");
+person1.sayHello(); // Outputs: Hello, my name is Alice!
+// person1.#privateName is not accessible from outside the class.
+```
+
+## Inheritance using prototypes
+
+```javascript
+function Person(name) {
+  this.name = name;
+}
+
+Person.prototype.sayHello = function () {
+  console.log("Hello, my name is " + this.name + "!");
+};
+
+function Employee(name, jobTitle) {
+  Person.call(this, name); // Call the parent constructor
+  this.jobTitle = jobTitle;
+}
+
+// Inherit from Person
+Employee.prototype = Object.create(Person.prototype);
+Employee.prototype.constructor = Employee;
+
+// Add method to Employee
+Employee.prototype.sayHello = function () {
+  console.log(
+    "Hello, my name is " + this.name + " and I am a " + this.jobTitle + "."
+  );
+};
+
+var employee1 = new Employee("Alice", "Engineer");
+employee1.sayHello(); // Outputs: Hello, my name is Alice and I am a Engineer.
+```
+
+## Inheritance using ES6
+
+```javascript
+class Person {
+  constructor(name) {
+    this.name = name;
+  }
+
+  sayHello() {
+    console.log(`Hello, my name is ${this.name}!`);
+  }
+}
+
+class Employee extends Person {
+  constructor(name, jobTitle) {
+    super(name); // Call the parent class constructor
+    this.jobTitle = jobTitle;
+  }
+
+  sayHello() {
+    console.log(`Hello, my name is ${this.name} and I am a ${this.jobTitle}.`);
+  }
+}
+
+const employee1 = new Employee("Alice", "Engineer");
+employee1.sayHello(); // Outputs: Hello, my name is Alice and I am a Engineer.
+```
+
+## Exercises
+
+Project **dark-modal** - turning dark mode to dark modal switcher
+
 # Javascript Outside the Browser
+
+## Exercises
+
+Project **where-am-i** - node.js project
 
 # Modern JavaScript Development
