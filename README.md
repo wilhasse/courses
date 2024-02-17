@@ -2,6 +2,7 @@
 
 | Folder                 | Type/Status   | Date       |
 | ---------------------- | ------------- | ---------- |
+|js-first-steps          | In progress   | 17/02/2024 |
 |vanilla-js-projects     | Finished      | 15/02/2024 |
 |svelte-game             | Hold          | 14/02/2024 |
 |svelte-shadcdn          | Test          | 11/02/2024 |
@@ -21,6 +22,12 @@
 |react-toast             | Finished      | 15/11/2023 |
 
 # Description
+
+## js-first-steps
+
+FrontEnd Masters  
+JavaScript: From first steps to Professional  
+Anjana Vakil
 
 ## vanilla-js-projects
 
