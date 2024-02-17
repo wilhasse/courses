@@ -410,3 +410,18 @@ Add package.json Scripts:
 ```json
     "format": "prettier . --write" 
 ```
+
+# Deployment
+
+Github Pages and Actions
+
+Netlify
+
+Vercel
+
+# Final Project
+
+Meme me
+
+https://github.com/vakila/meme-me
+
