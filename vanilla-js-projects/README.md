@@ -318,3 +318,41 @@ Project **dark-modal** - turning dark mode to dark modal switcher
 Project **where-am-i** - node.js project
 
 # Modern JavaScript Development
+
+## Importing Modules
+
+CommonJS modules
+
+```javascript
+const cowsay = require('cowsay');
+
+modules.export = {
+  moove: () => cowsay.say({text: "Get going"})
+};
+```
+
+ECMAScript modules
+
+```javascript
+import { say } from 'cowsay'
+
+export const moove = () => cowsay.say({text: "Get going"})
+```
+
+In the browser
+
+```javascript
+<script type="module">
+  // import away
+</script>
+```
+
+## Vite Project
+
+```bash
+npm create vite@latest
+```
+
+## Exercises
+
+Project **selfie-cam** - vite project

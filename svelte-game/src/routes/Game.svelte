@@ -27,7 +27,7 @@
 <div class="game">
 	<div class="grid" style="--size: {size}">
 		{#each game.grid as square}
-			<Square value={square} />
+			<Square emoji={square} selected={false}/>
 		{/each}
 	</div>
 
