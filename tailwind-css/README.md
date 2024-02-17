@@ -17,11 +17,11 @@ npm install
 npm install autoprefixer
 npm i -D tailwindcss@latest
 npx tailwindcss init -p
-```bash
+```
 
 add index.html or other pages to tailwind.config.js content section
 
-```javascript
+```js
   content: [
     "./index.html"
   ],
@@ -39,7 +39,7 @@ index.html
 
 add styles 
 
-``html
+```html
     <link rel="stylesheet" href="/style.css" />
 ```
 
