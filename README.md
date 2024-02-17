@@ -2,6 +2,7 @@
 
 | Folder                 | Type/Status   | Date       |
 | ---------------------- | ------------- | ---------- |
+|tailwind-css            | In progress   | 17/02/2024 |
 |js-first-steps          | In progress   | 17/02/2024 |
 |vanilla-js-projects     | Finished      | 15/02/2024 |
 |svelte-game             | Hold          | 14/02/2024 |
@@ -22,6 +23,12 @@
 |react-toast             | Finished      | 15/11/2023 |
 
 # Description
+
+## tailwind-css
+
+FrontEnd Masters  
+Tailwind CSS  
+Steve Kinney
 
 ## js-first-steps
 
