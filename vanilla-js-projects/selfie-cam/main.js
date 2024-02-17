@@ -1,11 +1,14 @@
-import './style.css'
-import { getVideo, drawVideo } from './src/camera.js'
+import './style.css';
+import { getVideo, drawVideo } from './src/camera.js';
 
-const button = document.querySelector('button');
-const video = await getVideo();
-const canvas = document.querySelector('canvas');
+(async function run() {
 
-button.addEventListener('click', () => {
+  const button = document.querySelector('button');
+  const video = await getVideo();
+  const canvas = document.querySelector('canvas');
+
+  button.addEventListener('click', () => {
  
-  drawVideo(video, canvas);
-});
+    drawVideo(video, canvas);
+  });
+})();
