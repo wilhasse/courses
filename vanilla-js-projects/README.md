@@ -356,3 +356,57 @@ npm create vite@latest
 ## Exercises
 
 Project **selfie-cam** - vite project
+
+# Source Control, Linting and Formatting
+
+## eslint
+
+```bash
+C:\courses\vanilla-js-projects\selfie-cam>npm init @eslint/config
+Need to install the following packages:
+@eslint/create-config@0.4.6
+Ok to proceed? (y) y
+√ How would you like to use ESLint? · problems
+√ What type of modules does your project use? · esm
+√ Which framework does your project use? · none
+√ Does your project use TypeScript? · No / Yes
+√ Where does your code run? · browser
+√ What format do you want your config file to be in? · JSON
+Local ESLint installation not found.
+The config that you've selected requires the following dependencies:
+
+eslint@latest
+√ Would you like to install them now? · No / Yes
+√ Which package manager do you want to use? · npm
+Installing eslint@latest
+```
+
+## config and run eslint
+
+```bash
+npx eslint .
+```
+
+Or in package.json add in the script section:
+
+```json
+"lint": "eslint ."
+```
+
+Check lint before build, add in package.json:
+
+```json
+    "build": "npm run lint && vite build",
+```
+
+## prettier
+
+```bash
+npm install --save-dev --save-exact prettier
+```
+
+Add package.json Scripts:
+
+```json
+    "format": "prettier . --write" 
+```
