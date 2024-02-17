@@ -1,3 +1,7 @@
-console.log("You are here:");
+import { say } from 'cowsay'
+
 const currentDir = process.cwd();
-setTimeout(() => console.log(currentDir),1000);
+const message = 'Moo are here:\n' + currentDir
+console.log(say({ text: message}));
+
+
