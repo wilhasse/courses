@@ -2,8 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  button {
+    @apply border-2 px-2 py-1 rounded border-current hover:bg-purple-400 disabled:opacity-50;
+  }
+}
+
 @layer components {
-  .btn {
-    @apply border-2 px-2 py-1 rounded;
+
+  .btn-dangerous {
+    @apply text-red-300;
+  }
+
+  .btn-primary {
+    @apply text-purple-300;
   }
 }
