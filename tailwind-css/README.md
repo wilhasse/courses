@@ -110,6 +110,9 @@ The big difference is peers is siblings and group is descendants
 
 Note: Use **invisible** to hide an element but maintain its place in the DOM. It still takes up the same amount of space and **hidden** collapses. 
 
+Group Open Modifiers
+Exercise: index2.html
+
 ## Layout
 
 ## Plugin
