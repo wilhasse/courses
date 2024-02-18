@@ -49,6 +49,7 @@ add styles
 ## Basic Styling
 
 Styling a Button 
+Exercise: index.html - two buttons
 
 ```html
 bg-blue-500
@@ -69,6 +70,9 @@ Text Sizing
 text-xl text-2xl
 ```
 
+Customizing Colors
+Exercise: index.html - alert
+
 Adding Spacing 
 
 ```html
@@ -83,6 +87,28 @@ divide-y-4
 divide-x-4
 ```
 ## Variant
+
+Styling Pseudo-Classes with Variants
+
+```html
+hover:bg-blue-400
+active:bg-blue-600
+disabled:opacity-50
+```
+
+Styling Form State  
+Exercise: index.html - form fields
+
+Peer Modifiers Group Modifiers  
+The big difference is peers is siblings and group is descendants
+
+```html
+<p class="invisible text-red-600 peer-invalid:visible peer-focus:invisible">
+		Must be a valid email address.
+	</p>
+```
+
+Note: Use **invisible** to hide an element but maintain its place in the DOM. It still takes up the same amount of space and **hidden** collapses. 
 
 ## Layout
 
