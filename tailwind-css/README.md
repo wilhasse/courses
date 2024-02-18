@@ -119,6 +119,9 @@ Test: index2.html
 Dark Mode
 Test: index3.html
 
+Responsive Breakpoints  
+Test: index3.html
+
 ## Layout
 
 ## Plugin
