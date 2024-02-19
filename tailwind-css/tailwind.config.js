@@ -4,7 +4,8 @@ export default {
   content: [
     "./index.html",
     "./index2.html",
-    "./index3.html"
+    "./index3.html",
+    "./index4.html",
   ],
   theme: {
     extend: {},

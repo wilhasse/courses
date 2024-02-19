@@ -1,7 +1,7 @@
 # Course
 
 FrontendMasters - Tailwind CSS  
-Steve Kinney  
+Steve Kinney
 
 ## Link
 
@@ -40,32 +40,29 @@ replace styles.css to
 
 index.html
 
-add styles 
+add styles
 
 ```html
-    <link rel="stylesheet" href="/style.css" />
+<link rel="stylesheet" href="/style.css" />
 ```
 
 ## Basic Styling
 
-Styling a Button 
+Styling a Button
 Exercise: index.html - two buttons
 
 ```html
-bg-blue-500
-text-white rounded
-p-4 px-1 py-2
-border-2 border-blue-700
+bg-blue-500 text-white rounded p-4 px-1 py-2 border-2 border-blue-700
 ```
 
-Sizing and Spacing 
+Sizing and Spacing
+
 ```html
-h-72 w-96 bg-blue-200 
-px-4 py-10">
-mx-20 my-10
+h-72 w-96 bg-blue-200 px-4 py-10"> mx-20 my-10
 ```
 
-Text Sizing 
+Text Sizing
+
 ```html
 text-xl text-2xl
 ```
@@ -73,27 +70,24 @@ text-xl text-2xl
 Customizing Colors
 Exercise: index.html - alert
 
-Adding Spacing 
+Adding Spacing
 
 ```html
-space-y-4
-space-w-4
+space-y-4 space-w-4
 ```
 
-Adding Dividers 
+Adding Dividers
 
 ```html
-divide-y-4
-divide-x-4
+divide-y-4 divide-x-4
 ```
+
 ## Variant
 
 Styling Pseudo-Classes with Variants
 
 ```html
-hover:bg-blue-400
-active:bg-blue-600
-disabled:opacity-50
+hover:bg-blue-400 active:bg-blue-600 disabled:opacity-50
 ```
 
 Styling Form State  
@@ -104,11 +98,11 @@ The big difference is peers is siblings and group is descendants
 
 ```html
 <p class="invisible text-red-600 peer-invalid:visible peer-focus:invisible">
-		Must be a valid email address.
-	</p>
+  Must be a valid email address.
+</p>
 ```
 
-Note: Use **invisible** to hide an element but maintain its place in the DOM. It still takes up the same amount of space and **hidden** collapses. 
+Note: Use **invisible** to hide an element but maintain its place in the DOM. It still takes up the same amount of space and **hidden** collapses.
 
 Group Open Modifiers  
 Exercise: index2.html
@@ -124,7 +118,23 @@ Test: index3.html
 
 ## Layout
 
-## Plugin
+Playgrounds
 
-## Useful Tricks
+Flex  
+https://tailwind-workshop.vercel.app/playgrounds/flex?boxes=3&height=600&width=w-20
 
+Grid  
+https://tailwind-workshop.vercel.app/playgrounds/grid?boxes=9&height=600&width=w-20
+
+Exercises  
+index3.html  
+index4.html
+
+## Additional Tailwind CSS Features
+
+Animations - Spin / Pulse / Bounce  
+User Select - selecting all string (ex ID)
+
+Plugins:  
+Typography - prose class  
+Container queries - add @{size}
