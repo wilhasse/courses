@@ -228,3 +228,27 @@ js.full = "JS";
 js;
 //{first: 'J', last: 'S', full: 'JS'}
 ```
+
+Tic Tac Toe Demo  
+https://anjana.dev/javascript-first-steps/1-tictactoe.html
+
+Edit Console
+
+```javascript
+document.getElementById("p2-name").textContent;
+//'Marc'
+const players = [{ name: "Willian", symbol: "X" }];
+//undefined
+players.push({ name: "Others", symbol: "O" });
+//2
+players;
+//(2) [{…}, {…}]0: {name: 'Willian', symbol: 'X'}1: {name: 'Others', symbol: 'O'}length: 2[[Prototype]]: Array(0)
+document.getElementById("p2-name").textContent = players[0].name;
+//'Willian'
+board.childElementCount;
+//9
+const squares = document.querySelectorAll(".square");
+//undefined
+squares[4].textContent = "X";
+//'X'
+```
