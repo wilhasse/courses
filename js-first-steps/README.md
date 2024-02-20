@@ -38,3 +38,77 @@ document.querySelector('#p1-symbol').textContent = 'O'
 document.querySelector('#p2-symbol').textContent = 'X'
 document.querySelector('header h2').append(' and love')
 ```
+
+## Value & Data Types
+
+JS has only two kinds of data  
+Primitive types (ex: strings, numbers)  
+Objects (document)  
+
+```javascript
+typeof "42"
+//'string'
+typeof 42
+//'number'
+typeof Infinity
+//'number'
+typeof true
+//'boolean'
+typeof null
+//'object'
+"some string".length
+//11
+```
+
+undefined and null abscence of the value  
+undefined - accidental nothing  
+null - deliberate nothing  
+
+## String
+
+string are made of characters  
+starts at 0 (index)  
+
+```javascript
+"ALOHA"[0]
+//'A'
+"ALOHA".indexOf("L")
+//1
+"ALOHA".indexOf("Q")
+//-1
+"ALOHA".includes("HA")
+//true
+"ALOHA".startsWith("AL")
+//true
+```
+
+### Comparison
+
+```javascript
+1 === "1"
+//false
+1 == "1"
+//true
+```
+
+strict operator ===  
+loosey goolsey ==  
+
+## Variables
+
+**var** declares a variable globally or locally to an entire function regardless of block scope.  
+**let** introduces block scope to JavaScript. Variables declared with let are limited in scope to the block, statement, or expression in which they are used.  
+**const** declares and assignes a variable that can't be changed
+
+```javascript
+if (true) {
+  var varVariable = "I am var";
+  let letVariable = "I am let";
+}
+
+console.log(varVariable); // Outputs: "I am var" because var is function-scoped or globally scoped.
+console.log(letVariable); // ReferenceError: letVariable is not defined because let is block-scoped.
+```
+
+## Arrays
+
