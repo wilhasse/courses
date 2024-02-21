@@ -1,35 +1,23 @@
 # vueschool-vite
 
-This template should help get you started developing with Vue 3 in Vite.
+## Chrome Extension
 
-## Recommended IDE Setup
+https://chromewebstore.google.com/search/vuejs
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+## Vue cli (old)
 
-## Customize configuration
+```bash
+npm install -g @vue/cli
+vue --version
+vue create vueschool-forum
+```
 
-See [Vite Configuration Reference](https://vitejs.dev/config/).
+## Vue Vite
 
-## Project Setup
-
-```sh
+```bash
+npm init vue@3
+cd vue-project
 npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
+npm run format
 npm run dev
-```
-
-### Compile and Minify for Production
-
-```sh
-npm run build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
 ```

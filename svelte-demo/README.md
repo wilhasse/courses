@@ -1,17 +1,28 @@
-# create-svelte
+## Course
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
+Site:  
+https://fireship.io/courses/sveltekit
+
+GitHub:  
+https://github.com/fireship-io/fkit-course
+
+## Visual Studio
+
+Svelte for VS Code  
+Svelte Intellisense  
+Thunder Client
+
+Chorme Extension  
+Web Vitals
 
 ## Creating a project
 
 If you're seeing this, you've probably already done this step. Congrats!
 
 ```bash
-# create a new project in the current directory
-npm create svelte@latest
-
-# create a new project in my-app
-npm create svelte@latest my-app
+npm create svelte@latest svelte-demo
+cd svelte-demo
+npm install
 ```
 
 ## Developing
@@ -33,6 +44,24 @@ To create a production version of your app:
 npm run build
 ```
 
-You can preview the production build with `npm run preview`.
+## Firebase
 
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+```bash
+npm i firebase
+npm install firebase-admin
+```
+
+## Tailwind / Daisy UI
+
+```bash
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+npm install daisyui
+```
+
+## Deploy to Google Firebase
+
+```bash
+npm i -g firebase-tools
+firebase login
+```
