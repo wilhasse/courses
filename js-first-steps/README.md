@@ -252,3 +252,153 @@ const squares = document.querySelectorAll(".square");
 squares[4].textContent = "X";
 //'X'
 ```
+
+## Function
+
+Functions always return a value
+
+```javascript
+function logSquare(x) {
+    console.log(x*x);
+}
+//undefined
+const logNine=logSquare(3);
+//undefined
+logNine
+//undefined
+```
+
+## Anonymous function
+
+```javascript
+const yell = function (saying) {
+    return saying.toUpperCase();
+}
+//undefined
+yell
+//ƒ (saying) {
+//    return saying.toUpperCase();
+//}
+yell("hello");
+//'HELLO'
+```
+
+# Difference between function and anonymous function
+
+```javascript
+const yell = function (saying) {
+    return saying.toUpperCase();
+}
+yell
+//ƒ (saying) {
+//    return saying.toUpperCase();
+//}
+typeof yell
+//'function'
+```
+
+```javascript
+function yell(saying) {
+    return saying.toUpperCase();
+}
+//undefined
+yell
+//ƒ yell(saying) {
+//    return saying.toUpperCase();
+//}
+typeof yell
+//'function'```
+```
+
+It looks the same but the differences:
+
+- Hoisting: Function declarations are hoisted, meaning the function can be called before it is defined in the code.  
+
+```javascript
+// Call the function before its declaration
+helloWorld();
+
+// Function declaration
+function helloWorld() {
+  console.log("Hello, world!");
+}
+```
+- Mutability: In the function expression example, yell is declared with const, making it immutable.  
+
+## Arrow function
+
+
+```javascript
+const add = (x,y) => x + y
+//undefined
+add(2)
+//NaN
+add(2,3)
+//5
+const square = x => x * x
+//undefined
+square(3)
+//9
+```
+
+## Scope
+
+Keep variable planet
+
+```javascript
+let planet = "Jupiter";
+//undefined
+function scopeOut() {
+    let planet="Mars";
+    console.log(planet);
+}
+//undefined
+scopeOut()
+//Mars
+planet
+//'Jupiter'
+```
+
+Changing variable planet
+
+```javascript
+let planet = "Jupiter";
+//undefined
+function scopeOut() {
+    planet="Mars";
+    console.log(planet);
+}
+//undefined
+scopeOut()
+//Mars
+planet
+//'Mars'
+```
+
+## var and let
+
+```javascript
+let msg = "test"
+//undefined
+{
+    let msg = "ok"
+}
+//undefined
+msg
+//'test
+```
+
+```javascript
+var msg = "test"
+
+undefined
+{
+    var msg = "ok"
+}
+
+undefined
+msg
+
+'ok'
+```
+
