@@ -402,3 +402,12 @@ msg
 'ok'
 ```
 
+## Event handler
+
+```javascript
+document.addEventListener("click",() => { 
+    console.log('clicked')
+});
+//undefined
+//2 clicked
+```
