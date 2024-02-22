@@ -259,12 +259,12 @@ Functions always return a value
 
 ```javascript
 function logSquare(x) {
-    console.log(x*x);
+  console.log(x * x);
 }
 //undefined
-const logNine=logSquare(3);
+const logNine = logSquare(3);
 //undefined
-logNine
+logNine;
 //undefined
 ```
 
@@ -272,10 +272,10 @@ logNine
 
 ```javascript
 const yell = function (saying) {
-    return saying.toUpperCase();
-}
+  return saying.toUpperCase();
+};
 //undefined
-yell
+yell;
 //ƒ (saying) {
 //    return saying.toUpperCase();
 //}
@@ -287,32 +287,32 @@ yell("hello");
 
 ```javascript
 const yell = function (saying) {
-    return saying.toUpperCase();
-}
-yell
+  return saying.toUpperCase();
+};
+yell;
 //ƒ (saying) {
 //    return saying.toUpperCase();
 //}
-typeof yell
+typeof yell;
 //'function'
 ```
 
-```javascript
+````javascript
 function yell(saying) {
-    return saying.toUpperCase();
+  return saying.toUpperCase();
 }
 //undefined
-yell
+yell;
 //ƒ yell(saying) {
 //    return saying.toUpperCase();
 //}
-typeof yell
+typeof yell;
 //'function'```
-```
+````
 
 It looks the same but the differences:
 
-- Hoisting: Function declarations are hoisted, meaning the function can be called before it is defined in the code.  
+- Hoisting: Function declarations are hoisted, meaning the function can be called before it is defined in the code.
 
 ```javascript
 // Call the function before its declaration
@@ -323,21 +323,21 @@ function helloWorld() {
   console.log("Hello, world!");
 }
 ```
-- Mutability: In the function expression example, yell is declared with const, making it immutable.  
+
+- Mutability: In the function expression example, yell is declared with const, making it immutable.
 
 ## Arrow function
 
-
 ```javascript
-const add = (x,y) => x + y
+const add = (x, y) => x + y;
 //undefined
-add(2)
+add(2);
 //NaN
-add(2,3)
+add(2, 3);
 //5
-const square = x => x * x
+const square = (x) => x * x;
 //undefined
-square(3)
+square(3);
 //9
 ```
 
@@ -349,13 +349,13 @@ Keep variable planet
 let planet = "Jupiter";
 //undefined
 function scopeOut() {
-    let planet="Mars";
-    console.log(planet);
+  let planet = "Mars";
+  console.log(planet);
 }
 //undefined
-scopeOut()
+scopeOut();
 //Mars
-planet
+planet;
 //'Jupiter'
 ```
 
@@ -365,49 +365,112 @@ Changing variable planet
 let planet = "Jupiter";
 //undefined
 function scopeOut() {
-    planet="Mars";
-    console.log(planet);
+  planet = "Mars";
+  console.log(planet);
 }
 //undefined
-scopeOut()
+scopeOut();
 //Mars
-planet
+planet;
 //'Mars'
 ```
 
 ## var and let
 
 ```javascript
-let msg = "test"
+let msg = "test";
 //undefined
 {
-    let msg = "ok"
+  let msg = "ok";
 }
 //undefined
-msg
+msg;
 //'test
 ```
 
 ```javascript
-var msg = "test"
+var msg = "test";
 
-undefined
+undefined;
 {
-    var msg = "ok"
+  var msg = "ok";
 }
 
-undefined
-msg
+undefined;
+msg;
 
-'ok'
+("ok");
 ```
 
 ## Event handler
 
 ```javascript
-document.addEventListener("click",() => { 
-    console.log('clicked')
+document.addEventListener("click", () => {
+  console.log("clicked");
 });
 //undefined
 //2 clicked
+```
+
+## Conditional
+
+```javascript
+function compare(x, y) {
+  if (x > y) {
+    console.log(x, "is greater than", y);
+  } else if (x < y) {
+    console.log(x, "is less than", y);
+  } else {
+    console.log(x, "is equal to", y);
+  }
+}
+compare(3, 5);
+//3 'is less than' 5
+undefined;
+compare(10, 2);
+//10 'is greater than' 2
+```
+
+Ternary operatior
+
+```javascript
+let forecast = "sunny";
+//undefined
+let mood = forecast === "sunny" ? "happy" : "sad";
+//undefined
+mood;
+//'happy'
+```
+
+## Loops
+
+```javascript
+for (let count = 0; count <= 20; count += 10) {
+  console.log(count);
+}
+//0
+//10
+//20
+```
+
+```javascript
+Simpler interation
+
+const numbers = [1,2,3];
+
+for (let n of numbers) {
+    console.log(n);
+}
+//1
+//2
+//3
+
+for (let char of "ALOHA") {
+    console.log(char);
+}
+//A
+//L
+//O
+//H
+//A
 ```
