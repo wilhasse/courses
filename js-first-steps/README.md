@@ -555,3 +555,27 @@ async function fetchMessage(url) {
 }
 //Array(7) ["afghan","basset","blood","english","ibizan","plott","walker"]
 ```
+
+## Module
+
+```javascript
+<script type="module">
+    //...
+</script>
+
+<script>
+  // ...
+</script>
+```
+
+Import & Export
+
+```javascript
+// myModule.js
+const veryUsefulFunction = () => "I came from a module";
+export { veryUsefulFunction };
+
+// otherModule.js
+import { veryUsefulFunction } from "./myModule.js";
+veryUsefulFunction();
+```
