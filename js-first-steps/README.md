@@ -536,3 +536,22 @@ let [one, two, three] = [1, 2, 3];
 one;
 //1
 ```
+
+## Async
+
+```javascript
+async function fetchResponse(url) {
+  const response = await fetch(url);
+  return response;
+}
+```
+
+```javascript
+async function fetchMessage(url) {
+  const response = await fetch(url);
+  const body = await response.json();
+  const { message } = body;
+  return message;
+}
+//Array(7) ["afghan","basset","blood","english","ibizan","plott","walker"]
+```
