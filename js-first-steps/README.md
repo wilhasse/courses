@@ -474,3 +474,34 @@ for (let char of "ALOHA") {
 //H
 //A
 ```
+
+## APIs & fetch
+
+```javascript
+let response = await fetch("https://dog.ceo/api/breed/hound/list");
+// Response {type: 'cors', url: 'https://dog.ceo/api/breed/hound/list', redirected: false, status: 200, ok: true, …}
+let body = await response.json();
+/ {message: Array(7), status: 'success'} ...
+```
+
+## Destructing Objects & Arrays
+
+```javascript
+const spices = [
+    {name: "Emma", nickname: "Baby"}
+]
+//undefined
+let {nickname , name} = spices[0]
+//undefined
+nickname
+//'Baby'
+name
+//'Emma'
+```
+
+```javascript
+let [one, two, three] = [1,2,3]
+//undefined
+one
+//1
+```
