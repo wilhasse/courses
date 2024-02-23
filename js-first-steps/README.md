@@ -475,6 +475,39 @@ for (let char of "ALOHA") {
 //A
 ```
 
+## map
+
+```javascript
+const spices = [
+  { name: "Emma", nickname: "Baby" },
+  { name: "Geri", nickname: "Ginger" },
+];
+//undefined
+spices;
+//(2) [{…}, {…}]0: {name: 'Emma', nickname: 'Baby'}1: {name: 'Geri', nickname: 'Ginger'}length: 2[[Prototype]]: Array(0)
+const nicknames = spices.map((s) => s.nickname + " Spice");
+//undefined
+nicknames;
+//(2) ['Baby Spice', 'Ginger Spice']
+const geri = spices.filter((s) => s.name.includes("Geri"));
+//undefined
+geri;
+//0 :  {name: 'Geri', nickname: 'Ginger'} length:  1 [[Prototype]] :  Array(0)
+```
+
+## spreading arrays
+
+```javascript
+const array1 = ["a", "b", "c"];
+//undefined
+const array2 = ["d", "e", "f"];
+//undefined
+const joined = [...array1, ...array2];
+//undefined
+joined;
+//(6) ['a', 'b', 'c', 'd', 'e', 'f']
+```
+
 ## APIs & fetch
 
 ```javascript
@@ -487,21 +520,19 @@ let body = await response.json();
 ## Destructing Objects & Arrays
 
 ```javascript
-const spices = [
-    {name: "Emma", nickname: "Baby"}
-]
+const spices = [{ name: "Emma", nickname: "Baby" }];
 //undefined
-let {nickname , name} = spices[0]
+let { nickname, name } = spices[0];
 //undefined
-nickname
+nickname;
 //'Baby'
-name
+name;
 //'Emma'
 ```
 
 ```javascript
-let [one, two, three] = [1,2,3]
+let [one, two, three] = [1, 2, 3];
 //undefined
-one
+one;
 //1
 ```
