@@ -1,6 +1,6 @@
 # Machine Learning (4 months)
 
-## News in IA, Software / Interviews (15/04 ~ 15/05)
+## News in AI, Software / Interviews (15/04 ~ 15/05)
 
 Langchain framework  
 How machine learning works at a high level  
@@ -90,7 +90,7 @@ Project Interactive MDX-Based Blog
 Reference JavaScript Primer  
 Reference Tools of the Trade
 
-## Project / Course (03/11 ~ 15/11)
+## React Project / Course (03/11 ~ 15/11)
 
 TI.CSLOG  
 React Basics
@@ -110,5 +110,5 @@ Module 9 Little Big Details
 
 ## Web Frameworks (23/12 ~ 31/12)
 
-AstroJS 101
+AstroJS 101  
 Introduction to Svelte/SvelteKit
