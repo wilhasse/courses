@@ -2,7 +2,7 @@
 
 | Folder                 | Type/Status | Date       |
 | ---------------------- | ----------- | ---------- |
-| page/just-javascript   | In progress | 24/02/2024 |
+| p/just-javascript      | In progress | 24/02/2024 |
 | tailwind-css           | Finished    | 17/02/2024 |
 | js-first-steps         | Finished    | 17/02/2024 |
 | vanilla-js-projects    | Finished    | 15/02/2024 |
@@ -22,6 +22,8 @@
 | react-blog-mdx         | Finished    | 26/11/2023 |
 | react-wordle           | Finished    | 19/10/2023 |
 | react-toast            | Finished    | 15/11/2023 |
+
+"* p/" - one-page dir
 
 # Description
 
