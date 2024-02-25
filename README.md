@@ -1,28 +1,34 @@
 # Projects
 
-| Folder              | Type/Status | Date       |
-| ------------------- | ----------- | ---------- |
-| tailwind-css        | Finished    | 17/02/2024 |
-| js-first-steps      | In progress | 17/02/2024 |
-| vanilla-js-projects | Finished    | 15/02/2024 |
-| svelte-game         | Hold        | 14/02/2024 |
-| svelte-shadcdn      | Test        | 11/02/2024 |
-| vite-demo           | Finished    | 11/02/2024 |
-| svelte-course       | Finished    | 10/02/2024 |
-| elixir-socket       | Umbrella    | 06/02/2024 |
-| phoenix live        | Hold        | 06/02/2024 |
-| svelte-demo         | Finished    | 24/01/2024 |
-| elixir-auction      | Hold        | 23/01/2024 |
-| elixir-ecto         | Hold        | 20/01/2024 |
-| alpine-course       | Finished    | 28/01/2024 |
-| vueschool-forum     | Cancelled   | 08/01/2024 |
-| sole-and-ankle      | Finished    | 23/12/2023 |
-| new-grid-times      | Finished    | 20/12/2023 |
-| react-blog-mdx      | Finished    | 26/11/2023 |
-| react-wordle        | Finished    | 19/10/2023 |
-| react-toast         | Finished    | 15/11/2023 |
+| Folder                 | Type/Status | Date       |
+| ---------------------- | ----------- | ---------- |
+| page/just-javascript   | In progress | 24/02/2024 |
+| tailwind-css           | Finished    | 17/02/2024 |
+| js-first-steps         | Finished    | 17/02/2024 |
+| vanilla-js-projects    | Finished    | 15/02/2024 |
+| svelte-game            | Hold        | 14/02/2024 |
+| svelte-shadcdn         | Test        | 11/02/2024 |
+| vite-demo              | Finished    | 11/02/2024 |
+| svelte-course          | Finished    | 10/02/2024 |
+| elixir-socket          | Umbrella    | 06/02/2024 |
+| phoenix live           | Hold        | 06/02/2024 |
+| svelte-demo            | Finished    | 24/01/2024 |
+| elixir-auction         | Hold        | 23/01/2024 |
+| elixir-ecto            | Hold        | 20/01/2024 |
+| alpine-course          | Finished    | 28/01/2024 |
+| vueschool-forum        | Cancelled   | 08/01/2024 |
+| sole-and-ankle         | Finished    | 23/12/2023 |
+| new-grid-times         | Finished    | 20/12/2023 |
+| react-blog-mdx         | Finished    | 26/11/2023 |
+| react-wordle           | Finished    | 19/10/2023 |
+| react-toast            | Finished    | 15/11/2023 |
 
 # Description
+
+## just-javascript
+
+Just JavaScript  
+Dan Abramov
 
 ## tailwind-css
 
