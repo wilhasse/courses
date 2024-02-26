@@ -2,6 +2,7 @@
 
 | Folder                 | Type/Status | Date       |
 | ---------------------- | ----------- | ---------- |
+| p/functional-js        | In progress | 25/02/2024 |
 | p/just-javascript      | In progress | 24/02/2024 |
 | tailwind-css           | Finished    | 17/02/2024 |
 | js-first-steps         | Finished    | 17/02/2024 |
@@ -26,6 +27,12 @@
 "* p/" - one-page dir
 
 # Description
+
+## functional-js
+
+FrontEnd Masters  
+Functional JavaScript First Steps
+Anjana Vakil
 
 ## just-javascript
 
