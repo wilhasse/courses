@@ -72,3 +72,53 @@ can be passed around as values
 Higher-order functions  
 take other functions  
 as input/output
+
+## Currying
+
+```javascript
+function greet(greeting, name) {
+  return `${greeting}, ${name}!`;
+}
+
+function curryGreet(greeting) {
+  return function (name) {
+    return `${greeting}, ${name}!`;
+  }
+};
+
+const greetItal = curryGreet("Ciao");
+greetItal("Alonzo"); // "Ciao, Alonzo!"
+
+const greetTex = curryGreet("Howdy");
+greetTex("Alonzo"); // "Howdy, Alonzo!"
+greetTex("Alan"); // "Howdy, Alan!"
+```
+
+## Composing functions
+
+```javascript
+var ender = (ending) => (input) => input + ending;
+
+var adore = ender(" rocks");
+var announce = ender(", y'all");
+var exclaim = ender("!");
+
+var hypeUp = (x) => exclaim(announce(adore(x)));
+hypeUp("JS"); // "JS rocks, y'all!"
+hypeUp("FP"); // "FP rocks, y'all!"
+```
+
+## Immutability
+
+```javascript
+const oldCities = ["Delhi", "Bombay", "Bangalore"];
+
+const newCities = oldCities.map((city) => {
+  if (city === "Bombay") return "Mumbai";
+  if (city === "Bangalore") return "Bengaluru";
+  return city;
+});
+
+newCities; //["Delhi", "Mumbai", "Bengaluru"]
+oldCities; //["Delhi", "Bombay", "Bangalore"]
+```
