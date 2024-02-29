@@ -6,12 +6,12 @@
 <div class="login-container">
 	<form method="POST" class="login-form">
 		<div class="form-group">
-			<label for="email">Usuário</label>
-			<input id="email" name="email" type="email" required />
+			<label for="user">Usuário</label>
+			<input id="user" name="user" type="user" bind:value={user} required />
 		</div>
 		<div class="form-group">
 			<label for="password">Senha</label>
-			<input id="password" name="password" type="password" required />
+			<input id="password" name="password" type="password" bind:value={password} required />
 		</div>
 		<button type="submit" class="login-button">Login</button>
 	</form>
