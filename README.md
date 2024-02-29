@@ -2,16 +2,17 @@
 
 | Folder                 | Status      | Date       |
 | ---------------------- | ----------- | ---------- |
+| s/svelte-login         | In progress | 28/02/2024 |
 | p/functional-js        | Finished    | 25/02/2024 |
 | p/revealjs             | In progress | 24/02/2024 |
 | p/just-javascript      | In progress | 24/02/2024 |
 | tailwind-css           | Finished    | 17/02/2024 |
 | js-first-steps         | Finished    | 17/02/2024 |
 | vanilla-js-projects    | Finished    | 15/02/2024 |
-| svelte-game            | Hold        | 14/02/2024 |
-| svelte-shadcdn         | Finished    | 11/02/2024 |
+| s/svelte-game          | Hold        | 14/02/2024 |
+| s/svelte-shadcdn       | Finished    | 11/02/2024 |
 | vite-demo              | Finished    | 11/02/2024 |
-| svelte-course          | Finished    | 10/02/2024 |
+| s/svelte-course        | Finished    | 10/02/2024 |
 | elixir-socket          | Finished    | 24/01/2024 |
 | elixir-auction         | Finished    | 23/01/2024 |
 | elixir-ecto            | Hold        | 20/01/2024 |
@@ -26,6 +27,12 @@
 "* p/" - one-page dir
 
 # Description
+
+## svelte-login
+
+Tutorial
+Jannik Wempe
+Authentication in Svelte using cookies
 
 ## functional-js
 
