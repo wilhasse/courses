@@ -123,6 +123,27 @@ console.log(typeof(NaN));
 
 ## Meeting Objects and Functions
 
+Do Objects Disapper? No.
+
+```javascript
+let shrek = {};
+let donkey = {};
+//undefined
+shrek = null;
+//null
+shrek
+//null
+```
+
+How many different values does this code pass to console.log? 7
+
+```javascript
+for (let i = 0; i < 7; i++) {
+  console.log(function() {});
+}
+//7 f() {}
+```
+
 ## Equality of Values
 
 ## Properties
