@@ -1,28 +1,28 @@
 # Projects
 
-| Folder                 | Status      | Date       |
-| ---------------------- | ----------- | ---------- |
-| s/svelte-login         | In progress | 28/02/2024 |
-| p/functional-js        | Finished    | 25/02/2024 |
-| p/revealjs             | In progress | 24/02/2024 |
-| p/just-javascript      | In progress | 24/02/2024 |
-| tailwind-css           | Finished    | 17/02/2024 |
-| js-first-steps         | Finished    | 17/02/2024 |
-| vanilla-js-projects    | Finished    | 15/02/2024 |
-| s/svelte-game          | Hold        | 14/02/2024 |
-| s/svelte-shadcdn       | Finished    | 11/02/2024 |
-| vite-demo              | Finished    | 11/02/2024 |
-| s/svelte-course        | Finished    | 10/02/2024 |
-| elixir-socket          | Finished    | 24/01/2024 |
-| elixir-auction         | Finished    | 23/01/2024 |
-| elixir-ecto            | Hold        | 20/01/2024 |
-| alpine-course          | Finished    | 28/01/2024 |
-| vueschool-forum        | Cancelled   | 08/01/2024 |
-| sole-and-ankle         | Finished    | 23/12/2023 |
-| new-grid-times         | Finished    | 20/12/2023 |
-| react-blog-mdx         | Finished    | 26/11/2023 |
-| react-wordle           | Finished    | 19/10/2023 |
-| react-toast            | Finished    | 15/11/2023 |
+| Folder                 | Status      | Date       | Description |
+| ---------------------- | ----------- | ---------- | ----------- |
+| s/svelte-login         | Finished    | 28/02/2024 | Simple login/logout flow in SvelteKit            |
+| p/functional-js        | Finished    | 25/02/2024 | Functional JavaScript Course                     |
+| p/revealjs             | In progress | 24/02/2024 | RevealJS Course - Slides                         |
+| p/just-javascript      | In progress | 24/02/2024 | Just JavaScript Course                           |
+| tailwind-css           | Finished    | 17/02/2024 | Tawild CSS Course (frontend masters)             |
+| js-first-steps         | Finished    | 17/02/2024 | JavaScript First Steps Course                    |
+| vanilla-js-projects    | Finished    | 15/02/2024 | Vanilla JS Projects Course                       |
+| s/svelte-game          | Hold        | 14/02/2024 | Svelte Game Workshop Rich Harris                 |
+| s/svelte-shadcdn       | Finished    | 11/02/2024 | Testing Shadcdn UI Framework                     |
+| vite-demo              | Finished    | 11/02/2024 | Simple Vite application (Vue Master Course)      |
+| s/svelte-course        | Finished    | 10/02/2024 | Joy of Svelte Course                             |
+| elixir-socket          | Finished    | 24/01/2024 | Testing Elixir Socket/WebSockets                 |
+| elixir-auction         | Finished    | 23/01/2024 | Elixir in Action book                            |
+| elixir-ecto            | Hold        | 20/01/2024 | Programming Ecto book                            |
+| alpine-course          | Finished    | 28/01/2024 | Alpine Udemy Course                              |
+| vueschool-forum        | Cancelled   | 08/01/2024 | Vue School Forum Course                          |
+| sole-and-ankle         | Finished    | 23/12/2023 | CSS Course Josh W Comeau                         |
+| new-grid-times         | Finished    | 20/12/2023 | CSS Course Josh W Comeau                         |
+| react-blog-mdx         | Finished    | 26/11/2023 | Joy of React Course Josh W Comeau                |
+| react-toast            | Finished    | 15/11/2023 | Joy of React Course Josh W Comeau                |
+| react-wordle           | Finished    | 19/10/2023 | Joy of React Course Josh W Comeau                |
 
 "* p/" - one-page dir
 
@@ -147,12 +147,12 @@ Josh W Comeau
 Joy of React  
 Josh W Comeau
 
-## react-wordle
+## react-toast
 
 Joy of React  
 Josh W Comeau
 
-## react-toast
+## react-wordle
 
 Joy of React  
 Josh W Comeau
