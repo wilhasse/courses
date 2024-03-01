@@ -49,3 +49,19 @@ textarea,
 select {
   font: inherit;
 }
+
+button {
+    padding: 0.5rem;
+    font-size: 1rem;
+    color: white;
+    background-color: #007bff;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    margin: 1rem;
+    width: 180px;
+}
+
+button:hover {
+    background-color: #0056b3;
+}

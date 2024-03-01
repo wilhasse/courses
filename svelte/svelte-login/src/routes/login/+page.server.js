@@ -10,7 +10,7 @@ export const actions = {
         console.log(user, password);
 		if (user === 'wil' && password === 'wil') {
 
-            cookies.set('session_id', user, {
+            cookies.set('username', user, {
                 path: '/',
                 httpOnly: true,
                 sameSite: 'strict',
@@ -18,7 +18,7 @@ export const actions = {
                 maxAge: 60 * 60 * 24 * 7 // one week
             });
 
-            throw redirect(307, '/');
+            throw redirect(303, '/protected');
         } 
 
         // login not ok

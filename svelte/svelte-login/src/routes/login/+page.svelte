@@ -13,7 +13,7 @@
 			<label for="password">Senha</label>
 			<input id="password" name="password" type="password" bind:value={password} required />
 		</div>
-		<button type="submit" class="login-button">Login</button>
+		<button type="submit">Login</button>
 	</form>
 </div>
 
@@ -51,20 +51,5 @@
 	.form-group label {
 		margin-bottom: 0.5rem;
 		font-size: 1rem;
-	}
-
-	.login-button {
-		padding: 0.5rem;
-		width: 100%;
-		font-size: 1rem;
-		color: white;
-		background-color: #007bff;
-		border: none;
-		border-radius: 0.25rem;
-		cursor: pointer;
-	}
-
-	.login-button:hover {
-		background-color: #0056b3;
 	}
 </style>
