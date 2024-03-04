@@ -1,8 +1,11 @@
 # Project
 
 Jannik Wempe
-Authentication in Svelte using cookies
+Authentication in Svelte using cookies  
 https://blog.logrocket.com/authentication-svelte-using-cookies/
+  
+Github   
+https://github.com/iamhabbeboy/sveltekit-auth  
 
 ## Create
 
