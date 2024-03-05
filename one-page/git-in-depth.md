@@ -4,7 +4,7 @@ Git In-Depth
 FrontendMasters - Nina Zakharenko
 
 https://frontendmasters.com/courses/git-in-depth/  
-https://github.com/nnja/advanced-git  
+https://github.com/nnja/advanced-git
 
 # Modules
 
@@ -74,10 +74,72 @@ tree /f .git\refs\heads
 //    new_branch
 ```
 
-
 ## Git Areas and Stashing
 
+1. Working Area - where you change your code that are not in the staging area. Untracked files.
+2. Staging Area - what files are going to be part of the next commit. The changes between the current commit and the next one.
+3. The repository - the files git knows about. It contains all of yout commits
+
+Moving to the staging area
+
+```bash
+git add file
+git add . // (all files)
+git add -p // interactive staging
+```
+
+Stash - Save your work without commiting it.
+
+```bash
+git stash save "name your stash"
+git status
+git stash list
+git stash show stash@{0}
+git stash apply stash@{0}
+```
+
 ## References, Commits, Branches
+
+What is a branch? It is just a pointer to a particular commit  
+Head is how git knows what branch you are currently on  
+Tag is a simple pointer to a commit (like branch)
+Branch and tag are pointers but branch is dynamic it moves after each commit. Tag ist just a name and keep the same as new commits are added.  
+Detached head state - it happens after git checkout to a commit, news commits are not referenced and can be lost if yout don't attach to a new branch.
+
+Where's your HEAD
+
+```bash
+git checkout exercise3
+type .git\HEAD
+// ref: refs/heads/exercise3
+git branch
+//  exercise2
+//* exercise3
+//  master
+```
+
+Where are your refs?
+
+```bash
+git show-ref --heads
+// 43388fee19744e8893467331d7853a6475a227b8 refs/heads/exercise2
+// e348ebc1187cb3b4066b1e9432a614b464bf9d07 refs/heads/exercise3
+// 43388fee19744e8893467331d7853a6475a227b8 refs/heads/master
+git cat-file -p 43388fee19744e8893467331d7853a6475a227b8
+... Initial commit
+```
+
+Detached HEAD
+
+```bash
+git log --oneline
+git checkout e348ebc
+echo "This is a test file" > dangle.txt
+git add dangle.txt
+git commit -m "This is a dangling commit"
+git checkout exercise3
+// --> Warning: you are leaving 1 commit behind, not connected to any of your branches
+```
 
 ## Merging and Rebasing
 
