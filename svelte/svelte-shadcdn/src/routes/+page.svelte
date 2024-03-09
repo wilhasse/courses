@@ -1,36 +1,121 @@
+<script lang="ts" context="module">
+  import { z } from "zod";
+ 
+  const items = [
+    {
+      id: "recents",
+      label: "Recents"
+    },
+    {
+      id: "home",
+      label: "Home"
+    },
+    {
+      id: "applications",
+      label: "Applications"
+    },
+    {
+      id: "desktop",
+      label: "Desktop"
+    },
+    {
+      id: "downloads",
+      label: "Downloads"
+    },
+    {
+      id: "documents",
+      label: "Documents"
+    }
+  ] as const;
+ 
+  export const formSchema = z.object({
+    items: z.array(z.string()).refine((value) => value.some((item) => item), {
+      message: "You have to select at least one item."
+    })
+  });
+  export type FormSchema = typeof formSchema;
+</script>
+ 
 <script lang="ts">
-    import { Calendar as CalendarIcon } from "lucide-svelte";
-    import {
-      type DateValue,
-      DateFormatter,
-      getLocalTimeZone,
-    } from "@internationalized/date";
-    import { cn } from "$lib/utils";
-    import { Button } from "$lib/components/ui/button";
-    import { Calendar } from "$lib/components/ui/calendar";
-    import * as Popover from "$lib/components/ui/popover";
+  import { browser } from "$app/environment";
+  import { page } from "$app/stores";
+  import * as Form from "$lib/components/ui/form/index.js";
+  import { Checkbox } from "$lib/components/ui/checkbox/index.js";
+  import SuperDebug, {
+    type SuperValidated,
+    type Infer,
+    superForm
+  } from "sveltekit-superforms";
+  import { zodClient } from "sveltekit-superforms/adapters";
+  import { toast } from "svelte-sonner";
+  let data: SuperValidated<Infer<FormSchema>> = $page.data.checkboxMultiple;
+ 
+  let initialData = $page.data.checkboxMultiple ?? { items: [] }; // Provide a default structure
 
-    const df = new DateFormatter("pt-BR", { 
-      dateStyle: "long"
-    });
-
-    let value: DateValue | undefined = undefined;
-  </script>
-  <Popover.Root openFocus>
-    <Popover.Trigger asChild let:builder>
-      <Button
-        variant="outline"
-        class={cn(
-          "w-[280px] justify-start text-left font-normal",
-          !value && "text-muted-foreground"
-        )}
-        builders={[builder]}
-      >
-        <CalendarIcon class="mr-2 h-4 w-4" />
-        {value ? df.format(value.toDate(getLocalTimeZone())) : "Selecione uma data"}
-      </Button>
-    </Popover.Trigger>
-    <Popover.Content class="w-auto p-0">
-      <Calendar bind:value initialFocus locale="pt-BR" />
-    </Popover.Content>
-  </Popover.Root>
+  const form = superForm(initialData, {
+    validators: zodClient(formSchema),
+    onUpdated: ({ form: f }) => {
+      if (f.valid) {
+        toast.success("You submitted" + JSON.stringify(f.data, null, 2));
+      } else {
+        toast.error("Please fix the errors in the form.");
+      }
+    }
+  });
+ 
+  const { form: formData, enhance } = form;
+ 
+  function addItem(id: string) {
+    $formData.items = [...$formData.items, id];
+  }
+ 
+  function removeItem(id: string) {
+    $formData.items = $formData.items.filter((i) => i !== id);
+  }
+</script>
+ 
+<form action="?/checkboxMultiple" method="POST" class="space-y-8" use:enhance>
+  <Form.Fieldset {form} name="items" class="space-y-0">
+    <div class="mb-4">
+      <Form.Legend class="text-base">Sidebar</Form.Legend>
+      <Form.Description>
+        Select the items you want to display in the sidebar.
+      </Form.Description>
+    </div>
+    <div class="space-y-2">
+      {#each items as item}
+        {@const checked = $formData.items.includes(item.id)}
+        <div class="flex flex-row items-start space-x-3">
+          <Form.Control let:attrs>
+            <Checkbox
+              {...attrs}
+              {checked}
+              onCheckedChange={(v) => {
+                if (v) {
+                  addItem(item.id);
+                } else {
+                  removeItem(item.id);
+                }
+              }}
+            />
+            <Form.Label class="text-sm font-normal">
+              {item.label}
+            </Form.Label>
+            <input
+              hidden
+              type="checkbox"
+              name={attrs.name}
+              value={item.id}
+              {checked}
+            />
+          </Form.Control>
+        </div>
+      {/each}
+      <Form.FieldErrors />
+    </div>
+  </Form.Fieldset>
+  <Form.Button>Update display</Form.Button>
+  {#if browser}
+    <SuperDebug data={$formData} />
+  {/if}
+</form>
