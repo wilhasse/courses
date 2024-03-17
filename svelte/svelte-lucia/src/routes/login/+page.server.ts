@@ -40,6 +40,7 @@ export const actions: Actions = {
 
 		// `rows` will contain the result set. Check if a user was found.
 		const existingUser: DatabaseUser | undefined = rows[0] ? (rows[0] as DatabaseUser) : undefined;
+        console.log(existingUser);
 
 		if (!existingUser) {
 			return fail(400, {
@@ -60,6 +61,9 @@ export const actions: Actions = {
 			path: '.',
 			...sessionCookie.attributes
 		});
+
+        console.log(session);
+        console.log(sessionCookie);
 
 		return redirect(302, '/');
 	}
