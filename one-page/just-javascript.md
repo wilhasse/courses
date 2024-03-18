@@ -146,8 +146,167 @@ for (let i = 0; i < 7; i++) {
 
 ## Equality of Values
 
+```javascript
+console.log(2 === 2); 
+// true
+console.log({} === {}); 
+// false
+Object.is(2,2);
+//true
+Object.is({},{});
+//false
+```
+
+```javascript
+console.log(NaN === NaN);
+//false
+Object.is(NaN,NaN);
+//true
+```
+
+```javascript
+let width = 0;
+let height = -width;
+console.log(width === height); 
+// true
+console.log(Object.is(width, height)); 
+// false
+```
+
+Loose Equality ==  
+Don't use it !
+
+```javascript
+console.log([[]] == ''); 
+// true
+console.log(true == [1]); 
+// true
+console.log(false == [0]); 
+// true
+```
+
 ## Properties
+
+```javascript
+let sherlock = {
+  surname: 'Holmes',
+  address: { city: 'London' }
+};
+let john = {
+  surname: 'Watson',
+  address: sherlock.address
+};
+john.surname = 'Lennon';
+john.address.city = 'Malibu';
+
+console.log(sherlock.surname); 
+// Holmes
+console.log(sherlock.address.city); 
+// Malibu ??? 
+console.log(john.surname); 
+// Lennon
+console.log(john.address.city); 
+// Malibu
+```
+
+The sherlock.address.city is Maliby because john.address is pointing to sherlock.address.   
+When john.address has changed to Malibu it already changed sherlock.address, the variable it was point to.  
+I fresh new shelock object keep London in this case:
+
+
+```javascript
+let sherlock2 = {
+  surname: 'Holmes',
+  address: { city: 'London' }
+};
+sherlock2.address.city
+//'London'
+```
 
 ## Mutation
 
+Not mutating properties
+
+```javascript
+let sherlock = {
+  surname: 'Holmes',
+  address: { city: 'London' }
+};
+let john = {
+  surname: 'Watson',
+  address: { city: 'London' }
+};
+john.surname = 'Lennon';
+john.address.city = 'Malibu';
+
+console.log(sherlock.surname); 
+// Holmes
+console.log(sherlock.address.city); 
+// London !! 
+console.log(john.surname); 
+// Lennon
+console.log(john.address.city); 
+// Malibu
+```
+
 ## Prototypes
+
+```javascript
+let human = {
+  teeth: 32
+};
+
+let gwen = {
+  age: 19
+};
+
+console.log(gwen.teeth);
+//undefined
+
+let human = {
+  teeth: 32
+};
+
+let gwen = {
+  // We added this line:
+  __proto__: human,
+  age: 19
+};
+
+console.log(gwen.teeth);
+//32
+```
+
+```javascript
+let human = {
+  teeth: 32
+};
+
+let gwen = {
+  __proto__: human,
+  // This object has its own teeth property:
+  teeth: 31
+};
+console.log(human.teeth); 
+// 32
+console.log(gwen.teeth); 
+// 31
+```
+
+```javascript
+let human = {
+  teeth: 32
+};
+
+let gwen = {
+  __proto__: human,
+  // Note: no own teeth property
+};
+
+gwen.teeth = 31;
+
+console.log(human.teeth); 
+// 32
+console.log(gwen.teeth); 
+// 31
+```

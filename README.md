@@ -5,7 +5,7 @@
 | s/svelte-login         | Finished    | 28/02/2024 | Simple login/logout flow in SvelteKit            |
 | p/functional-js        | Finished    | 25/02/2024 | Functional JavaScript Course                     |
 | p/revealjs             | In progress | 24/02/2024 | RevealJS Course - Slides                         |
-| p/just-javascript      | In progress | 24/02/2024 | Just JavaScript Course                           |
+| p/just-javascript      | Finished    | 24/02/2024 | Just JavaScript Course                           |
 | tailwind-css           | Finished    | 17/02/2024 | Tawild CSS Course (frontend masters)             |
 | js-first-steps         | Finished    | 17/02/2024 | JavaScript First Steps Course                    |
 | vanilla-js-projects    | Finished    | 15/02/2024 | Vanilla JS Projects Course                       |
