@@ -2,6 +2,7 @@
 
 | Folder                 | Status      | Date       | Description |
 | ---------------------- | ----------- | ---------- | ----------- |
+| s/svelte-lucia         | Finished    | 17/03/2024 | SvelteKit integration with Lucia Auth and MySQL  |
 | s/svelte-login         | Finished    | 28/02/2024 | Simple login/logout flow in SvelteKit            |
 | p/functional-js        | Finished    | 25/02/2024 | Functional JavaScript Course                     |
 | p/revealjs             | In progress | 24/02/2024 | RevealJS Course - Slides                         |
@@ -27,6 +28,11 @@
 "* p/" - one-page dir
 
 # Description
+
+## svelte-lucia
+
+Tutorial
+Implementing integration with Lucia Authentication and MySQL
 
 ## svelte-login
 
