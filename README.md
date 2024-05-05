@@ -1,11 +1,13 @@
 # Projects
 
-| Folder                 | Status      | Date       | Description |
-| ---------------------- | ----------- | ---------- | ----------- |
+| Folder                 | Status      | Date       | Description                                      |
+| ---------------------- | ----------- | ---------- | ------------------------------------------------ |
+| go-language            | In progress | 04/05/2024 | Go Language                                      |
+| database               | In progress | 04/05/2024 | Build yout own database                          |
 | s/svelte-lucia         | Finished    | 17/03/2024 | SvelteKit integration with Lucia Auth and MySQL  |
 | s/svelte-login         | Finished    | 28/02/2024 | Simple login/logout flow in SvelteKit            |
 | p/functional-js        | Finished    | 25/02/2024 | Functional JavaScript Course                     |
-| p/revealjs             | In progress | 24/02/2024 | RevealJS Course - Slides                         |
+| p/revealjs             | Hold        | 24/02/2024 | RevealJS Course - Slides                         |
 | p/just-javascript      | Finished    | 24/02/2024 | Just JavaScript Course                           |
 | tailwind-css           | Finished    | 17/02/2024 | Tawild CSS Course (frontend masters)             |
 | js-first-steps         | Finished    | 17/02/2024 | JavaScript First Steps Course                    |
@@ -29,15 +31,29 @@
 
 # Description
 
+## go
+
+Books:  
+Go Cookbook  
+Learning Go  
+Go Programming Cookbook  
+
+## database
+
+Book:  
+Build Your Own Database from Scratch in Go  
+James Smith  
+https://build-your-own.org/  
+
 ## svelte-lucia
 
-Tutorial
+Tutorial  
 Implementing integration with Lucia Authentication and MySQL
 
 ## svelte-login
 
-Tutorial
-Jannik Wempe
+Tutorial  
+Jannik Wempe  
 Authentication in Svelte using cookies
 
 ## functional-js
