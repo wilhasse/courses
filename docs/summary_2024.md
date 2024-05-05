@@ -1,4 +1,4 @@
-# WEB
+# WEB (3 and half months)
 
 ## Short Courses (01/01 ~ 11/01)
 
@@ -32,3 +32,23 @@ Tailwind CSS
 
 Vanilla Javascript  
 Javascript: From Fist Steps to Professional
+
+## Svelte / SvelteKit (26/02 ~18/03)
+
+Mini Project CH
+Mini Project ConBD
+
+# Databases
+
+## TiDB Database (18/03 ~03/05)
+
+Installing TiDB
+Testing TiDB
+Data Migration TiFlow
+TiDB/MySQL Replication
+
+## Go (04/05 ~ )
+
+Go Cookbook
+Go Programming Cookbook
+Learning Go
