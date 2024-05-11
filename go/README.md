@@ -1,3 +1,14 @@
+# Projects
+
+| Name            | Description                            |
+| ----------------|----------------------------------------|
+| database        | Book: Build your own                   |
+| hello           | Hello World                            |
+| http            | Basic Http Server                      |  
+| memsql          | Memory SQL Server (go-mysql-server)    |
+| mysqlreplica    | Replication test from mysql            |
+| testsql         | Parsing SQL using Vitess               |
+
 # Basic Commands
 
 Create new module
@@ -14,6 +25,11 @@ Correct Syntax  all files
 go fmt ./...
 ```
 
+Organize packages
+
+```bash
+go mod tidy
+```
 Compile and create executable
 
 ```bash
