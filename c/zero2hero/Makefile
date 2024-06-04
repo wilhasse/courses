@@ -8,7 +8,7 @@ CFLAGS = -Wall -g
 TARGET = hello
 
 # Define the source files
-SRCS = hello.c string.c union.c struct.c
+SRCS = hello.c string.c union.c struct.c pointer.c static.c leak.c
 
 # Define the object files
 OBJS = $(SRCS:.c=.o)
@@ -18,7 +18,7 @@ all: $(TARGET)
 
 # Rule to link the object files to create the executable
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) -g
 
 # Rule to compile the source files into object files
 %.o: %.c

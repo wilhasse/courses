@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include "string.h"
 #include "union.h"
+#include "struct.h"
+#include "pointer.h"
+#include "static.h"
+#include "leak.h"
 
 int main() {
 
@@ -13,6 +17,9 @@ int main() {
   generate_string();
   generate_union();
   generate_struct();
+  generate_pointer();
+  generate_static();
+  generate_leak();
 
   return 0;
 }
