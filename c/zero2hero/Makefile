@@ -5,7 +5,7 @@ CC = gcc
 CFLAGS = -Wall -g
 
 # Define the target executable
-TARGET = hello
+TARGET = bin/hello
 
 # Define the source files
 SRCS = hello.c string.c union.c struct.c pointer.c static.c leak.c file.c
@@ -22,7 +22,7 @@ $(TARGET): $(OBJS)
 
 # Rule to compile the source files into object files
 %.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@ -Iinclude
 
 # Clean rule to remove generated files
 clean:
