@@ -2,7 +2,7 @@
 #include "pointer.h"
 
 // something is wrong here :(
-int swap( int *a, int *b) {
+void swap( int *a, int *b) {
     int temp;
     temp = *a;
     *a = *b;

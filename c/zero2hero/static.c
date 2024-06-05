@@ -8,8 +8,14 @@ int increaseItem() {
     return size;
 }
 
+static void generate_static2() {
+
+    printf("Static function \n");
+}
+
 int generate_static() {
 
+    generate_static2();
     printf("Static size %d\n", increaseItem());
     printf("Static size %d\n", increaseItem());
     printf("Static size %d\n", increaseItem());
