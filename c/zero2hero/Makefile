@@ -8,7 +8,7 @@ CFLAGS = -Wall -g
 TARGET = hello
 
 # Define the source files
-SRCS = hello.c string.c union.c struct.c pointer.c static.c leak.c
+SRCS = hello.c string.c union.c struct.c pointer.c static.c leak.c file.c
 
 # Define the object files
 OBJS = $(SRCS:.c=.o)

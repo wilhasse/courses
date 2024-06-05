@@ -5,6 +5,7 @@
 #include "pointer.h"
 #include "static.h"
 #include "leak.h"
+#include "file.h"
 
 int main() {
 
@@ -20,6 +21,7 @@ int main() {
   generate_pointer();
   generate_static();
   generate_leak();
+  generate_file();
 
   return 0;
 }
