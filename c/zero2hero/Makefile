@@ -18,7 +18,7 @@ all: $(TARGET)
 
 # Rule to link the object files to create the executable
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) -g
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) -g -lzero -Llib -Ilib
 
 # Rule to compile the source files into object files
 %.o: %.c

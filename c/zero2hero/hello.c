@@ -6,6 +6,7 @@
 #include "static.h"
 #include "leak.h"
 #include "file.h"
+#include "lib/libzero.h"
 
 int main() {
 
@@ -22,6 +23,7 @@ int main() {
   generate_static();
   generate_leak();
   generate_file();
+  lib_func();
 
   return 0;
 }
