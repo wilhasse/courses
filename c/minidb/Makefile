@@ -3,7 +3,8 @@ SRC = $(wildcard src/*.c)
 OBJ = $(patsubst src/%.c, obj/%.o, $(SRC))
 
 run: clean default
-	./$(TARGET) -f mydb.db
+	./$(TARGET) -f mynewdb.db -n
+	./$(TARGET) -f mynewdb.db -n
 default: $(TARGET)
 
 clean:
@@ -15,4 +16,4 @@ $(TARGET): $(OBJ)
 	gcc -o $@ $?
 
 obj/%.o : src/%.c
-	gcc -c $< -o $@ -Iinclude
+	gcc -c $< -o $@ -Isrc/include
