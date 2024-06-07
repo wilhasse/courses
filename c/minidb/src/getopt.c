@@ -1,6 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <getopt.h>
+#include "parse.h"
 #include "file.h"
 #include "common.h"
 
@@ -8,11 +10,13 @@ void print_usage(char *argv[]) {
        	printf("Usage %s -n -f <database file>\n",argv[0]);
         printf("\t -n - crate new database file \n");
        	printf("\t -f - (required) path to database file \n");
+       	printf("\t -a - add employee \n");
 	return;
 }
 
-int main(int argc, char *argv[]) { 
+int main(int argc, char *argv[]) {
 	char *filepath = NULL;
+	char *addstring = NULL;
 	char *portarg = NULL;
 	unsigned short port = 0;
 	bool newfile = false;
@@ -21,6 +25,7 @@ int main(int argc, char *argv[]) {
 
 	int dbfd = -1;
 	struct dbheader_t *dbhdr = NULL;
+	struct employees_t *employees = NULL;
 
 	while ((c = getopt(argc, argv, "nf:a:l")) != -1) {
 		switch (c) {
@@ -29,6 +34,9 @@ int main(int argc, char *argv[]) {
 				break;
 			case 'f':
 				filepath = optarg;
+				break;
+			case 'a':
+				addstring = optarg;
 				break;
 			case 'p':
 				portarg = optarg;
@@ -72,8 +80,23 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+	if (read_employees(dbfd, dbhdr, &employees) != STATUS_SUCCESS) {
+		printf("Failed to read employees\n");
+		return -1;
+	}
+
+	if (addstring) {
+		dbhdr->count++;
+		employees = realloc(employees, dbhdr->count*(sizeof(struct employee_t)));
+		add_employee(dbhdr, employees, addstring);
+	}
+
+	if (list) {
+		list_employees(dbhdr,employees);
+	}
+
 	printf("Newfile: %d\n" , newfile);
 	printf("Filepath: %s\n" , filepath);
 
-	output_file(dbfd,dbhdr);
+	output_file(dbfd,dbhdr,employees);
 }

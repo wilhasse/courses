@@ -10,6 +10,65 @@
 #include "common.h"
 #include "parse.h"
 
+void list_employees(struct dbheader_t *dbhdr, struct employee_t *employees) {
+
+        int i = 0;
+        for (; i < dbhdr->count; i++) {
+		printf("Employee %d\n", i);
+		printf("Name %s\n", employees[i].name);
+		printf("Address %s\n", employees[i].address);
+		printf("\n");
+        }
+}
+
+int add_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char *addstring) {
+	printf("%s\n", addstring);
+
+	char *name = strtok(addstring, ",");
+
+	char *addr = strtok(NULL, ",");
+
+	char *hours = strtok(NULL, ",");
+
+	printf("%s %s %s\n", name, addr, hours);
+
+
+	strncpy(employees[dbhdr->count-1].name, name, sizeof(employees[dbhdr->count-1].name));
+	strncpy(employees[dbhdr->count-1].address, addr, sizeof(employees[dbhdr->count-1].address));
+
+	employees[dbhdr->count-1].hours = atoi(hours);
+
+	return STATUS_SUCCESS;
+}
+
+int read_employees(int fd, struct dbheader_t *dbhdr, struct employee_t **employeesOut) {
+	if (fd < 0) {
+		printf("Got a bad FD from the user\n");
+		return STATUS_ERROR;
+	}
+
+
+	int count = dbhdr->count;
+
+	struct employee_t *employees = calloc(count, sizeof(struct employee_t));
+	if (employees == -1) {
+		printf("Malloc failed\n");
+		return STATUS_ERROR;
+	}
+
+	read(fd, employees, count*sizeof(struct employee_t));
+
+	int i = 0;
+	for (; i < count; i++) {
+		employees[i].hours = ntohl(employees[i].hours);
+	}
+
+	*employeesOut = employees;
+	return STATUS_SUCCESS;
+
+}
+
+
 int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) {
 	if (fd < 0) {
 		printf("Got a bad FD from the user\n");
@@ -35,7 +94,7 @@ int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) 
 
 	return STATUS_SUCCESS;
 
-}
+}	
 
 int validate_db_header(int fd, struct dbheader_t **headerOut) {
 	if (fd < 0) {
@@ -82,7 +141,6 @@ int validate_db_header(int fd, struct dbheader_t **headerOut) {
 	}
 
 	*headerOut = header;
-	printf("Database file ok. Size %d\n",header->filesize);
 }
 
 int create_db_header(int fd, struct dbheader_t **headerOut) {
