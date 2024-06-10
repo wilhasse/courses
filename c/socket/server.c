@@ -2,6 +2,21 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdio.h>
+#include "protocol.h"
+
+void handle_client(int fd) {
+	char buf[4096] = {0};
+	proto_hdr_t *hdr = (proto_hdr_t*)buf;
+
+	hdr->type = htonl(PROTO_HELLO); // pack the type
+	hdr->len = sizeof(int);
+	int reallen = hdr->len;
+	hdr->len = htons(hdr->len); // pack the len
+
+	int *data = &hdr[1];
+	*data = htonl(1); // protocol version one, packed
+	write(fd, hdr, sizeof(proto_hdr_t) + reallen);
+}
 
 int main() {
 
@@ -40,7 +55,7 @@ int main() {
 		    return 0;
 		}
 
-		//handle_client(clientSocket);
+		handle_client(clientSocket);
 
 		close(clientSocket);
 
