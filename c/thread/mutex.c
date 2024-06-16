@@ -3,12 +3,19 @@
 
 #define THREAD_COUNT 10
 
-// compile: gcc -o join_thread join_thread.c -pthread
+// compile: gcc -o mutex mutex.c -pthread
+int counter = 0;
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 // Thread function to execute.
 void *thread_function(void *arg) {
-    printf("Hello from the thread!\n");
-    return NULL;
+
+    for (int i = 0;i < 10000000; i++) {
+
+	pthread_mutex_lock(&lock);
+	counter++;
+	pthread_mutex_unlock(&lock);
+    }
 }
 
 int main() {
@@ -26,6 +33,9 @@ int main() {
     for (i = 0; i < THREAD_COUNT; i++) {
         pthread_join(threads[i], NULL);
     }
+
+    printf("Final counter value: %d\n", counter);
+    pthread_mutex_destroy(&lock);
 
     return 0;
 }
