@@ -2,8 +2,11 @@
 
 | Folder                 | Status      | Date       | Description                                      |
 | ---------------------- | ----------- | ---------- | ------------------------------------------------ |
+| c/threads              | Finished    | 13/06/2024 | C Threads                                        |
+| c/minidb-net           | Finished    | 10/06/2024 | C Network (Sockets)                              |
+| c/zero2hero/minidb     | Finished    | 04/06/2024 | C Language                                       |
 | go-language            | In progress | 04/05/2024 | Go Language                                      |
-| database               | In progress | 04/05/2024 | Build yout own database                          |
+| database               | Finished    | 04/05/2024 | Build yout own database                          |
 | s/svelte-lucia         | Finished    | 17/03/2024 | SvelteKit integration with Lucia Auth and MySQL  |
 | s/svelte-login         | Finished    | 28/02/2024 | Simple login/logout flow in SvelteKit            |
 | p/functional-js        | Finished    | 25/02/2024 | Functional JavaScript Course                     |
@@ -30,6 +33,11 @@
 "* p/" - one-page dir
 
 # Description
+
+## c
+
+Low Level Learning
+https://lowlevel.academy/
 
 ## go
 
