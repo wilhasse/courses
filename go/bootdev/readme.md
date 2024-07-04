@@ -23,6 +23,20 @@ go build -o test_balance ./variables/balance.go
 ./test_balance
 ```
 
+## Install Bootdev Tools
+
+```bash
+# Install
+go install github.com/bootdotdev/bootdev@latest
+
+# See bin path
+go env GOPATH
+
+# /home/cslog/go
+# binary would be in /home/cslog/go/bin
+bootdev
+```
+
 ## Other Units (test individually)
 
 Test one file inside directory
@@ -44,3 +58,4 @@ Test all files
 ```bash
 go test -v ./...
 ```
+
