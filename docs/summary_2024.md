@@ -47,8 +47,11 @@ Testing TiDB
 Data Migration TiFlow
 TiDB/MySQL Replication
 
-## Go (04/05 ~ )
+## MySQL (04/05 ~ 15/06)
 
-Go Cookbook
-Go Programming Cookbook
-Learning Go
+MySQL 8
+InnoDB Internals
+
+## Go/Database (16/06 ~ 05/07)
+
+Boot.Dev Go Course
