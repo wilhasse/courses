@@ -140,19 +140,3 @@ git commit -m "This is a dangling commit"
 git checkout exercise3
 // --> Warning: you are leaving 1 commit behind, not connected to any of your branches
 ```
-
-## Merging and Rebasing
-
-## History and Diffs
-
-## Fixing Mistakes
-
-## Rebase and Amend
-
-## Forks & Remote Repos
-
-## Danger Zone
-
-## GitHub
-
-## Advanced GitHub
