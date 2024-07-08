@@ -80,6 +80,8 @@ git cat-file -p 5b21d4f16a4b07a6cde5a3242187f6a5a68b060f
 ## Ch 4 - Config
 
 ```bash
+# change the default branch to main
+git config --global init.defaultBranch main
 # add any local information using key-value
 git config --add my.info "some"
 # get information
@@ -93,3 +95,48 @@ git config --remove-section my
 ```
 
 ## Ch 5 - Branching
+
+```bash
+# current branch
+git branch
+# rename master to main
+git branch -m master main
+# only create a new branch
+git branch my_new_branch
+# this command creates and switches to new branch
+git switch -c my_new_branch
+# only switch to a branch
+git switch main
+# or way to switch, the old way:
+git checkout main
+# log in a compact form
+git log --oneline
+# see all branches dir
+ls -la .git/refs/heads/
+```
+
+## Ch 5 - Merge
+
+```bash
+# show branch graph
+git log --oneline --graph --all
+# in main merge ddifferences from my_new_branch
+git merge my_new_branch 
+# show graph with merge
+git log --oneline --decorate --graph --parents
+# delete branch
+git branch -d my_new_branch
+```
+
+## Ch 6 - Rebase
+
+```bash
+# new branch at position COMMITHASH (change it to your commit hash)
+git switch -c update_dune COMMITHASH
+# rebase main on update_dune
+git rebase main
+```
+
+## Ch 7 - Reset
+
+
