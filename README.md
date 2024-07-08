@@ -2,6 +2,7 @@
 
 | Folder                 | Status      | Date       | Description                                      |
 | ---------------------- | ----------- | ---------- | ------------------------------------------------ |
+| go/bootdev             | Finished    | 04/07/2024 | Learn Go (168 items)                             |
 | c/threads              | Finished    | 13/06/2024 | C Threads                                        |
 | c/minidb-net           | Finished    | 10/06/2024 | C Network (Sockets)                              |
 | c/zero2hero/minidb     | Finished    | 04/06/2024 | C Language                                       |
@@ -34,17 +35,20 @@
 
 # Description
 
-## c
-
-Low Level Learning
-https://lowlevel.academy/
-
 ## go
+
+Boot Dev Course  
+https://www.boot.dev/
 
 Books:  
 Go Cookbook  
 Learning Go  
 Go Programming Cookbook  
+
+## c
+
+Low Level Learning  
+https://lowlevel.academy/
 
 ## database
 
