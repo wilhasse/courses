@@ -1,42 +1,42 @@
 # Projects
 
-| Folder                 | Status      | Date       | Description                                      |
-| ---------------------- | ----------- | ---------- | ------------------------------------------------ |
-| zig/zig-guide          | In progress | 08/07/2024 | Zig Guide                                        |
-| p/git-bootdev          | In progress | 05/07/2024 | BootDev Git Course                               |
-| go/bootdev             | Finished    | 04/07/2024 | BootDev Learn Go (168 items)                     |
-| c/threads              | Finished    | 13/06/2024 | C Threads                                        |
-| c/minidb-net           | Finished    | 10/06/2024 | C Network (Sockets)                              |
-| c/zero2hero/minidb     | Finished    | 04/06/2024 | C Language                                       |
-| database               | Finished    | 04/05/2024 | Build yout own database                          |
-| s/svelte-lucia         | Finished    | 17/03/2024 | SvelteKit integration with Lucia Auth and MySQL  |
-| s/svelte-login         | Finished    | 28/02/2024 | Simple login/logout flow in SvelteKit            |
-| p/functional-js        | Finished    | 25/02/2024 | Functional JavaScript Course                     |
-| p/just-javascript      | Finished    | 24/02/2024 | Just JavaScript Course                           |
-| tailwind-css           | Finished    | 17/02/2024 | Tawild CSS Course (frontend masters)             |
-| js-first-steps         | Finished    | 17/02/2024 | JavaScript First Steps Course                    |
-| vanilla-js-projects    | Finished    | 15/02/2024 | Vanilla JS Projects Course                       |
-| s/svelte-shadcdn       | Finished    | 11/02/2024 | Testing Shadcdn UI Framework                     |
-| vite-demo              | Finished    | 11/02/2024 | Simple Vite application (Vue Master Course)      |
-| s/svelte-course        | Finished    | 10/02/2024 | Joy of Svelte Course                             |
-| elixir-socket          | Finished    | 24/01/2024 | Testing Elixir Socket/WebSockets                 |
-| elixir-auction         | Finished    | 23/01/2024 | Elixir in Action book                            |
-| alpine-course          | Finished    | 28/01/2024 | Alpine Udemy Course                              |
-| vueschool-forum        | Unfinished  | 08/01/2024 | Vue School Forum Course                          |
-| sole-and-ankle         | Finished    | 23/12/2023 | CSS Course Josh W Comeau                         |
-| new-grid-times         | Finished    | 20/12/2023 | CSS Course Josh W Comeau                         |
-| react-blog-mdx         | Finished    | 26/11/2023 | Joy of React Course Josh W Comeau                |
-| react-toast            | Finished    | 15/11/2023 | Joy of React Course Josh W Comeau                |
-| react-wordle           | Finished    | 19/10/2023 | Joy of React Course Josh W Comeau                |
+| Folder              | Status      | Date       | Description                                     |
+| ------------------- | ----------- | ---------- | ----------------------------------------------- |
+| zig/zig-guide       | In progress | 08/07/2024 | Zig Guide                                       |
+| p/git-bootdev       | Finished    | 09/07/2024 | BootDev Git Course                              |
+| go/bootdev          | Finished    | 04/07/2024 | BootDev Learn Go (168 items)                    |
+| c/threads           | Finished    | 13/06/2024 | C Threads                                       |
+| c/minidb-net        | Finished    | 10/06/2024 | C Network (Sockets)                             |
+| c/zero2hero/minidb  | Finished    | 04/06/2024 | C Language                                      |
+| database            | Finished    | 04/05/2024 | Build yout own database                         |
+| s/svelte-lucia      | Finished    | 17/03/2024 | SvelteKit integration with Lucia Auth and MySQL |
+| s/svelte-login      | Finished    | 28/02/2024 | Simple login/logout flow in SvelteKit           |
+| p/functional-js     | Finished    | 25/02/2024 | Functional JavaScript Course                    |
+| p/just-javascript   | Finished    | 24/02/2024 | Just JavaScript Course                          |
+| tailwind-css        | Finished    | 17/02/2024 | Tawild CSS Course (frontend masters)            |
+| js-first-steps      | Finished    | 17/02/2024 | JavaScript First Steps Course                   |
+| vanilla-js-projects | Finished    | 15/02/2024 | Vanilla JS Projects Course                      |
+| s/svelte-shadcdn    | Finished    | 11/02/2024 | Testing Shadcdn UI Framework                    |
+| vite-demo           | Finished    | 11/02/2024 | Simple Vite application (Vue Master Course)     |
+| s/svelte-course     | Finished    | 10/02/2024 | Joy of Svelte Course                            |
+| elixir-socket       | Finished    | 24/01/2024 | Testing Elixir Socket/WebSockets                |
+| elixir-auction      | Finished    | 23/01/2024 | Elixir in Action book                           |
+| alpine-course       | Finished    | 28/01/2024 | Alpine Udemy Course                             |
+| vueschool-forum     | Unfinished  | 08/01/2024 | Vue School Forum Course                         |
+| sole-and-ankle      | Finished    | 23/12/2023 | CSS Course Josh W Comeau                        |
+| new-grid-times      | Finished    | 20/12/2023 | CSS Course Josh W Comeau                        |
+| react-blog-mdx      | Finished    | 26/11/2023 | Joy of React Course Josh W Comeau               |
+| react-toast         | Finished    | 15/11/2023 | Joy of React Course Josh W Comeau               |
+| react-wordle        | Finished    | 19/10/2023 | Joy of React Course Josh W Comeau               |
 
-"* p/" - one-page dir
+"\* p/" - one-page dir
 
 # Description
 
 ## zig
 
 Zig Guide  
-https://zig.guide/  
+https://zig.guide/
 
 ## git
 
@@ -51,7 +51,7 @@ https://www.boot.dev/
 Books:  
 Go Cookbook  
 Learning Go  
-Go Programming Cookbook  
+Go Programming Cookbook
 
 ## c
 
@@ -63,7 +63,7 @@ https://lowlevel.academy/
 Book:  
 Build Your Own Database from Scratch in Go  
 James Smith  
-https://build-your-own.org/  
+https://build-your-own.org/
 
 ## svelte-lucia
 
@@ -84,7 +84,7 @@ Anjana Vakil
 
 ## revealjs
 
-Mastering reveal.js   
+Mastering reveal.js  
 Hakim El Hattab (creator)
 
 ## just-javascript

@@ -115,28 +115,89 @@ git log --oneline
 ls -la .git/refs/heads/
 ```
 
-## Ch 5 - Merge
+## Ch 6 - Merge
 
 ```bash
 # show branch graph
 git log --oneline --graph --all
 # in main merge ddifferences from my_new_branch
-git merge my_new_branch 
+git merge my_new_branch
 # show graph with merge
 git log --oneline --decorate --graph --parents
 # delete branch
 git branch -d my_new_branch
 ```
 
-## Ch 6 - Rebase
+## Ch 7 - Rebase
 
 ```bash
 # new branch at position COMMITHASH (change it to your commit hash)
 git switch -c update_dune COMMITHASH
 # rebase main on update_dune
 git rebase main
+# make rebase default option
+git config --global pull.rebase true
 ```
 
-## Ch 7 - Reset
+## Ch 8 - Reset
 
+```bash
+# undo the last commit and get the modification unstaged
+git reset --soft HEAD~1
+# remove the unstaged modification
+git reset --hard
+# check status
+git status
+```
 
+## Ch 9 - Remote
+
+```bash
+# create local repository
+mkdir webflyx_local
+cd webflyx_local
+git init
+# adding a remote inside webflyx_local
+git remote add origin ../webflyx
+# get the content of a remote repo
+git fetch
+# see the log from that remote repo
+git log origin/update_dune --oneline
+# merge the remote repo into local repo
+git merge origin/main
+# list remote repo
+git ls-remote
+```
+
+## Ch 10 - Github
+
+```bash
+# install git
+curl -sS https://webi.sh/gh | sh
+# login
+gh auth login
+# add remote git repo
+cd webflyx
+git remote add origin https://github.com/wilhasse/webflyx.git
+# install git gh
+# https://github.com/cli/cli/blob/trunk/docs/install_linux.md
+# login
+gh auth login
+# update local copy
+git pull origin main
+# merge on a pull
+git config pull.rebase false
+```
+
+## Ch 11 - Gitignore
+
+```bash
+#c reate a file in any path it will ignore from that path
+.gitignore
+# add things you want to ignore
+src/node_modules etc
+# Ignore all .txt files
+*.txt
+# note exclude this file from all .txt
+!important.txt
+```
