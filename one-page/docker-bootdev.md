@@ -12,6 +12,8 @@ https://docs.docker.com/desktop/install/debian/
 ## Ch2 Command Line
 
 ```bash
+# run hello world
+docker run busybox echo hello world
 # run docker: getting started
 docker run -d -p 80:80 docker/getting-started:latest
 # list running container
@@ -75,4 +77,101 @@ docker run --network caddytest --name caddy2 -p 8002:80 -v $PWD/index2.html:/usr
 #        lb_policy round_robin
 #}
 docker run --network caddytest -p 8080:80 -v $PWD/Caddyfile:/etc/caddy/Caddyfile caddy
+```
+
+## Ch5 Dockerfiles
+
+```dockerfile
+# This is a comment
+
+# Use a lightweight debian os
+# as the base image
+FROM debian:stable-slim
+
+# execute the 'echo "hello world"'
+# command when the container runs
+CMD ["echo", "hello world"]
+```
+
+```bash
+docker build . -t helloworld:latest
+docker run helloworld
+```
+
+Run httpgo (own binary) inside linux docker
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+	"time"
+)
+
+func main() {
+	m := http.NewServeMux()
+
+	m.HandleFunc("/", handlePage)
+
+	const addr = ":8080"
+	srv := http.Server{
+		Handler:      m,
+		Addr:         addr,
+		WriteTimeout: 30 * time.Second,
+		ReadTimeout:  30 * time.Second,
+	}
+
+	// this blocks forever, until the server
+	// has an unrecoverable error
+	fmt.Println("server started on ", addr)
+	err := srv.ListenAndServe()
+	log.Fatal(err)
+}
+
+func handlePage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(200)
+	const page = `<html>
+<head></head>
+<body>
+	<p> Hello from Docker! I'm a Go server. </p>
+</body>
+</html>
+`
+	w.Write([]byte(page))
+}
+```
+
+```dockerfile
+FROM debian:stable-slim
+
+# COPY source destination
+COPY httpgo /bin/httpgo
+
+CMD ["/bin/httpgo"]
+```
+
+```bash
+docker build . -t httpgo:latest
+docker run -p 8080:8080 httpgo
+```
+
+## Ch5 Publish
+
+```bash
+# push
+docker build . -t USERNAME/httpgo
+docker run -p 8080:8080 USERNAME/httpgo
+docker push USERNAME/httpgo
+
+# remove local container and pull from docker
+docker image rm USERNAME/httpgo
+docker run -p 8080:8080 USERNAME/httpgo
+
+# new version (tag)
+docker build . -t USERNAME/httpgo:0.2.0
+docker run -p 8080:8080 USERNAME/httpgo:0.2.0
+docker push USERNAME/httpgo:0.2.0
 ```

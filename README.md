@@ -3,7 +3,7 @@
 | Folder              | Status      | Date       | Description                                     |
 | ------------------- | ----------- | ---------- | ----------------------------------------------- |
 | zig/zig-guide       | In progress | 08/07/2024 | Zig Guide                                       |
-| p/docker-bootdev    | In progress | 10/07/2024 | BootDev Docker Course                           |
+| p/docker-bootdev    | Finished    | 11/07/2024 | BootDev Docker Course                           |
 | p/git-bootdev       | Finished    | 09/07/2024 | BootDev Git Course                              |
 | go/bootdev          | Finished    | 04/07/2024 | BootDev Learn Go (168 items)                    |
 | c/threads           | Finished    | 13/06/2024 | C Threads                                       |
@@ -42,11 +42,11 @@ https://zig.guide/
 ## bootdev
 
 Boot Dev Courses  
-https://www.boot.dev/  
+https://www.boot.dev/
 
 Go  
 Git  
-Docker  
+Docker
 
 ## go
 
