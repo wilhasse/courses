@@ -9,7 +9,8 @@ Install
 ```bash
 go install github.com/bootdotdev/bootdev@latest
 go env GOPATH
-# add path to Library Path
+# add path to Library Path adding folder bin
+# /etc/profile
 bootdev --version
 bootdev login
 ```

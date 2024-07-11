@@ -3,12 +3,13 @@
 | Folder              | Status      | Date       | Description                                     |
 | ------------------- | ----------- | ---------- | ----------------------------------------------- |
 | zig/zig-guide       | In progress | 08/07/2024 | Zig Guide                                       |
+| p/docker-bootdev    | In progress | 10/07/2024 | BootDev Docker Course                           |
 | p/git-bootdev       | Finished    | 09/07/2024 | BootDev Git Course                              |
 | go/bootdev          | Finished    | 04/07/2024 | BootDev Learn Go (168 items)                    |
 | c/threads           | Finished    | 13/06/2024 | C Threads                                       |
 | c/minidb-net        | Finished    | 10/06/2024 | C Network (Sockets)                             |
 | c/zero2hero/minidb  | Finished    | 04/06/2024 | C Language                                      |
-| database            | Finished    | 04/05/2024 | Build yout own database                         |
+| go/database         | Finished    | 04/05/2024 | Build yout own database                         |
 | s/svelte-lucia      | Finished    | 17/03/2024 | SvelteKit integration with Lucia Auth and MySQL |
 | s/svelte-login      | Finished    | 28/02/2024 | Simple login/logout flow in SvelteKit           |
 | p/functional-js     | Finished    | 25/02/2024 | Functional JavaScript Course                    |
@@ -38,15 +39,16 @@
 Zig Guide  
 https://zig.guide/
 
-## git
+## bootdev
 
-Boot Dev Course  
-https://www.boot.dev/
+Boot Dev Courses  
+https://www.boot.dev/  
+
+Go  
+Git  
+Docker  
 
 ## go
-
-Boot Dev Course  
-https://www.boot.dev/
 
 Books:  
 Go Cookbook  
