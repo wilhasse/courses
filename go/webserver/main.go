@@ -21,7 +21,7 @@ func main() {
 	m.Handle("/", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir("."))))
 	m.HandleFunc("/healthz", handleOk)
 	m.HandleFunc("/reset", apiCfg.reset)
-	m.HandleFunc("/metrics", apiCfg.metrics)
+	m.HandleFunc("GET /metrics", apiCfg.metrics)
 
 	const addr = ":8080"
 	srv := http.Server{
@@ -55,6 +55,10 @@ func (cfg *apiConfig) reset(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *apiConfig) metrics(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed) // 405
+		return
+	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(200)
 	page := "Hits: " + strconv.Itoa(cfg.fileserverHits)
@@ -62,6 +66,10 @@ func (cfg *apiConfig) metrics(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleOk(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed) // 405
+		return
+	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(200)
 	const page = "OK"
