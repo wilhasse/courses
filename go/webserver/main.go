@@ -19,9 +19,10 @@ func main() {
 	m := http.NewServeMux()
 	m.Handle("/app/*", http.StripPrefix("/app/", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir(".")))))
 	m.Handle("/", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir("."))))
-	m.HandleFunc("/healthz", handleOk)
-	m.HandleFunc("/reset", apiCfg.reset)
-	m.HandleFunc("GET /metrics", apiCfg.metrics)
+	m.HandleFunc("GET /api/healthz", handleOk)
+	m.HandleFunc("GET /api/reset", apiCfg.reset)
+	m.HandleFunc("GET /api/metrics", apiCfg.metrics)
+	m.HandleFunc("GET /admin/metrics", apiCfg.adminMetrics)
 
 	const addr = ":8080"
 	srv := http.Server{
@@ -62,6 +63,22 @@ func (cfg *apiConfig) metrics(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(200)
 	page := "Hits: " + strconv.Itoa(cfg.fileserverHits)
+	w.Write([]byte(page))
+}
+
+func (cfg *apiConfig) adminMetrics(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed) // 405
+		return
+	}
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(200)
+	page := fmt.Sprintf(`<html>
+<body>
+    <h1>Welcome, Chirpy Admin</h1>
+    <p>Chirpy has been visited %d times!</p>
+</body>
+</html>`, cfg.fileserverHits)
 	w.Write([]byte(page))
 }
 
