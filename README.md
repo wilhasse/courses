@@ -4,6 +4,7 @@
 | ------------------- | ----------- | ---------- | ----------------------------------------------- |
 | zig/zig-guide       | In progress | 08/07/2024 | Zig Guide                                       |
 | p/docker-ardan      | In progress | 11/07/2024 | Ardan Labs Docker Course                        |
+| go/webserver        | In progress | 12/07/2024 | BootDev Webservers Go                           |
 | p/docker-bootdev    | Finished    | 11/07/2024 | BootDev Docker Course                           |
 | p/git-bootdev       | Finished    | 09/07/2024 | BootDev Git Course                              |
 | go/bootdev          | Finished    | 04/07/2024 | BootDev Learn Go (168 items)                    |
@@ -54,6 +55,7 @@ https://www.boot.dev/
 Go  
 Git  
 Docker
+Webservers
 
 ## go
 

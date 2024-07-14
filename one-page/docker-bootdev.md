@@ -9,6 +9,19 @@ Docker Course
 Debian  
 https://docs.docker.com/desktop/install/debian/
 
+Enable user to run docker
+
+```bash
+# add user to docker group
+sudo usermod -aG docker cslog
+# logout login
+exit
+# check if docker is in the group
+groups cslog
+# test
+docker run hello-world
+```
+
 ## Ch2 Command Line
 
 ```bash

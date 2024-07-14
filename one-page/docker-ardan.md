@@ -4,6 +4,7 @@ Ardan Labs
 Jérôme Petazzoni  
 https://2022-11-live.container.training/docker.yml.html
 
+# Day 1 
 ## Day 1 - Basic
 
 ```bash
@@ -83,4 +84,84 @@ RUN apt-get install -y build-essential
 COPY hello.c /
 RUN make hello
 CMD /hello
+```
+
+## Day 1 - Go Exercise
+
+Run CMD directly uses shell
+
+```dockerFile
+FROM golang
+COPY . .
+RUN go build dispatcher.go
+CMD ./dispatcher
+```
+
+```bash
+docker build . -t web
+docker run web
+docker exec 90831b3c48b0 ps aux
+#USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+#root           1  0.0  0.0   2576   872 ?        Ss   13:29   0:00 /bin/sh -c ./dispatcher
+#root           7  0.0  0.2 1600508 5764 ?        Sl   13:29   0:00 ./dispatcher
+```
+
+Correct way to invoke go binary
+
+```dockerFile
+FROM golang
+COPY . .
+RUN go build dispatcher.go
+CMD ["./dispatcher"]
+```
+
+```bash
+docker exec 2b4238a071b6 ps aux
+#USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+#root           1  0.0  0.3 1600508 7884 ?        Ssl  13:30   0:00 ./dispatcher
+```
+
+# Day 2
+## Day 2 - Network
+
+```bash
+# publish all ports
+docker run -d -P nginx
+# docker ps to find mapped port
+docker ps
+# or by container id
+docker port CONTAINER_ID 80
+# choose a specif port
+docker run -d -p 8000:80 nginx
+# find ip address
+sudo docker inspect --format '{{ .NetworkSettings.IPAddress }}' CONTAINER_ID
+```
+
+## Day 2 - Development Workflow
+
+Testing an example
+
+```bash
+# clone project
+git clone https://github.com/jpetazzo/namer
+# build an docker image
+docker build -t namer .
+# run exposing ports
+docker run -dP namer
+# check port
+docker ps -l
+```
+
+Mapping source code to a local dir
+
+```bash
+# run cointaner with source code (src) mapped to local current dir
+docker run --mount=type=bind,source=$(pwd),target=/src -dP namer
+# edit company_name_generator.rb outside the cointaner
+# change the color line 13 (color: royalblue;)
+vim company_name_generator.rb
+# find the port
+docker ps
+# see new color on the browser 
+http://localhost:32768/
 ```
