@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -97,8 +98,12 @@ func handleOk(w http.ResponseWriter, r *http.Request) {
 
 // Define returnVals only once outside of the function for simplicity.
 type returnVals struct {
-	Error string `json:"error,omitempty"` // omitempty will omit this field if it's an empty string.
-	Valid *bool  `json:"valid,omitempty"` // Use a pointer to bool to differentiate between omitted and false values.
+	// omitempty will omit this field if it's an empty string.
+	Error string `json:"error,omitempty"`
+	// use a pointer to bool to differentiate between omitted and false values.
+	Valid *bool `json:"valid,omitempty"`
+	// text converted
+	CleanedBody string `json:"cleaned_body"`
 }
 
 func validate(w http.ResponseWriter, r *http.Request) {
@@ -124,6 +129,7 @@ func validate(w http.ResponseWriter, r *http.Request) {
 	} else {
 		valid := true // Declare a true boolean value to use the address
 		respBody.Valid = &valid
+		respBody.CleanedBody = clearText(params.Body)
 		code = 200
 	}
 
@@ -136,4 +142,24 @@ func validate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(dat)
+}
+
+func clearText(source string) string {
+
+	var badwords = []string{"kerfuffle", "sharbert", "fornax"}
+	var splitWords = strings.Split(source, " ")
+
+	for i, sword := range splitWords {
+
+		for _, word := range badwords {
+
+			if strings.ToLower(sword) == word {
+
+				splitWords[i] = "****"
+			}
+		}
+
+	}
+
+	return strings.Join(splitWords, " ")
 }
