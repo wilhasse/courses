@@ -4,7 +4,8 @@ Ardan Labs
 Jérôme Petazzoni  
 https://2022-11-live.container.training/docker.yml.html
 
-# Day 1 
+# Day 1
+
 ## Day 1 - Basic
 
 ```bash
@@ -122,6 +123,7 @@ docker exec 2b4238a071b6 ps aux
 ```
 
 # Day 2
+
 ## Day 2 - Network
 
 ```bash
@@ -162,6 +164,42 @@ docker run --mount=type=bind,source=$(pwd),target=/src -dP namer
 vim company_name_generator.rb
 # find the port
 docker ps
-# see new color on the browser 
+# see new color on the browser
 http://localhost:32768/
 ```
+
+## Day 2 - Network
+
+```bash
+# list networks
+docker network ls
+# create network
+docker network create dev
+docker network create prod
+# create container with network
+# each network trunk and prod is isolated
+docker run --net trunk -ti alpine
+docker run --net prod -ti alpine
+# alias is a dns name
+docker run --net prod --net-alias api -d nginx
+ping api
+```
+
+## Day 2 - Compose
+
+```bash
+# install and run containers
+docker-compose up
+# start containers in the background
+docker-compose up -d
+# list all containers
+docker-compose ps
+# show logs
+docker-compose logs
+# stop all containers
+docker-compose stop
+# stop and remove
+docker-compose down
+```
+
+# Day 3
