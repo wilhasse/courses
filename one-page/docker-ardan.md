@@ -206,7 +206,7 @@ curl icanhazip.com
 
 # Day 3
 
-## Day 2 - Compose file
+## Day 3 - Compose file
 
 Example word  
 https://github.com/jpetazzo/wordsmith
@@ -230,7 +230,7 @@ services:
 #networks:
 ```
 
-## Day 2 - Managing containers
+## Day 3 - Managing containers
 
 ```bash
 # list size of all containers
@@ -253,7 +253,129 @@ docker attach myubuntu
 # rename a container
 docker rename myubuntu mubuntu
 # show diff inside container (changed file)
-cslog@docker:~$ docker diff mubuntu
+docker diff mubuntu
 # copy a specific file from inside the container
 docker cp mubuntu:/readme readme
 ```
+
+## Day 3 - Optimizing Dockerfiles
+
+```bash
+# instead of using one by one
+# RUN base
+# RUN install shell
+# RUN install tearraform
+# RUN install ffmpeg
+# uses Nixery (Nix ecosystem) package manager and NixOS to generate images on the fly
+docker run -ti nixery.dev/shell/terraform/ffmpeg
+
+# reduce number of layers: instead
+#RUN apt-get install thisthing
+#RUN apt-get install andthatthing andthatotherone
+#RUN apt-get install somemorestuff
+# to
+# RUN apt-get install thisthing andthatthing andthatotherone somemorestuff
+# or uses backslash
+# RUN apt-get install thisthing \
+#                     andthatthing \
+#                     andthatotherone \
+#                     somemorestuff
+
+# bad when you change something in your code will install everything again
+FROM python
+WORKDIR /src
+COPY . .
+RUN pip install -qr requirements.txt
+EXPOSE 5000
+CMD ["python", "app.py"]
+# good to avoid reinstalling requirements all the time
+FROM python
+WORKDIR /src
+COPY requirements.txt .
+RUN pip install -qr requirements.txt
+COPY . .
+EXPOSE 5000
+CMD ["python", "app.py"]
+```
+
+## Day 3 - Advanced Dockerfile Syntax
+
+ARG
+
+```Dockerfile
+FROM ubuntu
+ENV DATABASE_PASS=secret
+ARG API_KEY=hello
+RUN echo curh http://myapi.com -H "X-Auth_Header $API_KEY"
+```
+
+```bash
+#at build time it change API_KEY and it is not an environment variable
+docker build . -t argdemo
+#you can override at command line
+docker build . -t argdemo --build-arg API_KEY=very.secure
+```
+
+ONBUILD - it sets instruction taht will be executed when another image is builtd from the image being build
+
+```Dockerfile
+FROM ubuntu
+ONBUILD RUN apt-get update
+```
+
+```Dockerfile
+FROM firstbuild
+RUN apt-get install figlet
+```
+
+ENTRYPOINT
+
+```Dockerfile
+ENTRYPOINT [ "nginx" ]
+CMD [ "-g", "daemon off;" ]
+```
+
+The ENTRYPOINT specifies the command to be run and the CMD specifies its options.  
+On the command line we can then potentially override the options when needed.
+
+```bash
+docker run -d <dockerhubUsername>/web_image -t
+```
+
+## Day 3 - Reducing image size
+
+```Dockerfile
+RUN apt-get install build-essential -y
+RUN ... compile the code ...
+RUN apt-get remove build-essential
+RUN ... make clean
+```
+
+It doesn't work because of layers
+Solution: Multi-stage builds
+
+At any point in our Dockerfile, we can add a new FROM line.
+This line starts a new stage of our build.
+Each stage can access the files of the previous stages with COPY --from=....
+When a build is tagged (with docker build -t ...), the last stage is tagged.
+Previous stages are not discarded: they will be used for caching, and can be referenced
+
+```Dockerfile
+FROM ubuntu AS compiler
+RUN apt-get update
+RUN apt-get install -y build-essential
+COPY hello.c /
+RUN make hello
+FROM ubuntu
+COPY --from=compiler /hello /hello
+CMD /hello
+```
+
+It is still a big image but you can try other base image
+
+busybox
+alpine
+
+Or if you are going to have a lot of container in your server using the same base image
+You can use ubuntu that is larger but because of the layers you will have one copy no matter how many different images you have
+if it share the same FROM ubuntu
