@@ -200,6 +200,60 @@ docker-compose logs
 docker-compose stop
 # stop and remove
 docker-compose down
+# get public ib
+curl icanhazip.com
 ```
 
 # Day 3
+
+## Day 2 - Compose file
+
+Example word  
+https://github.com/jpetazzo/wordsmith
+
+docker-compse.yaml:
+
+```yaml
+version: "3"
+
+services:
+  web:
+    build: web
+    ports:
+      - 8888:80
+    volumes:
+      - ./web/static:/go/static
+  words:
+    build: words
+  db:
+    build: db
+#networks:
+```
+
+## Day 2 - Managing containers
+
+```bash
+# list size of all containers
+docker ps --all --size
+# prune containers
+docker system prune
+# detach from a container (exit stop the container)
+# ctrl P + ctrl Q
+# attach
+docker attach CONTAINER_ID
+#
+# create and run container (withour using run instead)
+docker create -ti ubuntu
+docker start CONTAINER_ID
+docker attach CONTAINER_ID
+# or using a name
+docker create --name myubuntu -ti ubuntu
+docker start myubuntu
+docker attach myubuntu
+# rename a container
+docker rename myubuntu mubuntu
+# show diff inside container (changed file)
+cslog@docker:~$ docker diff mubuntu
+# copy a specific file from inside the container
+docker cp mubuntu:/readme readme
+```
