@@ -2,9 +2,10 @@
 
 | Folder              | Status      | Date       | Description                                     |
 | ------------------- | ----------- | ---------- | ----------------------------------------------- |
-| zig/zig-guide       | In progress | 08/07/2024 | Zig Guide                                       |
-| p/docker-ardan      | In progress | 11/07/2024 | Ardan Labs Docker Course                        |
+| c/0de5              | In progress | 16/07/2024 | Assembly / C                                    |
 | go/webserver        | In progress | 12/07/2024 | BootDev Webservers Go                           |
+| p/docker-ardan      | In progress | 11/07/2024 | Ardan Labs Docker Course                        |
+| zig/zig-guide       | In progress | 08/07/2024 | Zig Guide                                       |
 | p/docker-bootdev    | Finished    | 11/07/2024 | BootDev Docker Course                           |
 | p/git-bootdev       | Finished    | 09/07/2024 | BootDev Git Course                              |
 | go/bootdev          | Finished    | 04/07/2024 | BootDev Learn Go (168 items)                    |
@@ -36,11 +37,6 @@
 
 # Description
 
-## zig
-
-Zig Guide  
-https://zig.guide/
-
 ## docker training
 
 Ardan Labs  
@@ -56,6 +52,16 @@ Go
 Git  
 Docker
 Webservers
+
+## Assembly / C
+
+0de5
+https://www.0de5.net/
+
+## zig
+
+Zig Guide  
+https://zig.guide/
 
 ## go
 

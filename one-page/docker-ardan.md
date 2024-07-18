@@ -376,6 +376,50 @@ It is still a big image but you can try other base image
 busybox
 alpine
 
-Or if you are going to have a lot of container in your server using the same base image
-You can use ubuntu that is larger but because of the layers you will have one copy no matter how many different images you have
+Or if you are going to have a lot of container in your server using the same base image  
+You can use ubuntu that is larger but because of the layers you will have one copy no matter how many different images you have  
 if it share the same FROM ubuntu
+
+# Day 4
+
+## Day 4 - Publishing images
+
+```bash
+# login
+docker login
+# let's tag our figlet image
+docker tag figlet jpetazzo/figlet
+# push it to the Hub:
+docker push jpetazzo/figlet
+# anybody can download
+docker run jpetazzo/figlet
+```
+
+## Day 4 - Buildkit
+
+New build system
+
+- copy files only when they are needed; cache them
+- compute dependency graph (dependencies are expressed by COPY)
+- parallel execution
+- doesn't rely on Docker, but on internal runner/snapshotter
+- can run in "normal" containers (including in Kubernetes pods)
+
+```bash
+# enable
+export DOCKER_BUILDKIT=1
+# use the same build commands
+# multi-arch
+docker buildx build … \
+       --platform linux/amd64,linux/arm64,linux/arm/v7,linux/386 \
+       [--tag jpetazzo/hello --push]
+```
+
+## Day 4 - Container network drivers
+
+```bash
+# no network
+docker run ti --net none alpine
+# same network as host
+docker run ti --net host alpine
+```
