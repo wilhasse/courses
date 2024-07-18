@@ -188,3 +188,20 @@ docker build . -t USERNAME/httpgo:0.2.0
 docker run -p 8080:8080 USERNAME/httpgo:0.2.0
 docker push USERNAME/httpgo:0.2.0
 ```
+
+## dhcpd example
+
+```bash
+# only run
+docker run -it --rm --init --net host -v "/docker/dhcpd/data/data":/data networkboot/dhcpd eth0
+
+# restart always
+docker run --restart always --net host -d -v "/docker/dhcpd/data":/data networkboot/dhcpd vmbr0
+
+# check policy 
+docker ps
+docker inspect -f '{{.HostConfig.RestartPolicy.Name}}' 15bfb3a1f62d
+
+# check docker service
+systemctl status docker
+```
