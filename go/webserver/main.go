@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 	"webserver/database"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type apiConfig struct {
@@ -67,7 +69,8 @@ func (app *App) createUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var code int
-	respBody, _ := app.DBUser.CreateUser(params.Email, params.Password)
+	passwordHash, _ := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
+	respBody, _ := app.DBUser.CreateUser(params.Email, string(passwordHash))
 	code = 201
 
 	dat, err := json.Marshal(respBody)
@@ -96,7 +99,8 @@ func (app *App) loginUsers(w http.ResponseWriter, r *http.Request) {
 	respBody, _ := app.DBUser.GetUser(params.Email)
 
 	// check password
-	if params.Password == respBody.Password {
+	err = bcrypt.CompareHashAndPassword([]byte(respBody.Password), []byte(params.Password))
+	if err == nil {
 		code = 200
 	} else {
 		code = 401
