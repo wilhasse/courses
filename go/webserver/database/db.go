@@ -75,6 +75,24 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 	return chirps, nil
 }
 
+func (db *DB) GetChirpId(ID int) (Chirp, error) {
+	db.Mux.RLock()
+	defer db.Mux.RUnlock()
+
+	dbData, err := db.loadDB()
+	if err != nil {
+		return Chirp{}, err
+	}
+
+	for _, chirp := range dbData.Chirps {
+		if chirp.ID == ID {
+			return chirp, nil
+		}
+	}
+
+	return Chirp{}, nil
+}
+
 func (db *DB) ensureDB() error {
 	if _, err := os.Stat(db.Path); errors.Is(err, os.ErrNotExist) {
 		return db.writeDB(DBStructure{Chirps: make(map[int]Chirp)})

@@ -34,6 +34,7 @@ func main() {
 	m.HandleFunc("GET /admin/metrics", apiCfg.adminMetrics)
 	m.HandleFunc("POST /api/chirps", app.createChirps)
 	m.HandleFunc("GET /api/chirps", app.getChirps)
+	m.HandleFunc("GET /api/chirps/{chirps}", app.getChirpId)
 
 	const addr = ":8080"
 	srv := http.Server{
@@ -84,6 +85,28 @@ func (app *App) getChirps(w http.ResponseWriter, r *http.Request) {
 
 	respBody, _ := app.DB.GetChirps()
 
+	dat, err := json.Marshal(respBody)
+	if err != nil {
+		log.Printf("Error marshalling JSON: %s", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	w.Write(dat)
+}
+
+func (app *App) getChirpId(w http.ResponseWriter, r *http.Request) {
+
+	id, _ := strconv.Atoi(r.PathValue("chirps"))
+	respBody, _ := app.DB.GetChirpId(id)
+
+	if respBody.ID == 0 {
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(404)
+		return
+	}
 	dat, err := json.Marshal(respBody)
 	if err != nil {
 		log.Printf("Error marshalling JSON: %s", err)
