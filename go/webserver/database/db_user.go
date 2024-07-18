@@ -9,6 +9,12 @@ import (
 )
 
 type User struct {
+	ID       int    `json:"id"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type UserResponse struct {
 	ID    int    `json:"id"`
 	Email string `json:"email"`
 }
@@ -34,7 +40,7 @@ func NewUserDB(path string) (*DBUser, error) {
 	return db, nil
 }
 
-func (db *DBUser) CreateUser(email string) (User, error) {
+func (db *DBUser) CreateUser(email string, password string) (User, error) {
 	db.Mux.Lock()
 	defer db.Mux.Unlock()
 
@@ -45,8 +51,9 @@ func (db *DBUser) CreateUser(email string) (User, error) {
 
 	newID := len(dbData.Users) + 1
 	user := User{
-		ID:    newID,
-		Email: email,
+		ID:       newID,
+		Email:    email,
+		Password: password,
 	}
 
 	dbData.Users[newID] = user
@@ -56,6 +63,24 @@ func (db *DBUser) CreateUser(email string) (User, error) {
 	}
 
 	return user, nil
+}
+
+func (db *DBUser) GetUser(Email string) (User, error) {
+	db.Mux.RLock()
+	defer db.Mux.RUnlock()
+
+	dbData, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+
+	for _, user := range dbData.Users {
+		if user.Email == Email {
+			return user, nil
+		}
+	}
+
+	return User{}, nil
 }
 
 func (db *DBUser) ensureDB() error {

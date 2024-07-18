@@ -38,6 +38,7 @@ func main() {
 	m.HandleFunc("POST /api/chirps", app.createChirps)
 	m.HandleFunc("GET /api/chirps/{chirps}", app.getChirpId)
 	m.HandleFunc("POST /api/users", app.createUsers)
+	m.HandleFunc("POST /api/login", app.loginUsers)
 
 	const addr = ":8080"
 	srv := http.Server{
@@ -66,22 +67,56 @@ func (app *App) createUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var code int
-	if len(params.Email) > 140 {
-		code = 400
-	} else {
-		respBody, _ := app.DBUser.CreateUser(params.Email)
-		code = 201
+	respBody, _ := app.DBUser.CreateUser(params.Email, params.Password)
+	code = 201
 
-		dat, err := json.Marshal(respBody)
-		if err != nil {
-			log.Printf("Error marshalling JSON: %s", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(code)
-		w.Write(dat)
+	dat, err := json.Marshal(respBody)
+	if err != nil {
+		log.Printf("Error marshalling JSON: %s", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
 	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(dat)
+}
+
+func (app *App) loginUsers(w http.ResponseWriter, r *http.Request) {
+
+	decoder := json.NewDecoder(r.Body)
+	params := database.User{}
+	err := decoder.Decode(&params)
+	if err != nil {
+		log.Printf("Error decoding parameters: %s", err)
+		http.Error(w, "Invalid request", http.StatusBadRequest) // More appropriate status code
+		return
+	}
+
+	var code int
+	respBody, _ := app.DBUser.GetUser(params.Email)
+
+	// check password
+	if params.Password == respBody.Password {
+		code = 200
+	} else {
+		code = 401
+	}
+
+	// Create a new struct without the password field
+	userResp := database.UserResponse{
+		Email: respBody.Email,
+		ID:    respBody.ID,
+	}
+
+	dat, err := json.Marshal(userResp)
+	if err != nil {
+		log.Printf("Error marshalling JSON: %s", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(dat)
 }
 
 func (app *App) createChirps(w http.ResponseWriter, r *http.Request) {
