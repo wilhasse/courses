@@ -8,15 +8,22 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"webserver/database"
 )
 
 type apiConfig struct {
 	fileserverHits int
 }
 
+type App struct {
+	DB *database.DB
+}
+
 func main() {
 
 	apiCfg := apiConfig{}
+	db, _ := database.NewDB("database.json")
+	app := App{DB: db}
 
 	m := http.NewServeMux()
 	m.Handle("/app/*", http.StripPrefix("/app/", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir(".")))))
@@ -25,7 +32,8 @@ func main() {
 	m.HandleFunc("GET /api/reset", apiCfg.reset)
 	m.HandleFunc("GET /api/metrics", apiCfg.metrics)
 	m.HandleFunc("GET /admin/metrics", apiCfg.adminMetrics)
-	m.HandleFunc("POST /api/validate_chirp", validate)
+	m.HandleFunc("POST /api/chirps", app.createChirps)
+	m.HandleFunc("GET /api/chirps", app.getChirps)
 
 	const addr = ":8080"
 	srv := http.Server{
@@ -40,6 +48,51 @@ func main() {
 	fmt.Println("server started on ", addr)
 	err := srv.ListenAndServe()
 	log.Fatal(err)
+}
+
+func (app *App) createChirps(w http.ResponseWriter, r *http.Request) {
+
+	decoder := json.NewDecoder(r.Body)
+	params := database.Chirp{}
+	err := decoder.Decode(&params)
+	if err != nil {
+		log.Printf("Error decoding parameters: %s", err)
+		http.Error(w, "Invalid request", http.StatusBadRequest) // More appropriate status code
+		return
+	}
+
+	var code int
+	if len(params.Body) > 140 {
+		code = 400
+	} else {
+		respBody, _ := app.DB.CreateChirp(params.Body)
+		code = 201
+
+		dat, err := json.Marshal(respBody)
+		if err != nil {
+			log.Printf("Error marshalling JSON: %s", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(code)
+		w.Write(dat)
+	}
+}
+
+func (app *App) getChirps(w http.ResponseWriter, r *http.Request) {
+
+	respBody, _ := app.DB.GetChirps()
+
+	dat, err := json.Marshal(respBody)
+	if err != nil {
+		log.Printf("Error marshalling JSON: %s", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	w.Write(dat)
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -104,44 +157,6 @@ type returnVals struct {
 	Valid *bool `json:"valid,omitempty"`
 	// text converted
 	CleanedBody string `json:"cleaned_body"`
-}
-
-func validate(w http.ResponseWriter, r *http.Request) {
-
-	type parameters struct {
-		Body string `json:"body"`
-	}
-
-	decoder := json.NewDecoder(r.Body)
-	params := parameters{}
-	err := decoder.Decode(&params)
-	if err != nil {
-		log.Printf("Error decoding parameters: %s", err)
-		http.Error(w, "Invalid request", http.StatusBadRequest) // More appropriate status code
-		return
-	}
-
-	respBody := returnVals{}
-	var code int
-	if len(params.Body) > 140 {
-		respBody.Error = "Chirp is too long"
-		code = 400
-	} else {
-		valid := true // Declare a true boolean value to use the address
-		respBody.Valid = &valid
-		respBody.CleanedBody = clearText(params.Body)
-		code = 200
-	}
-
-	dat, err := json.Marshal(respBody)
-	if err != nil {
-		log.Printf("Error marshalling JSON: %s", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	w.Write(dat)
 }
 
 func clearText(source string) string {
