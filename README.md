@@ -5,6 +5,7 @@
 | [c/0de5](./c/0de5)                             | In progress | 16/07/2024 | Assembly / C                                    |
 | [go/webserver](./go/webserver/)                | In progress | 12/07/2024 | BootDev Webservers Go                           |
 | [zig/ziglings](./zig/ziglings.md)              | In progress | 08/07/2024 | Zig Exercises                                   |
+| [kubernetes](./one-page/kubernetes-ardan.md)   | In progress | 19/07/2024 | Ardan Labs Kubernetes Course                    |
 | [docker-ardan](./one-page/docker-ardan.md)     | Finished    | 18/07/2024 | Ardan Labs Docker Course                        |
 | [docker-bootdev](./one-page/docker-bootdev.md) | Finished    | 11/07/2024 | BootDev Docker Course                           |
 | [git-bootdev](./one-page/git-bootdev.md)       | Finished    | 09/07/2024 | BootDev Git Course                              |
@@ -37,11 +38,11 @@
 
 # Description
 
-## docker training
+## docker/kubernetes training
 
 Ardan Labs  
 Jérôme Petazzoni  
-https://2022-11-live.container.training/docker.yml.html
+https://2022-11-live.container.training
 
 ## bootdev
 
