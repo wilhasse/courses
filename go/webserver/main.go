@@ -306,9 +306,28 @@ func (app *App) revokeUser(w http.ResponseWriter, r *http.Request) {
 
 func (app *App) createChirps(w http.ResponseWriter, r *http.Request) {
 
+	tokenString := r.Header.Get("Authorization")
+	if tokenString == "" {
+		http.Error(w, "Missing token", http.StatusUnauthorized)
+		return
+	}
+
+	tokenString = tokenString[len("Bearer "):]
+
+	claims := &jwt.StandardClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(app.JwtSecret), nil
+	})
+	if err != nil || !token.Valid {
+		http.Error(w, "Invalid token", http.StatusUnauthorized)
+		return
+	}
+
+	userID := int([]byte(claims.Subject)[0])
+
 	decoder := json.NewDecoder(r.Body)
 	params := database.Chirp{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		log.Printf("Error decoding parameters: %s", err)
 		http.Error(w, "Invalid request", http.StatusBadRequest) // More appropriate status code
@@ -316,10 +335,10 @@ func (app *App) createChirps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var code int
-	if len(params.Body) > 140 {
+	if len(params.Body) > 140 || userID == 0 {
 		code = 400
 	} else {
-		respBody, _ := app.DB.CreateChirp(params.Body)
+		respBody, _ := app.DB.CreateChirp(params.Body, userID)
 		code = 201
 
 		dat, err := json.Marshal(respBody)
