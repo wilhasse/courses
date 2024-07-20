@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -53,6 +55,8 @@ func main() {
 	m.HandleFunc("POST /api/users", app.createUsers)
 	m.HandleFunc("POST /api/login", app.loginUsers)
 	m.HandleFunc("PUT /api/users", app.updateUser)
+	m.HandleFunc("POST /api/refresh", app.refreshUser)
+	m.HandleFunc("POST /api/revoke", app.revokeUser)
 
 	const addr = ":8080"
 	srv := http.Server{
@@ -132,7 +136,7 @@ func (app *App) updateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update the user in the database (pseudo code, depends on your DB implementation)
+	// Update the user in the database
 	passwordHash, _ := bcrypt.GenerateFromPassword([]byte(requestBody.Password), bcrypt.DefaultCost)
 	updatedUser, err := app.DBUser.UpdateUser(int(userID[0]), requestBody.Email, string(passwordHash))
 	if err != nil {
@@ -200,11 +204,23 @@ func (app *App) loginUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Generate and store the refresh token
+	refreshToken, err := generateRefreshToken()
+
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	// Store refresh token
+	app.DBUser.StoreRefreshToken(respBody.ID, refreshToken)
+
 	// Create a new struct without the password field
 	userResp := database.UserResponse{
-		Email: respBody.Email,
-		ID:    respBody.ID,
-		Token: tokenString,
+		Email:        respBody.Email,
+		ID:           respBody.ID,
+		Token:        tokenString,
+		RefreshToken: refreshToken,
 	}
 
 	dat, err := json.Marshal(userResp)
@@ -216,6 +232,76 @@ func (app *App) loginUsers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(dat)
+}
+
+func generateRefreshToken() (string, error) {
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
+}
+
+func (app *App) refreshUser(w http.ResponseWriter, r *http.Request) {
+
+	tokenString := r.Header.Get("Authorization")
+	if tokenString == "" {
+		http.Error(w, "Missing token", http.StatusUnauthorized)
+		return
+	}
+
+	tokenString = tokenString[len("Bearer "):]
+
+	user, err := app.DBUser.GetUserByRefreshToken(tokenString)
+	if err != nil {
+		http.Error(w, "Invalid or expired refresh token", http.StatusUnauthorized)
+		return
+	}
+
+	// Create a new access token
+	expirationTime := time.Now().Add(1 * time.Hour)
+	claims := &jwt.StandardClaims{
+		Issuer:    "chirpy",
+		IssuedAt:  time.Now().UTC().Unix(),
+		ExpiresAt: expirationTime.UTC().Unix(),
+		Subject:   string(user.ID),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err = token.SignedString([]byte(app.JwtSecret))
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	response := struct {
+		Token string `json:"token"`
+	}{
+		Token: tokenString,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func (app *App) revokeUser(w http.ResponseWriter, r *http.Request) {
+
+	tokenString := r.Header.Get("Authorization")
+	if tokenString == "" {
+		http.Error(w, "Missing token", http.StatusUnauthorized)
+		return
+	}
+
+	tokenString = tokenString[len("Bearer "):]
+
+	err := app.DBUser.RevokeRefreshToken(tokenString)
+	if err != nil {
+		http.Error(w, "Invalid or non-existent refresh token", http.StatusUnauthorized)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (app *App) createChirps(w http.ResponseWriter, r *http.Request) {

@@ -13,12 +13,14 @@ type User struct {
 	Email            string `json:"email"`
 	Password         string `json:"password"`
 	ExpiresInSeconds int64  `json:"expires_in_seconds"`
+	RefreshToken     string `json:"refresh_token"`
 }
 
 type UserResponse struct {
-	ID    int    `json:"id"`
-	Email string `json:"email"`
-	Token string `json:"token"`
+	ID           int    `json:"id"`
+	Email        string `json:"email"`
+	Token        string `json:"token"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 type DBUser struct {
@@ -91,6 +93,65 @@ func (db *DBUser) UpdateUser(id int, email string, password string) (User, error
 	}
 
 	return user, nil
+}
+
+func (db *DBUser) StoreRefreshToken(userID int, refreshToken string) error {
+
+	db.Mux.Lock()
+	defer db.Mux.Unlock()
+
+	dbData, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	user, exists := dbData.Users[userID]
+	if !exists {
+		return errors.New("user not found")
+	}
+
+	user.RefreshToken = refreshToken
+	dbData.Users[userID] = user
+
+	return db.writeDB(dbData)
+}
+
+func (db *DBUser) GetUserByRefreshToken(refreshToken string) (User, error) {
+	db.Mux.RLock()
+	defer db.Mux.RUnlock()
+
+	dbData, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+
+	for _, user := range dbData.Users {
+		if user.RefreshToken == refreshToken {
+			return user, nil
+		}
+	}
+
+	return User{}, errors.New("refresh token not found")
+}
+
+func (db *DBUser) RevokeRefreshToken(refreshToken string) error {
+	db.Mux.Lock()
+	defer db.Mux.Unlock()
+
+	dbData, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	for id, user := range dbData.Users {
+		if user.RefreshToken == refreshToken {
+			user.RefreshToken = ""
+			dbData.Users[id] = user
+			return db.writeDB(dbData)
+		}
+	}
+
+	return errors.New("refresh token not found")
 }
 
 func (db *DBUser) GetUser(Email string) (User, error) {
