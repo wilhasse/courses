@@ -60,6 +60,29 @@ func (db *DB) CreateChirp(body string, id int) (Chirp, error) {
 	return chirp, nil
 }
 
+func (db *DB) DeleteChirp(ID int) error {
+	db.Mux.Lock()
+	defer db.Mux.Unlock()
+
+	dbData, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	if _, exists := dbData.Chirps[ID]; !exists {
+		return errors.New("chirp not found")
+	}
+
+	delete(dbData.Chirps, ID)
+
+	err = db.writeDB(dbData)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (db *DB) GetChirps() ([]Chirp, error) {
 	db.Mux.RLock()
 	defer db.Mux.RUnlock()

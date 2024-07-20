@@ -57,6 +57,7 @@ func main() {
 	m.HandleFunc("PUT /api/users", app.updateUser)
 	m.HandleFunc("POST /api/refresh", app.refreshUser)
 	m.HandleFunc("POST /api/revoke", app.revokeUser)
+	m.HandleFunc("DELETE /api/chirps/{chirps}", app.deleteChirpId)
 
 	const addr = ":8080"
 	srv := http.Server{
@@ -398,6 +399,66 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 		// Continue to the next handler
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (app *App) deleteChirpId(w http.ResponseWriter, r *http.Request) {
+
+	tokenString := r.Header.Get("Authorization")
+	if tokenString == "" {
+		http.Error(w, "Missing token", http.StatusUnauthorized)
+		return
+	}
+
+	// token
+	tokenString = tokenString[len("Bearer "):]
+
+	claims := &jwt.StandardClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(app.JwtSecret), nil
+	})
+	if err != nil || !token.Valid {
+		http.Error(w, "Invalid token", http.StatusUnauthorized)
+		return
+	}
+
+	// user
+	userID := int([]byte(claims.Subject)[0])
+
+	// chirp id
+	id, _ := strconv.Atoi(r.PathValue("chirps"))
+	respBody, _ := app.DB.GetChirpId(id)
+
+	if respBody.ID == 0 {
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(404)
+		return
+	}
+
+	// verify ownership
+	if userID != respBody.AuthorId {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(403)
+		return
+	}
+
+	// remove
+	err = app.DB.DeleteChirp(respBody.ID)
+	if err != nil {
+		http.Error(w, "Error", http.StatusInternalServerError)
+		return
+	}
+
+	// body
+	dat, err := json.Marshal(respBody)
+	if err != nil {
+		log.Printf("Error marshalling JSON: %s", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(204)
+	w.Write(dat)
 }
 
 func (cfg *apiConfig) reset(w http.ResponseWriter, r *http.Request) {
