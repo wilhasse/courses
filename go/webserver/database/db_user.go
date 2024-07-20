@@ -9,14 +9,16 @@ import (
 )
 
 type User struct {
-	ID       int    `json:"id"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	ID               int    `json:"id"`
+	Email            string `json:"email"`
+	Password         string `json:"password"`
+	ExpiresInSeconds int64  `json:"expires_in_seconds"`
 }
 
 type UserResponse struct {
 	ID    int    `json:"id"`
 	Email string `json:"email"`
+	Token string `json:"token"`
 }
 
 type DBUser struct {
@@ -57,6 +59,32 @@ func (db *DBUser) CreateUser(email string, password string) (User, error) {
 	}
 
 	dbData.Users[newID] = user
+	err = db.writeDB(dbData)
+	if err != nil {
+		return User{}, err
+	}
+
+	return user, nil
+}
+
+func (db *DBUser) UpdateUser(id int, email string, password string) (User, error) {
+	db.Mux.Lock()
+	defer db.Mux.Unlock()
+
+	dbData, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+
+	user, exists := dbData.Users[id]
+	if !exists {
+		return User{}, errors.New("user not found")
+	}
+
+	user.Email = email
+	user.Password = password
+	dbData.Users[id] = user
+
 	err = db.writeDB(dbData)
 	if err != nil {
 		return User{}, err

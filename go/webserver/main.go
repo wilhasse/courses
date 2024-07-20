@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
-	"strings"
 	"time"
 	"webserver/database"
 
+	"github.com/dgrijalva/jwt-go"
+	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -18,16 +20,25 @@ type apiConfig struct {
 }
 
 type App struct {
-	DB     *database.DB
-	DBUser *database.DBUser
+	DB        *database.DB
+	DBUser    *database.DBUser
+	JwtSecret string
 }
 
 func main() {
 
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	jwtSecret := os.Getenv("JWT_SECRET")
+	log.Printf("Secredt: %s", jwtSecret)
+
 	apiCfg := apiConfig{}
 	db, _ := database.NewDB("database.json")
 	dbUser, _ := database.NewUserDB("database_user.json")
-	app := App{DB: db, DBUser: dbUser}
+	app := App{DB: db, DBUser: dbUser, JwtSecret: jwtSecret}
 
 	m := http.NewServeMux()
 	m.Handle("/app/*", http.StripPrefix("/app/", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir(".")))))
@@ -41,6 +52,7 @@ func main() {
 	m.HandleFunc("GET /api/chirps/{chirps}", app.getChirpId)
 	m.HandleFunc("POST /api/users", app.createUsers)
 	m.HandleFunc("POST /api/login", app.loginUsers)
+	m.HandleFunc("PUT /api/users", app.updateUser)
 
 	const addr = ":8080"
 	srv := http.Server{
@@ -53,7 +65,7 @@ func main() {
 	// this blocks forever, until the server
 	// has an unrecoverable error
 	fmt.Println("server started on ", addr)
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	log.Fatal(err)
 }
 
@@ -84,6 +96,62 @@ func (app *App) createUsers(w http.ResponseWriter, r *http.Request) {
 	w.Write(dat)
 }
 
+func (app *App) updateUser(w http.ResponseWriter, r *http.Request) {
+	tokenString := r.Header.Get("Authorization")
+	if tokenString == "" {
+		http.Error(w, "Missing token", http.StatusUnauthorized)
+		return
+	}
+
+	tokenString = tokenString[len("Bearer "):]
+
+	claims := &jwt.StandardClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(app.JwtSecret), nil
+	})
+	if err != nil || !token.Valid {
+		http.Error(w, "Invalid token", http.StatusUnauthorized)
+		return
+	}
+
+	// Check if the token is expired
+	if claims.ExpiresAt < time.Now().Unix() {
+		http.Error(w, "Token is expired", http.StatusUnauthorized)
+		return
+	}
+
+	userID := []byte(claims.Subject)
+	var requestBody struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	err = json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	// Update the user in the database (pseudo code, depends on your DB implementation)
+	passwordHash, _ := bcrypt.GenerateFromPassword([]byte(requestBody.Password), bcrypt.DefaultCost)
+	updatedUser, err := app.DBUser.UpdateUser(int(userID[0]), requestBody.Email, string(passwordHash))
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	responseBody := struct {
+		ID    int    `json:"id"`
+		Email string `json:"email"`
+	}{
+		ID:    updatedUser.ID,
+		Email: updatedUser.Email,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(responseBody)
+}
+
 func (app *App) loginUsers(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body)
@@ -97,6 +165,7 @@ func (app *App) loginUsers(w http.ResponseWriter, r *http.Request) {
 
 	var code int
 	respBody, _ := app.DBUser.GetUser(params.Email)
+	respBody.ExpiresInSeconds = params.ExpiresInSeconds
 
 	// check password
 	err = bcrypt.CompareHashAndPassword([]byte(respBody.Password), []byte(params.Password))
@@ -106,10 +175,36 @@ func (app *App) loginUsers(w http.ResponseWriter, r *http.Request) {
 		code = 401
 	}
 
+	// Set expiration time
+	var expirationTime time.Duration
+	if respBody.ExpiresInSeconds > 0 {
+		expirationTime = time.Duration(respBody.ExpiresInSeconds) * time.Second
+		if expirationTime > 24*time.Hour {
+			expirationTime = 24 * time.Hour
+		}
+	} else {
+		expirationTime = 24 * time.Hour
+	}
+
+	claims := &jwt.StandardClaims{
+		Issuer:    "chirpy",
+		IssuedAt:  time.Now().UTC().Unix(),
+		ExpiresAt: time.Now().Add(expirationTime).UTC().Unix(),
+		Subject:   string(respBody.ID),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte(app.JwtSecret))
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
 	// Create a new struct without the password field
 	userResp := database.UserResponse{
 		Email: respBody.Email,
 		ID:    respBody.ID,
+		Token: tokenString,
 	}
 
 	dat, err := json.Marshal(userResp)
@@ -242,34 +337,4 @@ func handleOk(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	const page = "OK"
 	w.Write([]byte(page))
-}
-
-// Define returnVals only once outside of the function for simplicity.
-type returnVals struct {
-	// omitempty will omit this field if it's an empty string.
-	Error string `json:"error,omitempty"`
-	// use a pointer to bool to differentiate between omitted and false values.
-	Valid *bool `json:"valid,omitempty"`
-	// text converted
-	CleanedBody string `json:"cleaned_body"`
-}
-
-func clearText(source string) string {
-
-	var badwords = []string{"kerfuffle", "sharbert", "fornax"}
-	var splitWords = strings.Split(source, " ")
-
-	for i, sword := range splitWords {
-
-		for _, word := range badwords {
-
-			if strings.ToLower(sword) == word {
-
-				splitWords[i] = "****"
-			}
-		}
-
-	}
-
-	return strings.Join(splitWords, " ")
 }
