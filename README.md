@@ -3,9 +3,9 @@
 | Folder                                            | Status      | Date       | Description                                     |
 | ------------------------------------------------- | ----------- | ---------- | ----------------------------------------------- |
 | [0de5](./c/0de5)                                  | In progress | 16/07/2024 | Assembly / C                                    |
-| [webserver](./go/webserver/)                      | In progress | 12/07/2024 | BootDev Webservers Go                           |
 | [ziglings](./zig/ziglings.md)                     | In progress | 08/07/2024 | Zig Exercises                                   |
 | [kubernetes](./one-page/kubernetes-ardan.md)      | In progress | 19/07/2024 | Ardan Labs Kubernetes Course                    |
+| [webserver](./go/webserver/)                      | Finished    | 21/07/2024 | BootDev Webservers Go                           |
 | [docker-ardan](./one-page/docker-ardan.md)        | Finished    | 18/07/2024 | Ardan Labs Docker Course                        |
 | [docker-bootdev](./one-page/docker-bootdev.md)    | Finished    | 11/07/2024 | BootDev Docker Course                           |
 | [git-bootdev](./one-page/git-bootdev.md)          | Finished    | 09/07/2024 | BootDev Git Course                              |
@@ -52,7 +52,7 @@ Git
 Docker
 Webservers
 
-## Assembly / C
+## assembly / C
 
 0de5
 https://www.0de5.net/
@@ -64,13 +64,6 @@ https://codeberg.org/ziglings/exercises
 
 Zig Guide  
 https://zig.guide/
-
-## go
-
-Books:  
-Go Cookbook  
-Learning Go  
-Go Programming Cookbook
 
 ## c
 
@@ -84,103 +77,54 @@ Build Your Own Database from Scratch in Go
 James Smith  
 https://build-your-own.org/
 
-## svelte-lucia
-
-Tutorial  
-Implementing integration with Lucia Authentication and MySQL
-
-## svelte-login
-
-Tutorial  
-Jannik Wempe  
-Authentication in Svelte using cookies
-
-## functional-js
-
-FrontEnd Masters  
-Functional JavaScript First Steps
-Anjana Vakil
-
-## revealjs
-
-Mastering reveal.js  
-Hakim El Hattab (creator)
-
-## just-javascript
-
-Just JavaScript  
-Dan Abramov
-
-## tailwind-css
-
-FrontEnd Masters  
-Tailwind CSS  
-Steve Kinney
-
-## js-first-steps
+## javascript
 
 FrontEnd Masters  
 JavaScript: From first steps to Professional  
-Anjana Vakil
-
-## vanilla-js-projects
-
-FrontEnd Masters  
 Vanilla JavaScript Projects  
+Functional JavaScript First Steps  
 Anjana Vakil
 
-## svelte-game
-
-FrontEnd Masters  
-Svelte Fundamentals  
-Rich Harris
-
-## svelte-shadcdn
-
-Shadcn Svelte Component  
-https://www.shadcn-svelte.com/
-
-## vite-demo
+Just JavaScript  
+Dan Abramov
 
 Vue Mastery  
 Lightning Fast Builds w/ Vite  
 Evan You
 
-## svelte-course
+## svelte
 
-Course
+Tutorial  
+Implementing integration with Lucia Authentication and MySQL  
+Authentication in Svelte using cookies  
+
+FrontEnd Masters  
+Svelte Fundamentals  
+Rich Harris
+
+Shadcn Svelte Component  
+https://www.shadcn-svelte.com/
+
 The Joy of Svelte
 Jesse Skinner
-
-## elixir-socket
-
-Umbrella  
-Testng socket/websocket
-
-## phoenix-live
-
-The Pragmatic Studio  
-Phoenix LiveView  
-Mike & Nicole Clark
-
-## svelte-demo
 
 Fireship  
 SvelteKit Full Course  
 Jeff Delaney
 
-## elixir-auction
+## elixir
 
 Book  
 Elixir in Action Third Edition  
 Sasa Juric
 
-## elixir-ecto
-
-Book
 Programming Ecto  
 Darin Wilson  
 Eric Meadows-Jönsson
+
+The Pragmatic Studio  
+Phoenix LiveView  
+Mike & Nicole Clark
 
 ## alpine-course
 
@@ -193,27 +137,21 @@ Martin Krebs Eberth
 Vue School  
 The Vue.js 3 Masterclass
 
-## sole-and-ankle
+## css
+
+FrontEnd Masters  
+Tailwind CSS  
+Steve Kinney
 
 CSS for JavaScript Developers  
-Josh W Comeau
+Josh W Comeau 
+- sole-and-ankle  
+- new-grid-times   
 
-## new-grid-times
-
-CSS for JavaScript Developers  
-Josh W Comeau
-
-## react-blog-mdx
+## react
 
 Joy of React  
-Josh W Comeau
-
-## react-toast
-
-Joy of React  
-Josh W Comeau
-
-## react-wordle
-
-Joy of React  
-Josh W Comeau
+Josh W Comeau  
+- blog-mdx  
+- toast  
+- wordle  
