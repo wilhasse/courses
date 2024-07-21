@@ -25,6 +25,7 @@ type App struct {
 	DB        *database.DB
 	DBUser    *database.DBUser
 	JwtSecret string
+	PolkaKey  string
 }
 
 func main() {
@@ -35,12 +36,13 @@ func main() {
 	}
 
 	jwtSecret := os.Getenv("JWT_SECRET")
+	polkaKey := os.Getenv("POLKA_KEY")
 	log.Printf("Secredt: %s", jwtSecret)
 
 	apiCfg := apiConfig{}
 	db, _ := database.NewDB("database.json")
 	dbUser, _ := database.NewUserDB("database_user.json")
-	app := App{DB: db, DBUser: dbUser, JwtSecret: jwtSecret}
+	app := App{DB: db, DBUser: dbUser, JwtSecret: jwtSecret, PolkaKey: polkaKey}
 
 	m := http.NewServeMux()
 	m.Handle("/app/*", http.StripPrefix("/app/", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir(".")))))
@@ -508,6 +510,21 @@ func handleOk(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *App) polkaWebhooks(w http.ResponseWriter, r *http.Request) {
+
+	tokenString := r.Header.Get("Authorization")
+	if tokenString == "" {
+		http.Error(w, "Missing token", http.StatusUnauthorized)
+		return
+	}
+
+	tokenString = tokenString[len("Bearer "):]
+
+	// valid api ?
+	if app.PolkaKey != tokenString {
+		http.Error(w, "Invalid token", http.StatusUnauthorized)
+		return
+	}
+
 	var requestBody struct {
 		Event string `json:"event"`
 		Data  struct {
