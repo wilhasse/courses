@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"sort"
 	"sync"
 )
 
@@ -83,7 +84,7 @@ func (db *DB) DeleteChirp(ID int) error {
 	return nil
 }
 
-func (db *DB) GetChirps(author_id int) ([]Chirp, error) {
+func (db *DB) GetChirps(author_id int, order string) ([]Chirp, error) {
 	db.Mux.RLock()
 	defer db.Mux.RUnlock()
 
@@ -100,6 +101,14 @@ func (db *DB) GetChirps(author_id int) ([]Chirp, error) {
 			chirps = append(chirps, chirp)
 		}
 	}
+
+	// Sort chirps based on sort parameter
+	sort.Slice(chirps, func(i, j int) bool {
+		if order == "asc" {
+			return chirps[i].ID < chirps[j].ID
+		}
+		return chirps[i].ID > chirps[j].ID
+	})
 
 	return chirps, nil
 }
