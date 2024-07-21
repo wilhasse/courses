@@ -14,6 +14,7 @@ type User struct {
 	Password         string `json:"password"`
 	ExpiresInSeconds int64  `json:"expires_in_seconds"`
 	RefreshToken     string `json:"refresh_token"`
+	IsChirpyRed      bool   `json:"is_chirpy_red"`
 }
 
 type UserResponse struct {
@@ -21,6 +22,7 @@ type UserResponse struct {
 	Email        string `json:"email"`
 	Token        string `json:"token"`
 	RefreshToken string `json:"refresh_token"`
+	IsChirpyRed  bool   `json:"is_chirpy_red"`
 }
 
 type DBUser struct {
@@ -170,6 +172,26 @@ func (db *DBUser) GetUser(Email string) (User, error) {
 	}
 
 	return User{}, nil
+}
+
+func (db *DBUser) UpdateUserMembership(userID int, isChirpyRed bool) error {
+	db.Mux.Lock()
+	defer db.Mux.Unlock()
+
+	dbData, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	user, exists := dbData.Users[userID]
+	if !exists {
+		return errors.New("user not found")
+	}
+
+	user.IsChirpyRed = isChirpyRed
+	dbData.Users[userID] = user
+
+	return db.writeDB(dbData)
 }
 
 func (db *DBUser) ensureDB() error {

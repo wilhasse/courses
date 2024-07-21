@@ -58,6 +58,7 @@ func main() {
 	m.HandleFunc("POST /api/refresh", app.refreshUser)
 	m.HandleFunc("POST /api/revoke", app.revokeUser)
 	m.HandleFunc("DELETE /api/chirps/{chirps}", app.deleteChirpId)
+	m.HandleFunc("/api/polka/webhooks", app.polkaWebhooks)
 
 	const addr = ":8080"
 	srv := http.Server{
@@ -222,6 +223,7 @@ func (app *App) loginUsers(w http.ResponseWriter, r *http.Request) {
 		ID:           respBody.ID,
 		Token:        tokenString,
 		RefreshToken: refreshToken,
+		IsChirpyRed:  respBody.IsChirpyRed,
 	}
 
 	dat, err := json.Marshal(userResp)
@@ -503,4 +505,36 @@ func handleOk(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	const page = "OK"
 	w.Write([]byte(page))
+}
+
+func (app *App) polkaWebhooks(w http.ResponseWriter, r *http.Request) {
+	var requestBody struct {
+		Event string `json:"event"`
+		Data  struct {
+			UserID int `json:"user_id"`
+		} `json:"data"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	if requestBody.Event != "user.upgraded" {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	err = app.DBUser.UpdateUserMembership(requestBody.Data.UserID, true)
+	if err != nil {
+		if err.Error() == "user not found" {
+			http.Error(w, "User not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
