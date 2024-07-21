@@ -360,7 +360,8 @@ func (app *App) createChirps(w http.ResponseWriter, r *http.Request) {
 
 func (app *App) getChirps(w http.ResponseWriter, r *http.Request) {
 
-	respBody, _ := app.DB.GetChirps()
+	author_id, _ := strconv.Atoi(r.URL.Query().Get("author_id"))
+	respBody, _ := app.DB.GetChirps(author_id)
 
 	dat, err := json.Marshal(respBody)
 	if err != nil {

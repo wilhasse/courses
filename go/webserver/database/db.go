@@ -83,7 +83,7 @@ func (db *DB) DeleteChirp(ID int) error {
 	return nil
 }
 
-func (db *DB) GetChirps() ([]Chirp, error) {
+func (db *DB) GetChirps(author_id int) ([]Chirp, error) {
 	db.Mux.RLock()
 	defer db.Mux.RUnlock()
 
@@ -94,7 +94,11 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 
 	chirps := make([]Chirp, 0, len(dbData.Chirps))
 	for _, chirp := range dbData.Chirps {
-		chirps = append(chirps, chirp)
+
+		if author_id == 0 || chirp.AuthorId == author_id {
+
+			chirps = append(chirps, chirp)
+		}
 	}
 
 	return chirps, nil
