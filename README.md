@@ -1,40 +1,38 @@
 # Projects
 
-| Folder                                         | Status      | Date       | Description                                     |
-| ---------------------------------------------- | ----------- | ---------- | ----------------------------------------------- |
-| [c/0de5](./c/0de5)                             | In progress | 16/07/2024 | Assembly / C                                    |
-| [go/webserver](./go/webserver/)                | In progress | 12/07/2024 | BootDev Webservers Go                           |
-| [zig/ziglings](./zig/ziglings.md)              | In progress | 08/07/2024 | Zig Exercises                                   |
-| [kubernetes](./one-page/kubernetes-ardan.md)   | In progress | 19/07/2024 | Ardan Labs Kubernetes Course                    |
-| [docker-ardan](./one-page/docker-ardan.md)     | Finished    | 18/07/2024 | Ardan Labs Docker Course                        |
-| [docker-bootdev](./one-page/docker-bootdev.md) | Finished    | 11/07/2024 | BootDev Docker Course                           |
-| [git-bootdev](./one-page/git-bootdev.md)       | Finished    | 09/07/2024 | BootDev Git Course                              |
-| [go/bootdev](./go/bootdev/)                    | Finished    | 04/07/2024 | BootDev Learn Go (168 items)                    |
-| [c/threads](./c/thread/)                       | Finished    | 13/06/2024 | C Threads                                       |
-| [c/minidb-net](./c/minidb-net/)                | Finished    | 10/06/2024 | C Network (Sockets)                             |
-| [c/zero2hero/minidb](./c/zero2hero/)           | Finished    | 04/06/2024 | C Language                                      |
-| [go/database]                                  | Finished    | 04/05/2024 | Build yout own database                         |
-| [s/svelte-lucia]                               | Finished    | 17/03/2024 | SvelteKit integration with Lucia Auth and MySQL |
-| [s/svelte-login]                               | Finished    | 28/02/2024 | Simple login/logout flow in SvelteKit           |
-| [p/functional-js]                              | Finished    | 25/02/2024 | Functional JavaScript Course                    |
-| [p/just-javascript]                            | Finished    | 24/02/2024 | Just JavaScript Course                          |
-| [tailwind-css]                                 | Finished    | 17/02/2024 | Tawild CSS Course (frontend masters)            |
-| [js-first-steps]                               | Finished    | 17/02/2024 | JavaScript First Steps Course                   |
-| [vanilla-js-projects]                          | Finished    | 15/02/2024 | Vanilla JS Projects Course                      |
-| [s/svelte-shadcdn]                             | Finished    | 11/02/2024 | Testing Shadcdn UI Framework                    |
-| [vite-demo]                                    | Finished    | 11/02/2024 | Simple Vite application (Vue Master Course)     |
-| [s/svelte-course]                              | Finished    | 10/02/2024 | Joy of Svelte Course                            |
-| [elixir-socket]                                | Finished    | 24/01/2024 | Testing Elixir Socket/WebSockets                |
-| [elixir-auction]                               | Finished    | 23/01/2024 | Elixir in Action book                           |
-| [alpine-course]                                | Finished    | 28/01/2024 | Alpine Udemy Course                             |
-| [vueschool-forum]                              | Unfinished  | 08/01/2024 | Vue School Forum Course                         |
-| [sole-and-ankle]                               | Finished    | 23/12/2023 | CSS Course Josh W Comeau                        |
-| [new-grid-times]                               | Finished    | 20/12/2023 | CSS Course Josh W Comeau                        |
-| [react-blog-mdx]                               | Finished    | 26/11/2023 | Joy of React Course Josh W Comeau               |
-| [react-toast]                                  | Finished    | 15/11/2023 | Joy of React Course Josh W Comeau               |
-| [react-wordle]                                 | Finished    | 19/10/2023 | Joy of React Course Josh W Comeau               |
-
-"\* p/" - one-page dir
+| Folder                                            | Status      | Date       | Description                                     |
+| ------------------------------------------------- | ----------- | ---------- | ----------------------------------------------- |
+| [0de5](./c/0de5)                                  | In progress | 16/07/2024 | Assembly / C                                    |
+| [webserver](./go/webserver/)                      | In progress | 12/07/2024 | BootDev Webservers Go                           |
+| [ziglings](./zig/ziglings.md)                     | In progress | 08/07/2024 | Zig Exercises                                   |
+| [kubernetes](./one-page/kubernetes-ardan.md)      | In progress | 19/07/2024 | Ardan Labs Kubernetes Course                    |
+| [docker-ardan](./one-page/docker-ardan.md)        | Finished    | 18/07/2024 | Ardan Labs Docker Course                        |
+| [docker-bootdev](./one-page/docker-bootdev.md)    | Finished    | 11/07/2024 | BootDev Docker Course                           |
+| [git-bootdev](./one-page/git-bootdev.md)          | Finished    | 09/07/2024 | BootDev Git Course                              |
+| [bootdev](./go/bootdev/)                          | Finished    | 04/07/2024 | BootDev Learn Go (168 items)                    |
+| [threads](./c/thread/)                            | Finished    | 13/06/2024 | C Threads                                       |
+| [minidb-net](./c/minidb-net/)                     | Finished    | 10/06/2024 | C Network (Sockets)                             |
+| [zero2hero/minidb](./c/zero2hero/)                | Finished    | 04/06/2024 | C Language                                      |
+| [database](./go/database/)                        | Finished    | 04/05/2024 | Build yout own database                         |
+| [svelte-lucia](./web/svelte/svelte-lucia/'')      | Finished    | 17/03/2024 | SvelteKit integration with Lucia Auth and MySQL |
+| [svelte-login](./web/svelte/svelte-login/)        | Finished    | 28/02/2024 | Simple login/logout flow in SvelteKit           |
+| [functional-js](./one-page/functional-js.md)      | Finished    | 25/02/2024 | Functional JavaScript Course                    |
+| [just-javascript](./one-page/just-javascript.md)  | Finished    | 24/02/2024 | Just JavaScript Course                          |
+| [tailwind-css](./css/tailwind-css/)               | Finished    | 17/02/2024 | Tawild CSS Course (frontend masters)            |
+| [js-first-steps](./js/js-first-steps/)            | Finished    | 17/02/2024 | JavaScript First Steps Course                   |
+| [vanilla-js-projects](./js/vanilla-js-projects/)  | Finished    | 15/02/2024 | Vanilla JS Projects Course                      |
+| [svelte-shadcdn](./web/svelte/svelte-shadcdn/)    | Finished    | 11/02/2024 | Testing Shadcdn UI Framework                    |
+| [vite-demo](./js/vite-demo/)                      | Finished    | 11/02/2024 | Simple Vite application (Vue Master Course)     |
+| [svelte-course](./web/svelte/svelte-course/)      | Finished    | 10/02/2024 | Joy of Svelte Course                            |
+| [elixir-socket](./elixir/elixir-socket/)          | Finished    | 24/01/2024 | Testing Elixir Socket/WebSockets                |
+| [elixir-auction](./elixir/elixir-auction/)        | Finished    | 23/01/2024 | Elixir in Action book                           |
+| [alpine-course](./web/alpine-course/)             | Finished    | 28/01/2024 | Alpine Udemy Course                             |
+| [vueschool-forum](./web/vueschool-forum/)         | Unfinished  | 08/01/2024 | Vue School Forum Course                         |
+| [sole-and-ankle](./css/sole-and-ankle/)           | Finished    | 23/12/2023 | CSS Course Josh W Comeau                        |
+| [new-grid-times](./css/new-grid-times/)           | Finished    | 20/12/2023 | CSS Course Josh W Comeau                        |
+| [react-blog-mdx](./web/react-blog-mdx/)           | Finished    | 26/11/2023 | Joy of React Course Josh W Comeau               |
+| [react-toast](./web/react-toast/)                 | Finished    | 15/11/2023 | Joy of React Course Josh W Comeau               |
+| [react-wordle](./web/react-wordle/)               | Finished    | 19/10/2023 | Joy of React Course Josh W Comeau               |
 
 # Description
 
