@@ -50,6 +50,10 @@ git commit --amend -m "New comment"
 
 # show log
 git log
+
+# remove unstaged files (dry-run/force)
+git clean -n -d
+git clean -f -d
 ```
 
 ## Ch 3 - Internals

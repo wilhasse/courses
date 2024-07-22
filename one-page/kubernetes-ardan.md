@@ -135,3 +135,20 @@ kubectl logs pingpong --tail 1 --follow
 # scale (error could not find the resources)
 kubectl scale pod pingpong --replicas=3 -v6
 ```
+
+## Day 1 - Scale containers
+
+```bash
+# see all pods
+watch kubectl get pods
+# create a new pod
+kubectl create deployment pingpong --image alpine -- ping localhost
+# more information
+kubectl get all
+# scale replicasets
+kubectl scale deployment pingpong --replicas 3
+# remove original pod
+kubectl delete pod pingpong
+# try to remove an replicaset (it will create another to keep 3 instances)
+kubectl delete pod pingpong-c855654bb-lztnq
+```

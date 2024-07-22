@@ -34,17 +34,20 @@ p
 shift+b
 # keyboard shift colon enter command prompt down
 shift+;
-# another visual ollie debug 
+# another visual ollie debug
 V!
 # Visual edit configuration
 Ve
 ```
+
 # Strings, Cross References, Simple Assembly Analysis
 
 ```bash
 # strings in the data section
 iz
-# print 1@ follow vaddr of string 
+# search widestrings
+izz~Login
+# print 1@ follow vaddr of string
 pd 1@0xHEX
 # print all data
 axt @ @ str.*
@@ -57,4 +60,72 @@ axt
 s sym.check_password
 # convert hex to text to see mov data
 rax2 -s 0xHEX
+```
+
+# r2pm Ghidra Decompiler Usage in R2
+
+```bash
+# install hidra
+sudo apt-get update
+sudo apt-get install cmake
+sudo apt-get install pkg-config
+apt-get install meson
+r2pm -ci r2ghidra
+
+r2 a.out
+aaa
+s main
+pdg
+
+# install r2dec
+git clone --depth=10 --recursive https://github.com/wargio/r2dec-js
+cd r2dec-js/
+meson setup build
+sudo ninja -C build install
+
+r2 a.out
+aaa
+s main
+pdd
+```
+
+# Debugging Part 1 Runtime Analysis and Binary Patching
+
+```bash
+# run with analysis "aaa"
+r2 -AA a.out
+# list all colors
+eco
+# change to gentoo
+eco gentoo
+# change to display
+V (p p)
+# debug
+shift + ;
+# set breakpoint
+db main
+# re-open to debug
+ood
+# continue breakpoint (hit it)
+dc
+# change breakpoint
+f2
+# change jne (75) to je (74)
+s 0x563e476601a7
+pd 1
+wx 74
+pd 1
+# go back to debug
+f8
+```
+
+Patch binary
+
+```bash
+pdf @sym.check_password
+s 0x000011a7
+pd 1
+wx 74
+pd1
+q
 ```
