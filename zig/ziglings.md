@@ -179,3 +179,165 @@ for (bits, 0..) |bit, i| {
     value += place_value * bit;
 }
 ```
+
+## 017_quiz2.zig
+
+```zig
+pub fn main() void {
+    var i: u8 = 1;
+    const stop_at: u8 = 16;
+
+    // What kind of loop is this? A 'for' or a 'while'?
+    while (i <= stop_at) : (i += 1) {
+        if (i % 3 == 0) std.debug.print("Fizz", .{});
+        if (i % 5 == 0) std.debug.print("Buzz", .{});
+        if (!(i % 3 == 0) and !(i % 5 == 0)) {
+            std.debug.print("{}", .{i});
+        }
+        std.debug.print(", ", .{});
+    }
+    std.debug.print("\n", .{});
+}
+```
+
+## 018_functions.zig
+
+```zig
+# private function
+fn deepThought() u8 {
+    return 42; // Number courtesy Douglas Adams
+}
+```
+
+## 019_functions2.zig
+
+```zig
+fn twoToThe(my_number: u32) u32 {
+    return std.math.pow(u32, 2, my_number);
+}
+```
+
+## 020_quiz3.zig
+
+```zig
+fn printPowersOfTwo(numbers: [4]u16) void {
+    for (numbers) |n| {
+        std.debug.print("{} ", .{twoToThe(n)});
+    }
+}
+
+fn twoToThe(number: u16) u16 {
+    var n: u16 = 0;
+    var total: u16 = 1;
+
+    while (n < number) : (n += 1) {
+        total *= 2;
+    }
+
+    return total;
+}
+```
+
+##  021_errors.zig
+ 
+```zig
+const MyNumberError = error{
+    TooBig,
+    TooSmall,
+    TooFour,
+};
+
+pub fn main() void {
+    const nums = [_]u8{ 2, 3, 4, 5, 6 };
+
+    for (nums) |n| {
+        std.debug.print("{}", .{n});
+
+        const number_error = numberFail(n);
+
+        if (number_error == MyNumberError.TooBig) {
+            std.debug.print(">4. ", .{});
+        }
+        if (number_error == MyNumberError.TooSmall) {
+            std.debug.print("<4. ", .{});
+        }
+        if (number_error == MyNumberError.TooFour) {
+            std.debug.print("=4. ", .{});
+        }
+    }
+
+    std.debug.print("\n", .{});
+}
+
+fn numberFail(n: u8) MyNumberError {
+    if (n > 4) return MyNumberError.TooBig;
+    if (n < 4) return MyNumberError.TooSmall; // <---- this one is free!
+    return MyNumberError.TooFour;
+}
+```
+
+## 022_errors2.zig
+
+```zig
+const std = @import("std");
+
+const MyNumberError = error{TooSmall};
+
+pub fn main() void {
+    var my_number: MyNumberError!u16 = 5;
+
+    // Looks like my_number will need to either store a number OR
+    // an error. Can you set the type correctly above?
+    my_number = MyNumberError.TooSmall;
+
+    std.debug.print("I compiled!\n", .{});
+}
+```
+
+## 023_errors3.zig
+
+```zig
+const MyNumberError = error{TooSmall};
+
+pub fn main() void {
+    const a: u32 = addTwenty(44) catch 22;
+    const b: u32 = addTwenty(4) catch 22;
+
+    std.debug.print("a={}, b={}\n", .{ a, b });
+}
+
+// Please provide the return type from this function.
+// Hint: it'll be an error union.
+fn addTwenty(n: u32) MyNumberError!u32 {
+    if (n < 5) {
+        return MyNumberError.TooSmall;
+    } else {
+        return n + 20;
+    }
+}
+```
+
+##
+
+```zig
+```
+
+##
+
+```zig
+```
+
+##
+
+```zig
+```
+
+##
+
+```zig
+```
+
+##
+
+```zig
+```
