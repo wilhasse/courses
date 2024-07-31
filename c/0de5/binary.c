@@ -3,6 +3,7 @@
 int main() {
   unsigned char bytes[6] = {};
 
+  // 5 bytes + string terminated
   bytes[0] = 0b01001000;
   bytes[1] = 0x65;
   bytes[2] = 108;
@@ -18,6 +19,7 @@ int main() {
     // binary
     for (int b = 7; b>=0; b--) {
 
+      // expand binary numbers
       int bit = (bytes[i] >> b) & 0b0000001;
       printf("%u", bit);
     }
@@ -26,6 +28,6 @@ int main() {
     printf(" %c\n",bytes[i]);
   }
 
-  // string
+  // entire string
   printf(" '%s'\n",bytes);
 }
