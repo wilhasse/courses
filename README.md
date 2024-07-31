@@ -2,10 +2,10 @@
 
 | Folder                                           | Status      | Date       | Description                                     |
 | ------------------------------------------------ | ----------- | ---------- | ----------------------------------------------- |
-| [js-bootdev](./js/bootdev/)                      | In progress | 31/07/2024 | BootDev Javascript Course                       |
+| [js-bootdev](./js/bootdev/)                      | In progress | 30/07/2024 | BootDev Javascript Course                       |
 | [svelte5](./js/svelte5-concepts/)                | In progress | 31/07/2024 | Svelte 5 - Video Series                         |
 | [0de5](./c/0de5)                                 | In progress | 16/07/2024 | Assembly / C                                    |
-| [ziglings](./zig/ziglings.md)                    | In progress | 08/07/2024 | Zig Exercises                                   |
+| [zig](./zig/)                                    | In progress | 08/07/2024 | Zig Exercises                                   |
 | [kubernetes](./one-page/kubernetes-ardan.md)     | Stopped     | 19/07/2024 | Ardan Labs Kubernetes Course                    |
 | [webserver](./go/webserver/)                     | Finished    | 21/07/2024 | BootDev Webservers Go                           |
 | [docker-ardan](./one-page/docker-ardan.md)       | Finished    | 18/07/2024 | Ardan Labs Docker Course                        |
