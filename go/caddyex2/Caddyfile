@@ -1,0 +1,6 @@
+:80 {
+    route {
+        stateful_routing backend1.example.com backend2.example.com backend3.example.com
+        reverse_proxy {http.handlers.stateful_routing.0.backend}
+    }
+}

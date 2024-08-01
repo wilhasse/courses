@@ -8,6 +8,14 @@
 | memsql          | Memory SQL Server (go-mysql-server)    |
 | mysqlreplica    | Replication test from mysql            |
 | testsql         | Parsing SQL using Vitess               |
+| caddyex2        | Caddy Plugin Exercise                  |
+
+# Caddy
+
+```bash
+caddy build --with github.com/wilhasse/statefulrouting
+caddy run --config Caddyfile
+```
 
 # Basic Commands
 
@@ -41,3 +49,7 @@ Run only
 ```bash
 go run project
 ```
+
+# Caddy
+
+
