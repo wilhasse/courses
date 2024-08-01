@@ -8,5 +8,16 @@ const user = {
 }
 
 // don't touch below this line
-
 console.log(`${user.name}'s first review is: ${user.getFirstReview()}`)
+
+const tree = {
+  height: 256,
+  color: 'green',
+  cut() {
+    this.height /= 2
+  }
+}
+
+tree.cut()
+console.log(tree.height)
+// prints 128
