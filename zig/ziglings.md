@@ -547,3 +547,126 @@ fn getNumber() NumError!u32 {
     return 42;
 }
 ```
+
+## 035_enum.zig
+
+```zig
+// Please complete the enum!
+const Ops = enum { inc,dec,pow };
+
+pub fn main() void {
+    const operations = [_]Ops{
+        Ops.inc,
+        Ops.inc,
+        Ops.inc,
+        Ops.pow,
+        Ops.dec,
+        Ops.dec,
+    };
+}
+```
+
+## 036_enums2.zig
+
+```zig
+const Color = enum(u32) {
+    red = 0xff0000,
+    green = 0x00ff00,
+    blue = 0x0000ff,
+};
+
+pub fn main() void {
+    std.debug.print(
+        \\<p>
+        \\  <span style="color: #{x:0>6}">Red</span>
+        \\  <span style="color: #{x:0>6}">Green</span>
+        \\  <span style="color: #{x:0>6}">Blue</span>
+        \\</p>
+        \\
+    , .{
+        @intFromEnum(Color.red),
+        @intFromEnum(Color.green),
+        @intFromEnum(Color.blue),
+    });
+}
+```
+
+## 037_structs.zig
+
+```zig
+// Please add a new property to this struct called "health" and make
+// it a u8 integer type.
+const Character = struct {
+    role: Role,
+    gold: u32,
+    experience: u32,
+    health: u8,
+};
+
+pub fn main() void {
+    // Please initialize Glorp with 100 health.
+    var glorp_the_wise = Character{
+        .role = Role.wizard,
+        .gold = 20,
+        .experience = 10,
+        .health = 100,
+    };
+
+    // Glorp gains some gold.
+    glorp_the_wise.gold += 5;
+
+    // Ouch! Glorp takes a punch!
+    glorp_the_wise.health -= 10;
+
+    std.debug.print("Your wizard has {} health and {} gold.\n", .{
+        glorp_the_wise.health,
+        glorp_the_wise.gold,
+    });
+}
+```
+
+## 038_structs.zig
+
+```zig
+pub fn main() void {
+    var chars: [2]Character = undefined;
+
+    chars[0] = Character{
+        .role = Role.wizard,
+        .gold = 20,
+        .health = 100,
+        .experience = 10,
+    };
+
+    chars[1] = Character{
+        .role = Role.wizard,
+        .gold = 10,
+        .health = 100,
+        .experience = 20,
+    };
+
+    // Printing all RPG characters in a loop:
+    for (chars, 0..) |c, num| {
+        std.debug.print("Character {} - G:{} H:{} XP:{}\n", .{
+            num + 1, c.gold, c.health, c.experience,
+        });
+    }
+}
+```
+
+## 039_pointers.zig
+
+```zig
+pub fn main() void {
+    var num1: u8 = 5;
+    const num1_pointer: *u8 = &num1;
+
+    var num2: u8 = undefined;
+
+    // Please make num2 equal 5 using num1_pointer!
+    // (See the "cheatsheet" above for ideas.)
+    num2 = num1_pointer.*;
+
+    std.debug.print("num1: {}, num2: {}\n", .{ num1, num2 });
+}
+```
