@@ -317,27 +317,191 @@ fn addTwenty(n: u32) MyNumberError!u32 {
 }
 ```
 
-##
+## 024_errors4.zig
 
 ```zig
+fn fixTooSmall(n: u32) MyNumberError!u32 {
+    // Oh dear, this is missing a lot! But don't worry, it's nearly
+    // identical to fixTooBig() above.
+    //
+    // If we get a TooSmall error, we should return 10.
+    // If we get any other error, we should return that error.
+    // Otherwise, we return the u32 number.
+    return detectProblems(n) catch |err| {
+        if (err == MyNumberError.TooSmall) {
+            return 10;
+        }
+
+        return err;
+    };
+}
 ```
 
-##
+## 025_errors5.zig
 
 ```zig
+fn addFive(n: u32) MyNumberError!u32 {
+    // This function needs to return any error which might come back from detect().
+    // Please use a "try" statement rather than a "catch".
+    //
+    const x = try detect(n);
+
+    return x + 5;
+}
 ```
 
-##
+## 026_hello2.zig
 
 ```zig
+pub fn main() !void {
+    // We get a Writer for Standard Out so we can print() to it.
+    const stdout = std.io.getStdOut().writer();
+
+    // Unlike std.debug.print(), the Standard Out writer can fail
+    // with an error. We don't care _what_ the error is, we want
+    // to be able to pass it up as a return value of main().
+    //
+    // We just learned of a single statement which can accomplish this.
+    try stdout.print("Hello world!\n", .{});
+}
 ```
 
-##
+## 027_defer.zig
 
 ```zig
+pub fn main() void {
+    // Without changing anything else, please add a 'defer' statement
+    // to this code so that our program prints "One Two\n":
+    defer std.debug.print("Two\n", .{});
+    std.debug.print("One ", .{});
+}
 ```
 
-##
+## 028_defer2.zig
 
 ```zig
+fn printAnimal(animal: u8) void {
+    std.debug.print("(", .{});
+
+    defer std.debug.print(") ", .{}); // <---- how?!
+
+    if (animal == 'g') {
+        std.debug.print("Goat", .{});
+        return;
+    }
+    if (animal == 'c') {
+        std.debug.print("Cat", .{});
+        return;
+    }
+    if (animal == 'd') {
+        std.debug.print("Dog", .{});
+        return;
+    }
+
+    std.debug.print("Unknown", .{});
+}
+```
+
+## 029_errdefer.zig
+
+```zig
+fn makeNumber() MyErr!u32 {
+    std.debug.print("Getting number...", .{});
+
+    // Please make the "failed" message print ONLY if the makeNumber()
+    // function exits with an error:
+    errdefer std.debug.print("failed!\n", .{});
+
+    var num = try getNumber(); // <-- This could fail!
+
+    num = try increaseNumber(num); // <-- This could ALSO fail!
+
+    std.debug.print("got {}. ", .{num});
+
+    return num;
+}
+```
+
+## 030_switch.zig
+
+```zig
+pub fn main() void {
+    const lang_chars = [_]u8{ 26, 9, 7, 42 };
+
+    for (lang_chars) |c| {
+        switch (c) {
+            1 => std.debug.print("A", .{}),
+            2 => std.debug.print("B", .{}),
+            3 => std.debug.print("C", .{}),
+            // ... we don't need everything in between ...
+            25 => std.debug.print("Y", .{}),
+            26 => std.debug.print("Z", .{}),
+            // Switch statements must be "exhaustive" (there must be a
+            // match for every possible value).  Please add an "else"
+            // to this switch to print a question mark "?" when c is
+            // not one of the existing matches.
+            //
+            else => std.debug.print("?", .{}),
+        }
+    }
+
+    std.debug.print("\n", .{});
+}
+```
+
+## 031_switch2.zig
+
+```zig
+pub fn main() void {
+    const lang_chars = [_]u8{ 26, 9, 7, 42 };
+
+    for (lang_chars) |c| {
+        const real_char: u8 = switch (c) {
+            1 => 'A',
+            7 => 'G',
+            9 => 'I',
+            26 => 'Z',
+            // As in the last exercise, please add the 'else' clause
+            // and this time, have it return an exclamation mark '!'.
+            else => '!',
+        };
+
+        std.debug.print("{c}", .{real_char});
+
+        // Note: "{c}" forces print() to display the value as a character.
+        // Can you guess what happens if you remove the "c"? Try it!
+    }
+
+    std.debug.print("\n", .{});
+}
+```
+
+## 032_unreachable.zig
+
+```zig
+pub fn main() void {
+    const operations = [_]u8{ 1, 1, 1, 3, 2, 2 };
+
+    var current_value: u32 = 0;
+
+    for (operations) |op| {
+        switch (op) {
+            1 => {
+                current_value += 1;
+            },
+            2 => {
+                current_value -= 1;
+            },
+            3 => {
+                current_value *= current_value;
+            },
+            else => unreachable,
+        }
+
+        std.debug.print("{} ", .{current_value});
+    }
+
+    std.debug.print("\n", .{});
+}
+
 ```
