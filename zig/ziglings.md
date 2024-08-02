@@ -1,6 +1,6 @@
 # Course
 
-Link: https://codeberg.org/ziglings/exercises  
+Link: https://codeberg.org/ziglings/exercises
 
 Learn the ⚡Zig programming language by fixing tiny broken programs.
 
@@ -238,8 +238,8 @@ fn twoToThe(number: u16) u16 {
 }
 ```
 
-##  021_errors.zig
- 
+## 021_errors.zig
+
 ```zig
 const MyNumberError = error{
     TooBig,
@@ -504,4 +504,46 @@ pub fn main() void {
     std.debug.print("\n", .{});
 }
 
+```
+
+## 033_iferror.zig
+
+```zig
+pub fn main() void {
+    const nums = [_]u8{ 2, 3, 4, 5, 6 };
+
+    for (nums) |num| {
+        std.debug.print("{}", .{num});
+
+        const n = numberMaybeFail(num);
+        if (n) |value| {
+            std.debug.print("={}. ", .{value});
+        } else |err| switch (err) {
+            MyNumberError.TooBig => std.debug.print(">4. ", .{}),
+            MyNumberError.TooSmall => std.debug.print("<4. ", .{}),
+        }
+    }
+
+    std.debug.print("\n", .{});
+}
+```
+
+## 034_quiz4.zig
+
+```zig
+const NumError = error{IllegalNumber};
+
+pub fn main() ! void {
+    const stdout = std.io.getStdOut().writer();
+
+    const my_num: u32 = getNumber() catch 42;
+
+    try stdout.print("my_num={}\n", .{my_num});
+}
+
+// This function is obviously weird and non-functional. But you will not be changing it for this quiz.
+fn getNumber() NumError!u32 {
+    if (false) return NumError.IllegalNumber;
+    return 42;
+}
 ```
