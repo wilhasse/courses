@@ -2,6 +2,7 @@
 
 | Folder                                           | Status      | Date       | Description                                     |
 | ------------------------------------------------ | ----------- | ---------- | ----------------------------------------------- |
+| [vimified](./one-page/vimified.md)               | In progress | 02/08/2024 | Vimified Course                                 |
 | [svelte5](./js/svelte5-concepts/)                | In progress | 31/07/2024 | Svelte 5 - Video Series                         |
 | [0de5](./c/0de5)                                 | In progress | 16/07/2024 | Assembly / C                                    |
 | [zig](./zig/)                                    | In progress | 08/07/2024 | Zig Exercises                                   |
