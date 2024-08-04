@@ -670,3 +670,382 @@ pub fn main() void {
     std.debug.print("num1: {}, num2: {}\n", .{ num1, num2 });
 }
 ```
+
+## 040_pointers2.zig
+
+```zig
+pub fn main() void {
+    var a: u8 = 12;
+    const b: *u8 = &a; // fix this!
+
+    std.debug.print("a: {}, b: {}\n", .{ a, b.* });
+}
+```
+
+## 041_pointers3.zig
+
+```zig
+pub fn main() void {
+    var foo: u8 = 5;
+    var bar: u8 = 10;
+
+    // Please define pointer "p" so that it can point to EITHER foo or
+    // bar AND change the value it points to!
+    var p: *u8 = undefined;
+
+    p = &foo;
+    p.* += 1;
+    p = &bar;
+    p.* += 1;
+    std.debug.print("foo={}, bar={}\n", .{ foo, bar });
+```
+
+## 042_pointers4.zig
+
+```zig
+// This function should take a reference to a u8 value and set it
+// to 5.
+fn makeFive(x: *u8) void {
+     x.* = 5; // fix me!
+}
+```
+
+## 043_pointers5.zig
+
+```zig
+    var glorp = Character{ // Glorp!
+        .class = Class.wizard,
+        .gold = 10,
+        .experience = 20,
+        .mentor = &mighty_krodor, // Glorp's mentor is the Mighty Krodor
+    };
+
+    // FIX ME!
+    // Please pass Glorp to printCharacter():
+    printCharacter(&glorp);
+```
+
+## 044_quiz5.zig
+```zig
+pub fn main() void {
+    var elephantA = Elephant{ .letter = 'A' };
+    var elephantB = Elephant{ .letter = 'B' };
+    var elephantC = Elephant{ .letter = 'C' };
+
+    // Link the elephants so that each tail "points" to the next elephant.
+    // They make a circle: A->B->C->A...
+    elephantA.tail = &elephantB;
+    elephantB.tail = &elephantC;
+    elephantC.tail = &elephantA;
+
+    visitElephants(&elephantA);
+
+    std.debug.print("\n", .{});
+}
+```
+
+## 045_optionals.zig
+```zig
+pub fn main() void {
+    const result = deepThought();
+
+    // Please threaten the result so that answer is either the
+    // integer value from deepThought() OR the number 42:
+    const answer: u8 = result orelse 42;
+
+    std.debug.print("The Ultimate Answer: {}.\n", .{answer});
+}
+```
+
+## 046_optionals2.zig
+
+```zig
+// This function visits all elephants once, starting with the
+// first elephant and following the tails to the next elephant.
+fn visitElephants(first_elephant: *Elephant) void {
+    var e = first_elephant;
+
+    while (!e.visited) {
+        std.debug.print("Elephant {u}. ", .{e.letter});
+        e.visited = true;
+
+        // We should stop once we encounter a tail that
+        // does NOT point to another element. What can
+        // we put here to make that happen?
+
+        // HINT: We want something similar to what `.?` does,
+        // but instead of ending the program, we want to exit the loop...
+        e = e.tail orelse break;
+    }
+}
+```
+
+## 047_methods.zig
+
+```zig
+// Look at this hideous Alien struct. Know your enemy!
+const Alien = struct {
+    health: u8,
+
+    // We hate this method:
+    pub fn hatch(strength: u8) Alien {
+        return Alien{
+            .health = strength * 5,
+        };
+    }
+};
+
+// Your trusty weapon. Zap those aliens!
+const HeatRay = struct {
+    damage: u8,
+
+    // We love this method:
+    pub fn zap(self: HeatRay, alien: *Alien) void {
+        alien.health -= if (self.damage >= alien.health) alien.health else self.damage;
+    }
+};
+
+pub fn main() void {
+    // Look at all of these aliens of various strengths!
+    var aliens = [_]Alien{
+        Alien.hatch(2),
+        Alien.hatch(1),
+    };
+
+    var aliens_alive = aliens.len;
+    const heat_ray = HeatRay{ .damage = 7 }; // We've been given a heat ray weapon.
+
+    // We'll keep checking to see if we've killed all the aliens yet.
+    while (aliens_alive > 0) {
+        aliens_alive = 0;
+
+        // Loop through every alien by reference (* makes a pointer capture value)
+        for (&aliens) |*alien| {
+
+            // *** Zap the alien with the heat ray here! ***
+            heat_ray.zap(alien);
+
+            // If the alien's health is still above 0, it's still alive.
+            if (alien.health > 0) aliens_alive += 1;
+        }
+
+        std.debug.print("{} aliens. ", .{aliens_alive});
+    }
+
+    std.debug.print("Earth is saved!\n", .{});
+}
+```
+
+## 048_methods2.zig
+
+```zig
+fn visitElephants(first_elephant: *Elephant) void {
+    var e = first_elephant;
+
+    while (true) {
+        e.print();
+        e.visit();
+
+        // This gets the next elephant or stops:
+        // which method do we want here?
+        e = if (e.hasTail()) e.getTail() else break;
+    }
+}
+```
+
+## 049_quiz6.zig
+
+```zig
+    // Your Elephant trunk methods go here!
+    // ---------------------------------------------------
+    pub fn getTrunk(self: *Elephant) *Elephant {
+        return self.trunk.?; // Remember, this means "orelse unreachable"
+    }
+
+    pub fn hasTrunk(self: *Elephant) bool {
+        return (self.trunk != null);
+    }
+```
+
+## 050_no_value.zig
+
+```zig
+const Err = error{Cthulhu};
+
+pub fn main() void {
+    var first_line1: *const [16]u8 = undefined;
+    first_line1 = "That is not dead";
+
+    var first_line2: Err!*const [21]u8 = undefined;
+    first_line2 = "which can eternal lie";
+
+    // Note we need the "{!s}" format for the error union string.
+    std.debug.print("{s} {!s} / ", .{ first_line1, first_line2 });
+
+    printSecondLine();
+}
+
+fn printSecondLine() void {
+    var second_line2: ?*const [18]u8 = undefined;
+    second_line2 = "even death may die";
+
+    std.debug.print("And with strange aeons {s}.\n", .{second_line2.?});
+}
+```
+
+## 051_values.zig
+
+```zig
+pub fn main() void {
+
+    ..
+
+    var glorp = Character{
+        .gold = 30,
+    };
+
+    print("XP before:{}, ", .{glorp.experience});
+
+    // Fix 1 of 2 goes here:
+    levelUp(&glorp, reward_xp);
+
+    print("after:{}.\n", .{glorp.experience});
+}
+
+// Fix 2 of 2 goes here:
+fn levelUp(character_access: *Character, xp: u32) void {
+    character_access.experience += xp;
+}
+```
+
+## 052_slices.zig
+
+```zig
+pub fn main() void {
+    var cards = [8]u8{ 'A', '4', 'K', '8', '5', '2', 'Q', 'J' };
+
+    // Please put the first 4 cards in hand1 and the rest in hand2.
+    const hand1: []u8 = cards[???];
+    const hand2: []u8 = cards[???];
+
+    std.debug.print("Hand1: ", .{});
+    printHand(hand1);
+
+    std.debug.print("Hand2: ", .{});
+    printHand(hand2);
+}
+```
+
+## 053_slices2.zig
+
+```zig
+pub fn main() void {
+    const scrambled = "great base for all your justice are belong to us";
+
+    const base1: []const u8 = scrambled[15..23];
+    const base2: []const u8 = scrambled[6..10];
+    const base3: []const u8 = scrambled[32..];
+    printPhrase(base1, base2, base3);
+
+    const justice1: []const u8 = scrambled[11..14];
+    const justice2: []const u8 = scrambled[0..5];
+    const justice3: []const u8 = scrambled[24..31];
+    printPhrase(justice1, justice2, justice3);
+
+    std.debug.print("\n", .{});
+}
+
+fn printPhrase(part1: []const u8, part2: []const u8, part3: []const u8) void {
+    std.debug.print("'{s} {s} {s}.' ", .{ part1, part2, part3 });
+}
+```
+
+## 054_manypointers.zig
+
+```zig
+    const zen12: *const [21]u8 = "Memory is a resource.";
+    const zen_manyptr: [*]const u8 = zen12;
+    const zen12_string: []const u8 = zen_manyptr[0..21];
+
+    // Here's the moment of truth!
+    std.debug.print("{s}\n", .{zen12_string});
+```
+
+## 055_unions.zig
+
+```zig
+const Insect = union {
+    flowers_visited: u16,
+    still_alive: bool,
+};
+const AntOrBee = enum { a, b };
+
+pub fn main() void {
+    // We'll just make one bee and one ant to test them out:
+    const ant = Insect{ .still_alive = true };
+    const bee = Insect{ .flowers_visited = 15 };
+
+    std.debug.print("Insect report! ", .{});
+
+    // Oops! We've made a mistake here.
+    printInsect(ant, AntOrBee.a);
+    printInsect(bee, AntOrBee.b);
+
+    std.debug.print("\n", .{});
+}
+
+fn printInsect(insect: Insect, what_it_is: AntOrBee) void {
+    switch (what_it_is) {
+        .a => std.debug.print("Ant alive is: {}. ", .{insect.still_alive}),
+        .b => std.debug.print("Bee visited {} flowers. ", .{insect.flowers_visited}),
+    }
+}
+```
+
+## 056_unions2.zig
+
+```zig
+const InsectStat = enum { flowers_visited, still_alive };
+
+const Insect = union(InsectStat) {
+    flowers_visited: u16,
+    still_alive: bool,
+};
+
+pub fn main() void {
+    const ant = Insect{ .still_alive = true };
+    const bee = Insect{ .flowers_visited = 16 };
+
+    std.debug.print("Insect report! ", .{});
+
+    // Could it really be as simple as just passing the union?
+    printInsect(ant);
+    printInsect(bee);
+
+    std.debug.print("\n", .{});
+}
+
+fn printInsect(insect: Insect) void {
+    switch (insect) {
+        .still_alive => |a| std.debug.print("Ant alive is: {}. ", .{a}),
+        .flowers_visited => |f| std.debug.print("Bee visited {} flowers. ", .{f}),
+    }
+}
+```
+
+## 057_unions3.zig
+
+```zig
+const Insect = union(enum) {
+    flowers_visited: u16,
+    still_alive: bool,
+};
+
+fn printInsect(insect: Insect) void {
+    switch (insect) {
+        .still_alive => |a| std.debug.print("Ant alive is: {}. ", .{a}),
+        .flowers_visited => |f| std.debug.print("Bee visited {} flowers. ", .{f}),
+    }
+}
+```
+

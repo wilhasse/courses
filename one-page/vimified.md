@@ -4,6 +4,31 @@ Link: https://www.vimified.com
 
 Learn Vim
 
+## Keyboard
+
+## Copy text inside vim
+Copy line: yy  
+Paste: p
+
+## Copy text outside vim
+Copy external text  
+Insert Mode  
++p
+
+# Remove line
+dd
+
+# Search string
+In normal Mode
+search forward: / + string + enter
+search backward: ? + string + enter
+next occurence: n
+previous occurence: N
+
+# Quit 
+without saving: :q!
+save :wq
+
 # Lessons
 
 ## Chapter 1 Survival Essentials
