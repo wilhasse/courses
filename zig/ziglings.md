@@ -1049,3 +1049,40 @@ fn printInsect(insect: Insect) void {
 }
 ```
 
+## 058_quiz7.zig
+
+```zig
+    // found, we return null.
+    fn getEntry(self: *HermitsNotebook, place: *const Place) ?*NotebookEntry {
+        for (&self.entries, 0..) |*entry, i| {
+            if (i >= self.end_of_entries) break;
+            if (place == entry.*.?.place) return &entry.*.?;
+        }
+        return null;
+    }
+```
+
+## 059_integers.zig
+
+```zig
+pub fn main() void {
+    const zig = [_]u8{
+        0o132, // octal
+        0b01101001, // binary
+        0x67, // hex
+    };
+
+    print("{s} is cool.\n", .{zig});
+}
+```
+
+## 060_floats.zig
+
+```zig
+    const shuttle_weight: f32 = 0.453592 * 4480000;
+
+    // By default, float values are formatted in scientific
+    // notation. Try experimenting with '{d}' and '{d:.3}' to see
+    // how decimal formatting works.
+    print("Shuttle liftoff weight: {d:.0}kg\n", .{shuttle_weight});
+```
