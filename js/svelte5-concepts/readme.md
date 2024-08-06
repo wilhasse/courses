@@ -9,7 +9,15 @@ Install bun (Windows)
 powershell -c "irm bun.sh/install.ps1 | iex"
 ```
 
-Files:
+Reactivity example:
+
+- reacctivity.js
+
+Article:  
+https://nolanlawson.com/2023/12/02/lets-learn-how-modern-javascript-frameworks-work-by-building-one
+
+From video explanation.  
+Source code:
 - svelte4.js
 - signal.js
 - svelte5.js
@@ -20,6 +28,7 @@ bun run svelte4.js
 bun run signal.js
 bun run svelte5.js
 ```
+
 
 ## Video 2 - Basic
 
