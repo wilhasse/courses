@@ -9,12 +9,12 @@ echo 'export PATH="$HOME/zig-linux-x86_64-0.12.0:$PATH"' >> ~/.bashrc
 $ zig version
 ```
 
-## Course
+## Course Ziglings
 
-Ziglings - Correct zig code  
+Ziglings - 107 exercises
 https://codeberg.org/ziglings/exercises/
 
-Page
+Page My solution
 [ziglings](./ziglings.md)
 
 ## Exercises
