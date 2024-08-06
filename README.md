@@ -4,12 +4,12 @@
 | ------------------------------------------------ | ----------- | ---------- | ----------------------------------------------- |
 | [js-http](./js/http-bootdev)                     | In progress | 05/08/2024 | BootDev Http Course                             |
 | [vimified](./one-page/vimified.md)               | In progress | 02/08/2024 | Vimified Course                                 |
-| [svelte5](./js/svelte5-concepts/)                | In progress | 31/07/2024 | Svelte 5 - Video Series                         |
 | [0de5](./c/0de5)                                 | In progress | 16/07/2024 | Assembly / C                                    |
 | [zig](./zig/)                                    | In progress | 08/07/2024 | Zig Exercises                                   |
-| [kubernetes](./one-page/kubernetes-ardan.md)     | Stopped     | 19/07/2024 | Ardan Labs Kubernetes Course                    |
+| [svelte5](./js/svelte5-concepts/)                | Finished    | 05/08/2024 | Svelte 5 - Video Series                         |
 | [js-bootdev](./js/bootdev/)                      | Finished    | 01/08/2024 | BootDev Javascript Course                       |
 | [webserver](./go/webserver/)                     | Finished    | 21/07/2024 | BootDev Webservers Go                           |
+| [kubernetes](./one-page/kubernetes-ardan.md)     | Stopped     | 19/07/2024 | Ardan Labs Kubernetes Course                    |
 | [docker-ardan](./one-page/docker-ardan.md)       | Finished    | 18/07/2024 | Ardan Labs Docker Course                        |
 | [docker-bootdev](./one-page/docker-bootdev.md)   | Finished    | 11/07/2024 | BootDev Docker Course                           |
 | [git-bootdev](./one-page/git-bootdev.md)         | Finished    | 09/07/2024 | BootDev Git Course                              |
