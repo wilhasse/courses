@@ -38,10 +38,12 @@ shift + e - treat punctuation as the same word
 ## Chapter 2 Commands Programmers Love
 
 ### Yanking and Putting
+
 yy - copy line
 p - paste
 
 ### Deletion
+
 dd - delete line
 
 ### Visual Charracter Mode
@@ -62,28 +64,35 @@ p - paste text
 ## Keyboard
 
 ## Copy text inside vim
+
 Copy line: yy  
 Paste: p
 
 ## Copy text outside vim
+
 Copy external text  
 Insert Mode  
 +p
 
 # Undo / Redo
+
 Undo: u
 Redo: ctrl + r
 
 # Remove line
+
 dd
 
 # Search string
+
 In normal Mode
 search forward: / + string + enter
 search backward: ? + string + enter
 next occurence: n
 previous occurence: N
 
-# Quit 
-without saving: :q!
+# Quit
+
+without saving no changes: q
+without saving discarding changes: :q!
 save :wq

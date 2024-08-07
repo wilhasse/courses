@@ -1,4 +1,4 @@
-# Projects
+# Courses
 
 | Folder                                           | Status      | Date       | Description                                     |
 | ------------------------------------------------ | ----------- | ---------- | ----------------------------------------------- |
@@ -53,8 +53,8 @@ https://www.boot.dev/
 
 Go  
 Git  
-Docker
-Webservers
+Docker  
+Webservers  
 Http
 
 ## assembly / C

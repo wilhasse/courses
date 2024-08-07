@@ -9,6 +9,31 @@ echo 'export PATH="$HOME/zig-linux-x86_64-0.12.0:$PATH"' >> ~/.bashrc
 $ zig version
 ```
 
+## Configure vim
+
+Install plugin manager
+
+```bash
+curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+```
+
+Add to ~/.vimrc
+
+```bash
+call plug#begin('~/.vim/plugged')
+Plug 'ziglang/zig.vim'
+call plug#end()
+```
+
+Reopen Vim and run the command:
+
+```bash
+vim
+:PlugInstall
+:q!
+```
+
 ## Course Ziglings
 
 Ziglings - 107 exercises
