@@ -1,33 +1,7 @@
 # Course
 
 Link: https://www.vimified.com
-
 Learn Vim
-
-## Keyboard
-
-## Copy text inside vim
-Copy line: yy  
-Paste: p
-
-## Copy text outside vim
-Copy external text  
-Insert Mode  
-+p
-
-# Remove line
-dd
-
-# Search string
-In normal Mode
-search forward: / + string + enter
-search backward: ? + string + enter
-next occurence: n
-previous occurence: N
-
-# Quit 
-without saving: :q!
-save :wq
 
 # Lessons
 
@@ -61,4 +35,55 @@ shift + b - ignore punctuation
 e - end of the word  
 shift + e - treat punctuation as the same word
 
-## Chapter 1 Survival Essentials
+## Chapter 2 Commands Programmers Love
+
+### Yanking and Putting
+yy - copy line
+p - paste
+
+### Deletion
+dd - delete line
+
+### Visual Charracter Mode
+
+v - start selection of text
+navigate to the end selection (e, w, h, l, etc)
+y - yank text
+
+### Visual Line Mode
+
+shift + v - start selection of text
+navigate to the end selection (j,k)
+y - yank text
+p - paste text
+
+# Others
+
+## Keyboard
+
+## Copy text inside vim
+Copy line: yy  
+Paste: p
+
+## Copy text outside vim
+Copy external text  
+Insert Mode  
++p
+
+# Undo / Redo
+Undo: u
+Redo: ctrl + r
+
+# Remove line
+dd
+
+# Search string
+In normal Mode
+search forward: / + string + enter
+search backward: ? + string + enter
+next occurence: n
+previous occurence: N
+
+# Quit 
+without saving: :q!
+save :wq

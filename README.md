@@ -2,10 +2,10 @@
 
 | Folder                                           | Status      | Date       | Description                                     |
 | ------------------------------------------------ | ----------- | ---------- | ----------------------------------------------- |
-| [js-http](./js/http-bootdev)                     | In progress | 05/08/2024 | BootDev Http Course                             |
 | [vimified](./one-page/vimified.md)               | In progress | 02/08/2024 | Vimified Course                                 |
 | [0de5](./c/0de5)                                 | In progress | 16/07/2024 | Assembly / C                                    |
 | [zig](./zig/)                                    | In progress | 08/07/2024 | Zig Exercises                                   |
+| [js-http](./js/http-bootdev)                     | Finished    | 06/08/2024 | BootDev Http Course                             |
 | [svelte5](./js/svelte5-concepts/)                | Finished    | 05/08/2024 | Svelte 5 - Video Series                         |
 | [js-bootdev](./js/bootdev/)                      | Finished    | 01/08/2024 | BootDev Javascript Course                       |
 | [webserver](./go/webserver/)                     | Finished    | 21/07/2024 | BootDev Webservers Go                           |
