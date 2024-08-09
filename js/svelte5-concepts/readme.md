@@ -1,3 +1,14 @@
+## Articles
+
+Frontend Masters
+
+Introducing Svelte 5  
+https://frontendmasters.com/blog/introducing-svelte-5/  
+
+Snippets in Svelte 5  
+https://frontendmasters.com/blog/snippets-in-svelte-5/
+
+
 ## Video 1 - Signals
 
 https://www.youtube.com/watch?v=PC4Jx6ZBfTg  
