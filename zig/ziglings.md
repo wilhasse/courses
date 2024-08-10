@@ -1089,6 +1089,238 @@ pub fn main() void {
     print("Shuttle liftoff weight: {d:.0}kg\n", .{shuttle_weight});
 ```
 
+## 061_coercions.zig
+
+```zig
+pub fn main() void {
+    var letter: u8 = 'A';
+
+    const my_letter: ?*[1]u8 = &letter;
+    //               ^^^^^^^
+    //           Your type here.
+    // Must coerce from &letter (which is a *u8).
+    // Hint: Use coercion Rules 4 and 5.
+
+    // When it's right, this will work:
+    print("Letter: {u}\n", .{my_letter.?.*[0]});
+}
+```
+
+## 062_loop_expressions.zig
+
+```zig
+pub fn main() void {
+    const langs: [6][]const u8 = .{
+        "Erlang",
+        "Algol",
+        "C",
+        "OCaml",
+        "Zig",
+        "Prolog",
+    };
+
+    // Let's find the first language with a three-letter name and
+    // return it from the for loop.
+    const current_lang: ?[]const u8 = for (langs) |lang| {
+        if (lang.len == 3) break lang;
+    } else "";
+
+    // current_lang is a ?[]const u8, so we need to check it (value or null).
+    // if it's not null, cl gets the value and we print it.
+    // if it's null, we print a message that didn't find a match.
+    if (current_lang) |cl| {
+        print("Current language: {s}\n", .{cl});
+    } else {
+        print("Did not find a three-letter language name. :-(\n", .{});
+    }
+
+    // Here is the same thing, but using the if-null operator.
+    // this not explicit about the type of current_lang.
+    // I have to check it explicitly inside if.
+    if (current_lang != null) {
+        print("Current language: {s}\n", .{current_lang.?});
+    } else {
+        print("Did not find a three-letter language name. :-(\n", .{});
+    }
+}
+```
+
+## 063_labels.zig
+
+```zig
+const ingredients = 4;
+const foods = 4;
+
+const Food = struct {
+    name: []const u8,
+    requires: [ingredients]bool,
+};
+
+const menu: [foods]Food = [_]Food{
+    Food{
+        .name = "Mac & Cheese",
+        .requires = [ingredients]bool{ false, true, false, true },
+    },
+};
+
+pub fn main() void {
+    const wanted_ingredients = [_]u8{ 0, 3 }; // Chili, Cheese
+
+    // Look at each Food on the menu...
+    const meal: Food = food_loop: for (menu) |food| {
+
+        // Now look at each required ingredient for the Food...
+        for (food.requires, 0..) |required, required_ingredient| {
+
+            // This ingredient isn't required, so skip it.
+            if (!required) continue;
+
+            // See if the customer wanted this ingredient.
+            // (Remember that want_it will be the index number of
+            // the ingredient based on its position in the
+            // required ingredient list for each food.)
+            const found = for (wanted_ingredients) |want_it| {
+                if (required_ingredient == want_it) break true;
+            } else false;
+
+            // We did not find this required ingredient, so we
+            // can't make this Food. Continue the outer loop.
+            if (!found) continue :food_loop;
+        }
+
+        break food;
+    } else menu[0];
+
+    print("Enjoy your {s}!\n", .{meal.name});
+}
+```
+
+## 064_builtins.zig
+
+```zig
+    const expected_result: u8 = 0b10010;
+    print(". Without overflow: {b:0>8}. ", .{expected_result});
+
+    print("Furthermore, ", .{});
+
+    // Here's a fun one:
+    //
+    //   @bitReverse(integer: anytype) T
+    //     * 'integer' is the value to reverse.
+    //     * The return value will be the same type with the
+    //       value's bits reversed!
+    //
+    // Now it's your turn. See if you can fix this attempt to use
+    // this builtin to reverse the bits of a u8 integer.
+    const input: u8 = 0b11110000;
+    const tupni: u8 = @bitReverse(input);
+    print("{b:0>8} backwards is {b:0>8}.\n", .{ input, tupni });
+```
+
+## 065_builtins2.zig
+
+```zig
+const Narcissus = struct {
+    me: *Narcissus = undefined,
+    myself: *Narcissus = undefined,
+    echo: void = undefined, // Alas, poor Echo!
+
+   plain fn fetchTheMostBeautifulType() type {
+        return @This();
+    }
+};
+
+pub fn main() void {
+
+    var narcissus: Narcissus = Narcissus{};
+
+    narcissus.me = &narcissus;
+    narcissus.myself = &narcissus;
+
+    // Oh dear, we seem to have done something wrong when calling
+    // this function. We called it as a method, which would work
+    // if it had a self parameter. But it doesn't. (See above.)
+    //
+    // The fix for this is very subtle, but it makes a big
+    // difference!
+    const Type2 = Narcissus.fetchTheMostBeautifulType();
+
+    // 'fields' is a slice of StructFields. Here's the declaration:
+    //
+    //     pub const StructField = struct {
+    //         name: []const u8,
+    //         type: type,
+    //         default_value: anytype,
+    //         is_comptime: bool,
+    //         alignment: comptime_int,
+    //     };
+    //
+    // Please complete these 'if' statements so that the field
+    // name will not be printed if the field is of type 'void'
+    // (which is a zero-bit type that takes up no space at all!):
+    if (fields[0].type != void) {
+        print(" {s}", .{@typeInfo(Narcissus).Struct.fields[0].name});
+    }
+}
+```
+
+## 066_comptime.zig
+
+```zig
+    const const_int = 12345;
+    const const_float = 987.654;
+
+    var var_int: u32 = 12345;
+    var var_float: f32 = 987.654;
+```
+
+## 067_comptime2.zig
+
+```zig
+   comptime var count = 0;
+
+    // Builtin BONUS!
+    //
+    // The @compileLog() builtin is like a print statement that
+    // ONLY operates at compile time. The Zig compiler treats
+    // @compileLog() calls as errors, so you'll want to use them
+    // temporarily to debug compile time logic.
+    //
+    // Try uncommenting this line and playing around with it
+    // (copy it, move it) to see what it does:
+    @compileLog("Count at compile time: ", count);
+```
+
+## 068_comptime3.zig
+
+```zig
+pub fn main() void {
+    var whale = Schooner{ .name = "Whale" };
+    var shark = Schooner{ .name = "Shark" };
+    var minnow = Schooner{ .name = "Minnow" };
+
+    // Hey, we can't just pass this runtime variable as an
+    // argument to the scaleMe() method. What would let us do
+    // that?
+    comptime var scale: u32 = undefined;
+
+    scale = 32; // 1:32 scale
+
+    minnow.scaleMe(scale);
+    minnow.printMe();
+
+    scale -= 16; // 1:16 scale
+
+    shark.scaleMe(scale);
+    shark.printMe();
+
+    scale -= 16; // 1:0 scale (oops, but DON'T FIX THIS!)
+
+    whale.scaleMe(scale);
+    whale.printMe();
+}
+```
+
 ## 069_comptime4.zig
 
 ```zig
