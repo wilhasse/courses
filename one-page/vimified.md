@@ -29,6 +29,8 @@ w - next word
 shift + w - ignore punctuation  
 b - previous word  
 shift + b - ignore punctuation
+$ - go to the end of the line
+A - same $ and switch to the insert mode
 
 ### Word Based Movement
 
@@ -63,27 +65,26 @@ p - paste text
 
 ## Keyboard
 
-## Copy text inside vim
+### Copy text inside vim
 
 Copy line: yy  
 Paste: p
 
-## Copy text outside vim
+### Copy text outside vim
 
-Copy external text  
-Insert Mode  
-+p
+Enter Insert Mode  
+Shift + Insert or Right click mouse
 
-# Undo / Redo
+### Undo / Redo
 
 Undo: u
 Redo: ctrl + r
 
-# Remove line
+### Remove line
 
 dd
 
-# Search string
+### Search string
 
 In normal Mode
 search forward: / + string + enter
@@ -91,7 +92,7 @@ search backward: ? + string + enter
 next occurence: n
 previous occurence: N
 
-# Quit
+### Quit
 
 without saving no changes: q
 without saving discarding changes: :q!

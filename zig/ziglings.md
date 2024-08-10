@@ -726,6 +726,7 @@ fn makeFive(x: *u8) void {
 ```
 
 ## 044_quiz5.zig
+
 ```zig
 pub fn main() void {
     var elephantA = Elephant{ .letter = 'A' };
@@ -745,6 +746,7 @@ pub fn main() void {
 ```
 
 ## 045_optionals.zig
+
 ```zig
 pub fn main() void {
     const result = deepThought();
@@ -925,8 +927,8 @@ pub fn main() void {
     var cards = [8]u8{ 'A', '4', 'K', '8', '5', '2', 'Q', 'J' };
 
     // Please put the first 4 cards in hand1 and the rest in hand2.
-    const hand1: []u8 = cards[???];
-    const hand2: []u8 = cards[???];
+    const hand1: []u8 = cards[0..4];
+    const hand2: []u8 = cards[4..8];
 
     std.debug.print("Hand1: ", .{});
     printHand(hand1);
@@ -1085,4 +1087,29 @@ pub fn main() void {
     // notation. Try experimenting with '{d}' and '{d:.3}' to see
     // how decimal formatting works.
     print("Shuttle liftoff weight: {d:.0}kg\n", .{shuttle_weight});
+```
+
+## 069_comptime4.zig
+
+```zig
+pub fn main() void {
+    // Here we declare arrays of three different types and sizes
+    // at compile time from a function call. Neat!
+    const s1 = makeSequence(u8, 3); // creates a [3]u8
+    const s2 = makeSequence(u32, 5); // creates a [5]u32
+    const s3 = makeSequence(i64, 7); // creates a [7]i64
+
+    print("s1={any}, s2={any}, s3={any}\n", .{ s1, s2, s3 });
+}
+
+fn makeSequence(comptime T: type, comptime size: usize) [size]T {
+    var sequence: [size]T = undefined;
+    var i: usize = 0;
+
+    while (i < size) : (i += 1) {
+        sequence[i] = @as(T, @intCast(i)) + 1;
+    }
+
+    return sequence;
+}
 ```
