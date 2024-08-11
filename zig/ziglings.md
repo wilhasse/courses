@@ -1345,3 +1345,847 @@ fn makeSequence(comptime T: type, comptime size: usize) [size]T {
     return sequence;
 }
 ```
+
+## 070_comptime5.zig
+
+```zig
+fn isADuck(possible_duck: anytype) bool {
+    // We'll use @hasDecl() to determine if the type has
+    // everything needed to be a "duck".
+    //
+    // In this example, 'has_increment' will be true if type Foo
+    // has an increment() method:
+    //
+    //     const has_increment = @hasDecl(Foo, "increment");
+    //
+    // Please make sure MyType has both waddle() and quack()
+    // methods:
+    const MyType = @TypeOf(possible_duck);
+    const walks_like_duck = @hasDecl(MyType, "waddle");
+    const quacks_like_duck = @hasDecl(MyType, "quack");
+
+    const is_duck = walks_like_duck and quacks_like_duck;
+
+    if (is_duck) {
+        // We also call the quack() method here to prove that Zig
+        // allows us to perform duck actions on anything
+        // sufficiently duck-like.
+        //
+        // Because all of the checking and inference is performed
+        // at compile time, we still have complete type safety:
+        // attempting to call the quack() method on a struct that
+        // doesn't have it (like Duct) would result in a compile
+        // error, not a runtime panic or crash!
+        possible_duck.quack();
+    }
+
+    return is_duck;
+}
+```
+
+## 071_comptime6.zig
+
+```zig
+pub fn main() void {
+    print("Narcissus has room in his heart for:", .{});
+
+    // Last time we examined the Narcissus struct, we had to
+    // manually access each of the three fields. Our 'if'
+    // statement was repeated three times almost verbatim. Yuck!
+    //
+    // Please use an 'inline for' to implement the block below
+    // for each field in the slice 'fields'!
+
+    const fields = @typeInfo(Narcissus).Struct.fields;
+
+    inline for (fields) |field| {
+        if (field.type != void) {
+            print(" {s}", .{field.name});
+        }
+    }
+    // Once you've got that, go back and take a look at exercise
+    // 065 and compare what you've written to the abomination we
+    // had there!
+
+    print(".\n", .{});
+}
+```
+
+## 072_comptime7.zig
+
+```zig
+pub fn main() void {
+    // Here is a string containing a series of arithmetic
+    // operations and single-digit decimal values. Let's call
+    // each operation and digit pair an "instruction".
+    const instructions = "+3 *5 -2 *2";
+
+    // Here is a u32 variable that will keep track of our current
+    // value in the program at runtime. It starts at 0, and we
+    // will get the final value by performing the sequence of
+    // instructions above.
+    var value: u32 = 0;
+
+    // This "index" variable will only be used at compile time in
+    // our loop.
+    comptime var i = 0;
+
+    // Here we wish to loop over each "instruction" in the string
+    // at compile time.
+    inline while (i < instructions.len) : (i += 3) {
+
+        // This gets the digit from the "instruction". Can you
+        // figure out why we subtract '0' from it?
+        const digit = instructions[i + 1] - '0';
+
+        // This 'switch' statement contains the actual work done
+        // at runtime. At first, this doesn't seem exciting...
+        switch (instructions[i]) {
+            '+' => value += digit,
+            '-' => value -= digit,
+            '*' => value *= digit,
+            else => unreachable,
+        }
+    }
+
+    print("{}\n", .{value});
+}
+```
+
+## 073_comptime8.zig
+
+```zig
+const llama_count = 5;
+const llamas = [llama_count]u32{ 5, 10, 15, 20, 25 };
+
+pub fn main() void {
+    // We meant to fetch the last llama. Please fix this simple
+    // mistake so the assertion no longer fails.
+    const my_llama = getLlama(4);
+
+    print("My llama value is {}.\n", .{my_llama});
+}
+
+fn getLlama(comptime i: usize) u32 {
+    comptime assert(i < llama_count);
+    return llamas[i];
+}
+
+// Fun fact: this assert() function is identical to
+// std.debug.assert() from the Zig Standard Library.
+fn assert(ok: bool) void {
+    if (!ok) unreachable;
+}
+```
+
+## 074_comptime9.zig
+
+```zig
+// Being in the container-level scope, everything about this value is
+// implicitly required to be known compile time.
+const llama_count = 5;
+
+// Again, this value's type and size must be known at compile
+// time, but we're letting the compiler infer both from the
+// return type of a function.
+const llamas = makeLlamas(llama_count);
+
+// And here's the function. Note that the return value type
+// depends on one of the input arguments!
+fn makeLlamas(comptime count: usize) [count]u8 {
+    var temp: [count]u8 = undefined;
+    var i = 0;
+
+    // Note that this does NOT need to be an inline 'while'.
+    while (i < count) : (i += 1) {
+        temp[i] = i;
+    }
+
+    return temp;
+}
+
+pub fn main() void {
+    print("My llama value is {}.\n", .{llamas[2]});
+}
+```
+
+## 075_quiz8.zig
+
+```zig
+fn makePath(from: *Place, to: *Place, dist: u8) Path {
+    return Path{
+        .from = from,
+        .to = to,
+        .dist = dist,
+    };
+}
+
+// Using our new function, these path definitions take up considerably less
+// space in our program now!
+const a_paths = [_]Path{makePath(&a, &b, 2)};
+const b_paths = [_]Path{ makePath(&b, &a, 2), makePath(&b, &d, 1) };
+const c_paths = [_]Path{ makePath(&c, &d, 3), makePath(&c, &e, 2) };
+```
+
+## 076_sentinels.zig
+
+```zig
+fn printSequence(my_seq: anytype) void {
+    const my_typeinfo = @typeInfo(@TypeOf(my_seq));
+
+    // The TypeInfo contained in my_typeinfo is a union. We use
+    // a switch to handle printing the Array or Pointer fields,
+    // depending on which type of my_seq was passed in:
+    switch (my_typeinfo) {
+        .Array => {
+            print("Array:", .{});
+
+            // Loop through the items in my_seq.
+            for (???) |s| {
+                print("{}", .{s});
+            }
+        },
+        .Pointer => {
+            // Check this out - it's pretty cool:
+            const my_sentinel = sentinel(@TypeOf(my_seq));
+            print("Many-item pointer:", .{});
+
+            // Loop through the items in my_seq until we hit the
+            // sentinel value.
+            var i: usize = 0;
+            while (??? != my_sentinel) {
+                print("{}", .{my_seq[i]});
+                i += 1;
+            }
+        },
+        else => unreachable,
+    }
+    print(". ", .{});
+}
+```
+## 077_sentinels2.zig
+
+```zig
+pub fn main() void {
+    const foo = WeirdContainer{
+        .data = "Weird Data!",
+        .length = 11,
+    };
+
+    // Here's a big hint: do you remember how to take a slice?
+    const printable = foo.data[0..foo.length];
+
+    print("{s}\n", .{printable});
+```
+
+## 078_sentinels3.zig
+
+```zig
+pub fn main() void {
+    // Again, we've coerced the sentinel-terminated string to a
+    // many-item pointer, which has no length or sentinel.
+    const data: [*]const u8 = "Weird Data!";
+
+    // Please cast 'data' to 'printable':
+    const printable: [*:0]const u8 = @ptrCast(data);
+
+    print("{s}\n", .{printable});
+}
+```
+
+## 079_quoted_identifiers.zig
+
+```zig
+pub fn main() void {
+    const @"55_cows": i32 = 55;
+    const @"isn't true": bool = false;
+
+    print("Sweet freedom: {}, {}.\n", .{
+        @"55_cows",
+        @"isn't true",
+    });
+}
+```
+
+## 080_anonymous_structs.zig
+
+```zig
+fn Circle(comptime T: type) type {
+    return struct {
+        center_x: T,
+        center_y: T,
+        radius: T,
+    };
+}
+
+pub fn main() void {
+    //
+    // See if you can complete these two variable initialization
+    // expressions to create instances of circle struct types
+    // which can hold these values:
+    //
+    // * circle1 should hold i32 integers
+    // * circle2 should hold f32 floats
+    //
+    const circle1 = Circle(i32){
+        .center_x = 25,
+        .center_y = 70,
+        .radius = 15,
+    };
+
+    const circle2 = Circle(f32){
+        .center_x = 25.234,
+        .center_y = 70.999,
+        .radius = 15.714,
+    };
+}
+```
+
+## 081_anonymous_structs2.zig
+
+```zig
+pub fn main() void {
+    printCircle(.{
+        .center_x = @as(u32, 205),
+        .center_y = @as(u32, 187),
+        .radius = @as(u32, 12),
+    });
+}
+
+// Please complete this function which prints an anonymous struct
+// representing a circle.
+fn printCircle(circle: anytype) void {
+    print("x:{} y:{} radius:{}\n", .{
+        circle.center_x,
+        circle.center_y,
+        circle.radius,
+    });
+}
+```
+
+## 082_anonymous_structs3.zig
+
+```zig
+pub fn main() void {
+    // A "tuple":
+    const foo = .{
+        true,
+        false,
+        @as(i32, 42),
+        @as(f32, 3.141592),
+    };
+
+    // We'll be implementing this:
+    printTuple(foo);
+
+    // This is just for fun, because we can:
+    const nothing = .{};
+    print("\n", nothing);
+}
+
+fn printTuple(tuple: anytype) void {
+    // This will be an array of StructFields.
+    const fields = @typeInfo(@TypeOf(tuple)).Struct.fields;
+
+    // 2. Loop through each field. This must be done at compile
+    // time.
+    inline for (fields) |field| {
+        // The first field should print as: "0"(bool):true
+        print("\"{s}\"({any}):{any} ", .{
+            field.name,
+            field.type,
+            @field(tuple, field.name),
+        });
+    }
+}
+
+```
+
+## 083_anonymous_lists.zig
+
+```zig
+pub fn main() void {
+    // Please make 'hello' a string-like array of u8 WITHOUT
+    // changing the value literal.
+    //
+    // Don't change this part:
+    //
+    //     = .{ 'h', 'e', 'l', 'l', 'o' };
+    //
+    const hello: [5]u8 = .{ 'h', 'e', 'l', 'l', 'o' };
+    print("I say {s}!\n", .{hello});
+}
+```
+## 084_async.zig to 091_async8.zig
+
+async was removed in zig 0.10.0
+
+## 092_interfaces.zig
+
+```zig
+const Insect = union(enum) {
+    ant: Ant,
+    bee: Bee,
+    grasshopper: Grasshopper,
+
+    // Thanks to 'inline else', we can think of this print() as
+    // being an interface method. Any member of this union with
+    // a print() method can be treated uniformly by outside
+    // code without needing to know any other details. Cool!
+    pub fn print(self: Insect) void {
+        switch (self) {
+            inline else => |case| return case.print(),
+        }
+    }
+};
+
+pub fn main() !void {
+    const my_insects = [_]Insect{
+        Insect{ .ant = Ant{ .still_alive = true } },
+        Insect{ .bee = Bee{ .flowers_visited = 17 } },
+        Insect{ .grasshopper = Grasshopper{ .distance_hopped = 32 } },
+    };
+
+    std.debug.print("Daily Insect Report:\n", .{});
+    for (my_insects) |insect| {
+        // Almost done! We want to print() each insect with a
+        // single method call here.
+        insect.print();
+    }
+}
+```
+
+## 093_hello_c.zig
+
+```zig
+// and here the new import for C
+const c = @cImport({
+    @cInclude("unistd.h");
+});
+
+pub fn main() void {
+
+    // In order to output text that can be evaluated by the
+    // Zig Builder, we need to write it to the Error output.
+    // In Zig, we do this with "std.debug.print" and in C we can
+    // specify a file descriptor i.e. 2 for error console.
+    //
+    // In this exercise we use 'write' to output 17 chars,
+    // but something is still missing...
+    const c_res = c.write(2, "Hello C from Zig!", 17);
+
+    // let's see what the result from C is:
+    std.debug.print(" - C result is {d} chars written.\n", .{c_res});
+}
+```
+
+## 094_c_math.zig
+
+```zig
+const c = @cImport({
+    // What do we need here?
+    @cInclude("math.h");
+});
+
+pub fn main() !void {
+    const angle = 765.2;
+    const circle = 360;
+
+    // Here we call the C function 'fmod' to get our normalized angle.
+    const result = c.fmod(angle, circle);
+
+    // We use formatters for the desired precision and to truncate the decimal places
+    std.debug.print("The normalized angle of {d: >3.1} degrees is {d: >3.1} degrees.\n", .{ angle, result });
+}
+```
+
+## 095_for3.zig
+
+```zig
+pub fn main() void {
+
+    // I want to print every number between 1 and 20 that is NOT
+    // divisible by 3 or 5.
+    for (0..21) |n| {
+
+        // The '%' symbol is the "modulo" operator and it
+        // returns the remainder after division.
+        if (n % 3 == 0) continue;
+        if (n % 5 == 0) continue;
+        std.debug.print("{} ", .{n});
+    }
+
+    std.debug.print("\n", .{});
+}
+```
+
+## 096_memory_allocation.zig
+
+```zig
+pub fn main() !void {
+    // pretend this was defined by reading in user input
+    const arr: []const f64 = &[_]f64{ 0.3, 0.2, 0.1, 0.1, 0.4 };
+
+    // initialize the allocator
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+
+    // free the memory on exit
+    defer arena.deinit();
+
+    // initialize the allocator
+    const allocator = arena.allocator();
+
+    // allocate memory for this array
+    const avg: []f64 = try allocator.alloc(f64, arr.len);
+
+    runningAverage(arr, avg);
+    std.debug.print("Running Average: ", .{});
+    for (avg) |val| {
+        std.debug.print("{d:.2} ", .{val});
+    }
+    std.debug.print("\n", .{});
+}
+```
+
+## 097_bit_manipulation.zig
+
+```zig
+pub fn main() !void {
+
+    // As in the example above, we use 1 and 0 as values for x and y
+    var x: u8 = 1;
+    var y: u8 = 0;
+
+    // Now we swap the values of the two variables by doing xor on them
+    x ^= y;
+    y ^= x;
+
+    // What must be written here?
+    x ^= y;
+
+    print("x = {d}; y = {d}\n", .{ x, y });
+}
+```
+
+## 098_bit_manipulation2.zig
+
+```zig
+fn isPangram(str: []const u8) bool {
+    // first we check if the string has at least 26 characters
+    if (str.len < 26) return false;
+
+    // we use a 32 bit variable of which we need 26 bits
+    var bits: u32 = 0;
+
+    // loop about all characters in the string
+    for (str) |c| {
+        // if the character is an alphabetical character
+        if (ascii.isASCII(c) and ascii.isAlphabetic(c)) {
+            // then we set the bit at the position
+            //
+            // to do this, we use a little trick:
+            // since the letters in the ASCII table start at 65
+            // and are numbered sequentially, we simply subtract the
+            // first letter (in this case the 'a') from the character
+            // found, and thus get the position of the desired bit
+            bits |= @as(u32, 1) << @truncate(ascii.toLower(c) - 'a');
+        }
+    }
+    // last we return the comparison if all 26 bits are set,
+    // and if so, we know the given string is a pangram
+    //
+    // but what do we have to compare?
+    return bits == 0x3FFFFFF;
+}
+```
+
+## 099_formatting.zig
+
+```zig
+pub fn main() !void {
+    // Max number to multiply
+    const size = 15;
+
+    // Print the header:
+    //
+    // We start with a single 'X' for the diagonal.
+    print("\n X |", .{});
+
+    // Header row with all numbers from 1 to size.
+    for (0..size) |n| {
+        print("{d:>3} ", .{n + 1});
+    }
+    print("\n", .{});
+
+    // Header column rule line.
+    var n: u8 = 0;
+    while (n <= size) : (n += 1) {
+        print("---+", .{});
+    }
+    print("\n", .{});
+
+    // Now the actual table. (Is there anything more beautiful
+    // than a well-formatted table?)
+    for (0..size) |a| {
+        print("{d:>2} |", .{a + 1});
+
+        for (0..size) |b| {
+            // What formatting is needed here to make our columns
+            // nice and straight?
+            print("{d:>3} ", .{(a + 1) * (b + 1)});
+        }
+
+        // After each row we use double line feed:
+        print("\n\n", .{});
+    }
+}
+```
+
+## 100_for4.zig
+
+```zig
+pub fn main() void {
+    const hex_nums = [_]u8{ 0xb, 0x2a, 0x77 };
+    const dec_nums = [_]u8{ 11, 42, 119 };
+
+    for (hex_nums, dec_nums) |hn, dn| {
+        if (hn != dn) {
+            std.debug.print("Uh oh! Found a mismatch: {d} vs {d}\n", .{ hn, dn });
+            return;
+        }
+    }
+
+    std.debug.print("Arrays match!\n", .{});
+}
+```
+
+## 101_for5.zig
+
+```zig
+pub fn main() void {
+    // Here are the three "property" arrays:
+    const roles = [4]Role{ .wizard, .bard, .bard, .warrior };
+    const gold = [4]u16{ 25, 11, 5, 7392 };
+    const experience = [4]u8{ 40, 17, 55, 21 };
+
+    // We would like to number our list starting with 1, not 0.
+    // How do we do that?
+    for (roles, gold, experience, 1..) |c, g, e, i| {
+        const role_name = switch (c) {
+            .wizard => "Wizard",
+            .thief => "Thief",
+            .bard => "Bard",
+            .warrior => "Warrior",
+        };
+
+        std.debug.print("{d}. {s} (Gold: {d}, XP: {d})\n", .{
+            i,
+            role_name,
+            g,
+            e,
+        });
+    }
+}
+```
+
+## 102_testing.zig
+
+```zig
+fn sub(a: f16, b: f16) f16 {
+    return a - b;
+}
+
+test "sub" {
+    try testing.expect(sub(10, 5) == 5);
+
+    try testing.expect(sub(3, 1.5) == 1.5);
+}
+fn divide(a: f16, b: f16) !f16 {
+    if (b == 0) return error.DivisionByZero;
+    return a / b;
+}
+
+test "divide" {
+    try testing.expect(divide(2, 2) catch unreachable == 1);
+    try testing.expect(divide(-1, -1) catch unreachable == 1);
+    try testing.expect(divide(10, 2) catch unreachable == 5);
+    try testing.expect(divide(1, 3) catch unreachable == 0.3333333333333333);
+
+    // Now we test if the function returns an error
+    // if we pass a zero as denominator.
+    // But which error needs to be tested?
+    try testing.expectError(error.DivisionByZero, divide(15, 0));
+}
+```
+## 103_tokenization.zig
+
+```zig
+pub fn main() !void {
+
+    // our input
+    const poem =
+        \\My name is Ozymandias, King of Kings;
+        \\Look on my Works, ye Mighty, and despair!
+    ;
+
+    // now the tokenizer, but what do we need here?
+    var it = std.mem.tokenizeAny(u8, poem, " ,;!\n");
+
+    // print all words and count them
+    var cnt: usize = 0;
+    while (it.next()) |word| {
+        cnt += 1;
+        print("{s}\n", .{word});
+    }
+
+    // print the result
+    print("This little poem has {d} words!\n", .{cnt});
+}
+```
+
+## 104_threading.zig
+
+```zig
+pub fn main() !void {
+    // This is where the preparatory work takes place
+    // before the parallel processing begins.
+    std.debug.print("Starting work...\n", .{});
+
+    // These curly brackets are very important, they are necessary
+    // to enclose the area where the threads are called.
+    // Without these brackets, the program would not wait for the
+    // end of the threads and they would continue to run beyond the
+    // end of the program.
+    {
+        // Now we start the first thread, with the number as parameter
+        const handle = try std.Thread.spawn(.{}, thread_function, .{1});
+
+        // Waits for the thread to complete,
+        // then deallocates any resources created on `spawn()`.
+        defer handle.join();
+
+        // Second thread
+        const handle2 = try std.Thread.spawn(.{}, thread_function, .{2}); // that can't be right?
+        defer handle2.join();
+
+        // Third thread
+        const handle3 = try std.Thread.spawn(.{}, thread_function, .{3});
+        defer handle3.join(); // <-- something is missing
+
+        // After the threads have been started,
+        // they run in parallel and we can still do some work in between.
+        std.time.sleep(1500 * std.time.ns_per_ms);
+        std.debug.print("Some weird stuff, after starting the threads.\n", .{});
+    }
+    // After we have left the closed area, we wait until
+    // the threads have run through, if this has not yet been the case.
+    std.debug.print("Zig is cool!\n", .{});
+}
+
+// This function is started with every thread that we set up.
+// In our example, we pass the number of the thread as a parameter.
+fn thread_function(num: usize) !void {
+    std.time.sleep(200 * num * std.time.ns_per_ms);
+    std.debug.print("thread {d}: {s}\n", .{ num, "started." });
+
+    // This timer simulates the work of the thread.
+    const work_time = 3 * ((5 - num % 3) - 2);
+    std.time.sleep(work_time * std.time.ns_per_s);
+
+    std.debug.print("thread {d}: {s}\n", .{ num, "finished." });
+}
+```
+
+## 105_threading2.zig
+
+```zig
+pub fn main() !void {
+    const count = 1_000_000_000;
+    var pi_plus: f64 = 0;
+    var pi_minus: f64 = 0;
+
+    {
+        // First thread to calculate the plus numbers.
+        const handle1 = try std.Thread.spawn(.{}, thread_pi, .{ &pi_plus, 5, count });
+        defer handle1.join();
+
+        // Second thread to calculate the minus numbers.
+        const handle2 = try std.Thread.spawn(.{}, thread_pi, .{ &pi_minus, 3, count });
+        defer handle2.join();
+    }
+    // Here we add up the results.
+    std.debug.print("PI ≈ {d:.8}\n", .{4 + pi_plus - pi_minus});
+}
+
+fn thread_pi(pi: *f64, begin: u64, end: u64) !void {
+    var n: u64 = begin;
+    while (n < end) : (n += 4) {
+        pi.* += 4 / @as(f64, @floatFromInt(n));
+    }
+}
+```
+
+## 106_files.zig
+
+```zig
+pub fn main() !void {
+    // first we get the current working directory
+    const cwd: std.fs.Dir = std.fs.cwd();
+
+    // then we'll try to make a new directory /output/
+    // to store our output files.
+    cwd.makeDir("output") catch |e| switch (e) {
+
+        error.PathAlreadyExists => {},
+        // if there's any other unexpected error we just propagate it through
+        else => return e,
+    };
+
+    // then we'll try to open our freshly created directory
+    // wait a minute...
+    // opening a directory might fail!
+    // what should we do here?
+    var output_dir: std.fs.Dir = cwd.openDir("output", .{});
+    defer output_dir.close();
+
+    // we try to open the file `zigling.txt`,
+    // and propagate any error up
+    var output_dir: std.fs.Dir = cwd.openDir("output", .{}) catch |e| {
+        return e;
+    };
+    file.close();
+
+    // you are not allowed to move these two lines above the file closing line!
+    const byte_written = try file.write("It's zigling time!");
+    std.debug.print("Successfully wrote {d} bytes.\n", .{byte_written});
+}
+```
+
+## 107_files2.zig
+
+```zig
+pub fn main() !void {
+    // Get the current working directory
+    const cwd = std.fs.cwd();
+
+    // try to open ./output assuming you did your 106_files exercise
+    var output_dir = try cwd.openDir("output", .{});
+    defer output_dir.close();
+
+    // try to open the file
+    const file = try output_dir.openFile("zigling.txt", .{});
+    defer file.close();
+
+    // initalize an array of u8 with all letter 'A'
+    // we need to pick the size of the array, 64 seems like a good number
+    // fix the initalization below
+    var content = [_]u8{'A'} ** 64;
+    // this should print out : `AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA`
+    std.debug.print("{s}\n", .{content});
+    const bytes_read = try file.readAll(&content);
+    std.debug.print("Successfully Read {d} bytes: {s}\n", .{
+        bytes_read,
+        content[0..bytes_read], // change this line only
+    });
+}
+```
