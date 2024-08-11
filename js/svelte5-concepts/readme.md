@@ -40,6 +40,17 @@ bun run signal.js
 bun run svelte5.js
 ```
 
+## Video 1a - Signals
+
+https://www.youtube.com/watch?v=1TSLEzNzGQM  
+Learn Why JavaScript Frameworks Love Signals By Implementing Them
+
+Observer  
+![Observer](images/observer.png)
+
+Signals  
+![Signals](images/signals.png)
+
 
 ## Video 2 - Basic
 

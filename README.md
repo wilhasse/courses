@@ -3,14 +3,14 @@
 | Folder                                           | Status      | Date       | Description                                     |
 | ------------------------------------------------ | ----------- | ---------- | ----------------------------------------------- |
 | [vimified](./one-page/vimified.md)               | In progress | 02/08/2024 | Vimified Course                                 |
-| [0de5](./c/0de5)                                 | In progress | 16/07/2024 | Assembly / C                                    |
-| [ziglings](./zig/)                               | Finished    | 10/08/2024 | Zig Exercises                                   |
+| [ziglings](./zig/ziglings.md)                    | Finished    | 10/08/2024 | Ziglings Exercises                              |
 | [js-http](./js/http-bootdev)                     | Finished    | 06/08/2024 | BootDev Http Course                             |
 | [svelte5](./js/svelte5-concepts/)                | Finished    | 05/08/2024 | Svelte 5 - Video Series                         |
 | [js-bootdev](./js/bootdev/)                      | Finished    | 01/08/2024 | BootDev Javascript Course                       |
 | [webserver](./go/webserver/)                     | Finished    | 21/07/2024 | BootDev Webservers Go                           |
 | [kubernetes](./one-page/kubernetes-ardan.md)     | Stopped     | 19/07/2024 | Ardan Labs Kubernetes Course                    |
 | [docker-ardan](./one-page/docker-ardan.md)       | Finished    | 18/07/2024 | Ardan Labs Docker Course                        |
+| [0de5](./c/0de5)                                 | Incomplete  | 16/07/2024 | Assembly / C                                    |
 | [docker-bootdev](./one-page/docker-bootdev.md)   | Finished    | 11/07/2024 | BootDev Docker Course                           |
 | [git-bootdev](./one-page/git-bootdev.md)         | Finished    | 09/07/2024 | BootDev Git Course                              |
 | [bootdev](./go/bootdev/)                         | Finished    | 04/07/2024 | BootDev Learn Go (168 items)                    |
@@ -31,7 +31,7 @@
 | [elixir-socket](./elixir/elixir-socket/)         | Finished    | 24/01/2024 | Testing Elixir Socket/WebSockets                |
 | [elixir-auction](./elixir/elixir-auction/)       | Finished    | 23/01/2024 | Elixir in Action book                           |
 | [alpine-course](./web/alpine-course/)            | Finished    | 28/01/2024 | Alpine Udemy Course                             |
-| [vueschool-forum](./web/vueschool-forum/)        | Unfinished  | 08/01/2024 | Vue School Forum Course                         |
+| [vueschool-forum](./web/vueschool-forum/)        | Cancelled   | 08/01/2024 | Vue School Forum Course                         |
 | [sole-and-ankle](./css/sole-and-ankle/)          | Finished    | 23/12/2023 | CSS Course Josh W Comeau                        |
 | [new-grid-times](./css/new-grid-times/)          | Finished    | 20/12/2023 | CSS Course Josh W Comeau                        |
 | [react-blog-mdx](./web/react-blog-mdx/)          | Finished    | 26/11/2023 | Joy of React Course Josh W Comeau               |
