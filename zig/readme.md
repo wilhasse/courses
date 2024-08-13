@@ -48,3 +48,9 @@ Trying the language
 Random exercises
 
 [zig-exercises](./zig-exercises/)
+
+## RocksDB
+
+Testing Zig with RocksDB
+
+[rocksdb](./rocskmin/)
