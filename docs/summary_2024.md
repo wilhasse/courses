@@ -35,23 +35,35 @@ Javascript: From Fist Steps to Professional
 
 ## Svelte / SvelteKit (26/02 ~18/03)
 
-Mini Project CH
+Mini Project CH  
 Mini Project ConBD
 
-# Databases
+# Databases / Language (5 months)
 
 ## TiDB Database (18/03 ~03/05)
 
-Installing TiDB
-Testing TiDB
-Data Migration TiFlow
+Installing TiDB  
+Testing TiDB  
+Data Migration TiFlow  
 TiDB/MySQL Replication
 
-## MySQL (04/05 ~ 15/06)
+## MySQL/C (04/05 ~ 15/06)
 
-MySQL 8
-InnoDB Internals
+MySQL 8  
+InnoDB Internals  
+C Threads/Network
 
-## Go/Database (16/06 ~ 05/07)
+## Go/Database (16/06 ~ 12/07)
 
-Boot.Dev Go Course
+Boot.Dev Go Course  
+Webservers Go
+
+## Docker/Kubernetes (12/07 ~19/07)
+
+Ardan Labs Docker  
+Ardan Labs Kubernetes
+
+## Zig (19/07 ~ 14/08)
+
+Ziglings Course  
+Zig/RocksDB Project
