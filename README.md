@@ -2,6 +2,7 @@
 
 | Folder                                           | Status      | Date       | Description                                     |
 | ------------------------------------------------ | ----------- | ---------- | ----------------------------------------------- |
+| [cmu-intro-db](./db/cmu_intro/)                  | In progress | 18/08/2024 | Carnegie Mellon - Database Systems              |
 | [zigrocksdb](./zig/rocksmin/)                    | In progress | 13/08/2024 | Project RocksDB and Zig                         |
 | [vimified](./one-page/vimified.md)               | In progress | 02/08/2024 | Vimified Course                                 |
 | [ziglings](./zig/ziglings.md)                    | Finished    | 10/08/2024 | Ziglings Exercises (99 items)                   |
