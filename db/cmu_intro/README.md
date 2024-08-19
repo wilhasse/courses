@@ -66,3 +66,21 @@ Log-Structured Storage
 Index-Organized Storage  
 Data Representation  
 External Value Store  
+
+## 05 - Storage Models & Compression
+
+Slides:  
+https://15445.courses.cs.cmu.edu/fall2023/slides/05-storage3.pdf
+
+Database Workloads  
+N-ary Storage Model (NSM)  
+Decomposition Store Model (DSM)  
+PAX Storage Model (PSM)  
+
+Columnar Compression
+- Run-length Encoding
+- Bit-Packing Encoding
+- Bitmap Encoding
+- Delta Encoding
+- Incremental Encoding
+- Dictionary Encoding
