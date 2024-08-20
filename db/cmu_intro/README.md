@@ -84,3 +84,22 @@ Columnar Compression
 - Delta Encoding
 - Incremental Encoding
 - Dictionary Encoding
+
+## 06 - Database Memory & Disk I/O Management
+
+Slides:  
+https://15445.courses.cs.cmu.edu/fall2023/slides/06-bufferpool.pdf
+
+Buffer Pool Metadata  
+Locks vs. Latches  
+Buffer Pool Optimizations  
+- Multiple Buffer Pools  
+- Pre-feching  
+- Scan Sharing  
+- Buffer Pool Bypass  
+Buffer Pool Replacment Policies
+- Least Recently Used (LRU)
+- Clock Replacement
+- LRU-K
+Dirty Pages
+OS Page Cache (fsync X O_DIRECT)
