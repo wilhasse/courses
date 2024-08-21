@@ -84,15 +84,15 @@ sudo -u postgres psql
 New User and Database
 
 ```bash
-CREATE ROLE cslog LOGIN PASSWORD 'your_password';
-CREATE DATABASE newdb OWNER cslog;
+CREATE ROLE user LOGIN PASSWORD 'your_password';
+CREATE DATABASE newdb OWNER user;
 ```
 
 ```bash
-psql -U cslog -d newdb
+psql -U user -d newdb
 
 # already user
-psql -d siscom
+psql -d newdb
 ```
 
 Create user and permission for pgloader
@@ -100,8 +100,8 @@ Create user and permission for pgloader
 ```sql
 CREATE USER pgloader WITH PASSWORD 'pgloader1';
 ALTER USER pgloader WITH CREATEDB;
-GRANT CONNECT ON DATABASE siscom TO pgloader;
-\c siscom
+GRANT CONNECT ON DATABASE newdb TO pgloader;
+\c newdb
 
 GRANT USAGE ON SCHEMA public TO pgloader;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO pgloader;
