@@ -103,3 +103,55 @@ Buffer Pool Replacment Policies
 - LRU-K
 Dirty Pages
 OS Page Cache (fsync X O_DIRECT)
+
+## 07 - Hash Tables (CMU Intro to Database Systems)
+
+Slides:  
+https://15445.courses.cs.cmu.edu/fall2023/slides/07-hashtables.pdf
+
+Static Hash Tables  
+Hash Functions  
+Linear Probe Hashing  
+Non-Unique Keys  
+Cukoo Hashing
+Chained Hashing  
+Extendible Hashing  
+Linear Hasing
+
+## 08 - B+Tree Indexes
+
+Slides:    
+https://15445.courses.cs.cmu.edu/fall2023/slides/08-trees.pdf
+
+Visualize B+Tree  
+https://cmudb.io/btree  
+
+B+Tree  
+Nodes  
+Leaf Nodes  
+
+Leaf Nodes Values  
+- Record IDs  
+- Tuple Data  
+
+B+Tree Insert  
+Selection Conditions
+B+Tree Append Record ID  
+B+Tree Overflow Leaf Nodes  
+Index Scan Page Sorting
+
+B+Tree Design
+- Node Size
+- Merge Threshold
+- Variable-Length Keys
+- Intra-Node Search
+
+Optimizations  
+- Prefix Compression
+- Deduplication
+- Suffix Truncation
+- Pointer Swizzling
+- Bulk Insert
+- Buffered Updates
+
+
