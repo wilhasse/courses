@@ -154,4 +154,23 @@ Optimizations
 - Bulk Insert
 - Buffered Updates
 
+## 09 -Index Concurrency Control
 
+Concurrency Control
+
+Locks vs. Latches
+Latches Mode
+- Read Mode
+- Write Mode
+
+Latcnes Implementation
+- Test-and-Set Spinlock
+- Blocking OS Mutex
+- Reader-Writer Locks
+
+Hash Table - Pages Latches
+Hash Table - Slot LLatches
+B+Tree Concurrency Control
+B+Tree - Multi Threaded 
+B+Tree - Delete / Insert
+Leaf Node Scan
