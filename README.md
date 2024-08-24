@@ -2,9 +2,10 @@
 
 | Folder                                           | Status      | Date       | Description                                     |
 | ------------------------------------------------ | ----------- | ---------- | ----------------------------------------------- |
+| [grpc-zig](./one-page/grpc-zig.md)               | In progress | 24/08/2024 | gRPC and Zig                                    |
 | [cmu-intro-db](./db/cmu_intro/)                  | In progress | 18/08/2024 | Carnegie Mellon - Database Systems              |
-| [zigrocksdb](./zig/rocksmin/)                    | In progress | 13/08/2024 | Project RocksDB and Zig                         |
 | [vimified](./one-page/vimified.md)               | In progress | 02/08/2024 | Vimified Course                                 |
+| [zigrocksdb](./zig/rocksmin/)                    | Finished    | 18/08/2024 | Project RocksDB and Zig                         |
 | [ziglings](./zig/ziglings.md)                    | Finished    | 10/08/2024 | Ziglings Exercises (99 items)                   |
 | [web-dev](./web/web-development)                 | Finished    | 07/08/2024 | Web Development                                 |
 | [js-http](./js/http-bootdev)                     | Finished    | 06/08/2024 | BootDev Http Course                             |
