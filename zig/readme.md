@@ -37,8 +37,6 @@ Ctrl + Alt + P task
 
 ```json
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format
     "version": "2.0.0",
     "tasks": [
         {
@@ -74,7 +72,7 @@ Ctrl + Alt + P task
 Create launch.json  
 Substitute <your-project-name> for your bin name  
 
-```json
+``` json
 {
     "version": "0.2.0",
     "configurations": [
