@@ -21,6 +21,77 @@ mkdir .config
 git clone https://github.com/nvim-lua/kickstart.nvim nvim
 ```
 
+## Debug in VSCode
+
+Linux 
+
+Install extensions
+- Remote SSH (from Windows)
+- CodeLLDB
+- C/C++ Microsoft
+- Zig Language (ziglang)
+
+Create task  
+Ctrl + Alt + P task  
+<your-project-name>/.vscode/tasks.json  
+
+```json
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "zig build",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "--summary",
+                "all"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
+```
+
+Create launch.json  
+Substitute <your-project-name> for your bin name  
+
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug",
+            "program": "${workspaceFolder}/zig-out/bin/<your-project-name>",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "zig build"
+        },
+    ]
+}
+```
+
+
 ## Install Neovim
 
 ```bash
