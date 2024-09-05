@@ -1,8 +1,8 @@
 # Course
 
-Fall 2023 
+Fall 2023
 Database Systems  
-https://15445.courses.cs.cmu.edu/fall2023/  
+https://15445.courses.cs.cmu.edu/fall2023/
 
 Playlist
 https://www.youtube.com/playlist?list=PLSE8ODhjZXjbj8BMuIrRcacnQh20hmY9g
@@ -10,13 +10,16 @@ https://www.youtube.com/playlist?list=PLSE8ODhjZXjbj8BMuIrRcacnQh20hmY9g
 Slides List  
 https://15445.courses.cs.cmu.edu/fall2023/slides
 
+Notes list  
+https://15445.courses.cs.cmu.edu/fall2023/notes
+
 # Videos
 
 ## 01 - Relational Model & Algebra
 
 Introduction  
 Primary Keys / Foriegn Keys  
-Relational Algebras: Select, Projection, Union, Intersection, Differenc , Product, Join.  
+Relational Algebras: Select, Projection, Union, Intersection, Differenc , Product, Join.
 
 ## 02 - Modern SQL
 
@@ -26,6 +29,7 @@ Group By Clause
 Window Functions
 
 Performs a "sliding" calculation across a set of tuples that are related
+
 ```sql
 SELECT ... FUNC-NAME(...) OVER (...)
  FROM tableName
@@ -52,20 +56,21 @@ Slotted Page: Slot Array map "slot" to the page
 
 ## 04 - Database Storage Part 2
 
-Tuple-Oriented Storeage   
+Tuple-Oriented Storeage  
 Log-Structured Storage  
 Index-Organized Storage  
 Data Representation  
-External Value Store  
+External Value Store
 
 ## 05 - Storage Models & Compression
 
 Database Workloads  
 N-ary Storage Model (NSM)  
 Decomposition Store Model (DSM)  
-PAX Storage Model (PSM)  
+PAX Storage Model (PSM)
 
 Columnar Compression
+
 - Run-length Encoding
 - Bit-Packing Encoding
 - Bitmap Encoding
@@ -77,17 +82,18 @@ Columnar Compression
 
 Buffer Pool Metadata  
 Locks vs. Latches  
-Buffer Pool Optimizations  
-- Multiple Buffer Pools  
-- Pre-feching  
-- Scan Sharing  
+Buffer Pool Optimizations
+
+- Multiple Buffer Pools
+- Pre-feching
+- Scan Sharing
 - Buffer Pool Bypass  
-Buffer Pool Replacment Policies
+  Buffer Pool Replacment Policies
 - Least Recently Used (LRU)
 - Clock Replacement
 - LRU-K
-Dirty Pages
-OS Page Cache (fsync X O_DIRECT)
+  Dirty Pages
+  OS Page Cache (fsync X O_DIRECT)
 
 ## 07 - Hash Tables (CMU Intro to Database Systems)
 
@@ -103,15 +109,16 @@ Linear Hasing
 ## 08 - B+Tree Indexes
 
 Visualize B+Tree  
-https://cmudb.io/btree  
+https://cmudb.io/btree
 
 B+Tree  
 Nodes  
-Leaf Nodes  
+Leaf Nodes
 
-Leaf Nodes Values  
-- Record IDs  
-- Tuple Data  
+Leaf Nodes Values
+
+- Record IDs
+- Tuple Data
 
 B+Tree Insert  
 Selection Conditions
@@ -120,12 +127,14 @@ B+Tree Overflow Leaf Nodes
 Index Scan Page Sorting
 
 B+Tree Design
+
 - Node Size
 - Merge Threshold
 - Variable-Length Keys
 - Intra-Node Search
 
-Optimizations  
+Optimizations
+
 - Prefix Compression
 - Deduplication
 - Suffix Truncation
@@ -139,10 +148,12 @@ Concurrency Control
 
 Locks vs. Latches
 Latches Mode
+
 - Read Mode
 - Write Mode
 
 Latcnes Implementation
+
 - Test-and-Set Spinlock
 - Blocking OS Mutex
 - Reader-Writer Locks
@@ -150,7 +161,7 @@ Latcnes Implementation
 Hash Table - Pages Latches
 Hash Table - Slot LLatches
 B+Tree Concurrency Control
-B+Tree - Multi Threaded 
+B+Tree - Multi Threaded
 B+Tree - Delete / Insert
 Leaf Node Scan
 
@@ -171,6 +182,7 @@ Join Operators
 Operator Output
 
 Join Algorithms
+
 - Nested Loop Join
 - Block Nested Loop Join
 - Index Nested Loop Join
