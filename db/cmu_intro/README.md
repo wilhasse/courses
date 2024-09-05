@@ -49,7 +49,8 @@ SELECT * FROM cteName
 Storage Hierarchies  
 Disk Oriented (Buffer Pool and Database File)  
 Denormalized Tuple Data  
-Why not use the OS? Why not use mmap (memory mapping) instead of buffer pool?  
+Why not use the OS?   
+Why not use mmap (memory mapping) instead of buffer pool?  
 Database Pages  
 Heap File  
 Slotted Page: Slot Array map "slot" to the page
@@ -121,7 +122,7 @@ Leaf Nodes Values
 - Tuple Data
 
 B+Tree Insert  
-Selection Conditions
+Selection Conditions  
 B+Tree Append Record ID  
 B+Tree Overflow Leaf Nodes  
 Index Scan Page Sorting
@@ -144,9 +145,9 @@ Optimizations
 
 ## 09 -Index Concurrency Control
 
-Concurrency Control
+Concurrency Control  
 
-Locks vs. Latches
+Locks vs. Latches  
 Latches Mode
 
 - Read Mode
@@ -158,38 +159,37 @@ Latcnes Implementation
 - Blocking OS Mutex
 - Reader-Writer Locks
 
-Hash Table - Pages Latches
-Hash Table - Slot LLatches
-B+Tree Concurrency Control
-B+Tree - Multi Threaded
-B+Tree - Delete / Insert
-Leaf Node Scan
+Hash Table - Pages Latches  
+Hash Table - Slot LLatches  
+B+Tree Concurrency Control  
+B+Tree - Multi Threaded   
+B+Tree - Delete / Insert  
+Leaf Node Scan  
 
 ## 10 -Sorting
 
-Top-N Heap Sort
-External Merge Sort
-Double Buffering
-Clustered B+Tree
-Aggregations
-Partitions
-Rehash
+Top-N Heap Sort  
+External Merge Sort  
+Double Buffering  
+Clustered B+Tree  
+Aggregations  
+Partitions  
+Rehash  
 
 ## 11- Join Algorithms
 
-Query Plan
-Join Operators
-Operator Output
+Query Plan  
+Join Operators  
+Operator Output  
 
-Join Algorithms
-
+Join Algorithms  
 - Nested Loop Join
 - Block Nested Loop Join
 - Index Nested Loop Join
 - Sort-Merge Join
 - Hash Join
 
-Optimizations: Bloom Filters
-Partitioned Hash Join
-Recursive Partitioning
-Optimizations: Hybrid Hash Join
+Optimizations: Bloom Filters  
+Partitioned Hash Join  
+Recursive Partitioning  
+Optimizations: Hybrid Hash Join  
