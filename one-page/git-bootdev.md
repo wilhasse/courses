@@ -194,6 +194,14 @@ git pull origin main
 git config pull.rebase false
 ```
 
+Authentication by token
+
+```bash
+git remote set-url origin https://***USER***:***TOKEN***@github.com/[user]/[repo]
+git config --global credential.helper store
+git push
+```
+
 ## Ch 11 - Gitignore
 
 ```bash
