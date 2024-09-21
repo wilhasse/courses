@@ -2,8 +2,9 @@
 
 | Folder                                           | Status      | Date       | Description                                     |
 | ------------------------------------------------ | ----------- | ---------- | ----------------------------------------------- |
-| [cmu-intro-db](./db/cmu_intro/)                  | In progress | 18/08/2024 | Carnegie Mellon - Database Systems              |
-| [vimified](./one-page/vimified.md)               | In progress | 02/08/2024 | Vimified Course                                 |
+| [cuda](./cuda/)                                  | In progress | 18/09/2024 | Coursera - Cuda Programming                     |
+| [cmu-intro-db](./db/cmu_intro/)                  | Stopped     | 18/08/2024 | Carnegie Mellon - Database Systems              |
+| [vimified](./one-page/vimified.md)               | Stopped     | 02/08/2024 | Vimified Course                                 |
 | [grpc-zig](./one-page/grpc-zig.md)               | Finished    | 24/08/2024 | gRPC and Zig                                    |
 | [zigrocksdb](./zig/rocksmin/)                    | Finished    | 18/08/2024 | Project RocksDB and Zig                         |
 | [ziglings](./zig/ziglings.md)                    | Finished    | 10/08/2024 | Ziglings Exercises (99 items)                   |
