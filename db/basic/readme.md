@@ -47,3 +47,40 @@ Write amplification X number of levels (query performance)
 What is in each level? Indexing data structure, could be a sorted array
 
 # Chapter 3
+
+What the differences between a B-Tree and a B+Tree?  
+B-Tree stores data in any node  
+B+Tree only stores data in leaf nodes  
+B+Tree keep all the leaf nodes in a double linked list (facilitate searching)  
+
+Split and Merge nodes when necessary  
+What happens after a crash? How to prevent a consistent tree?  
+- Copy on write to prevent tree ccorruption (partial writes after a crash). What is the problem with this approach? Write amplification.  
+- Double write , copy all modifications on an double write buffer first and then changes the tree. There is an variation that stores the original nodes.    
+
+MySQL uses a B+Tree for the primary and secondary indexes  
+- Primary index leaf nodes store data  
+- Secondary index leaf nodes store the primary key  
+
+# Chapter 4 and 5
+
+Self-balancing tree data structure with sorted data
+
+Data structures
+- BNode - Node in a B+Tree. It's a slice that can be dumped directly to disk.
+- BTree - The tree itself. Root pointer and callbacks to managing on-disk pages.
+
+Node format:
+- Header (4 bytes)
+- Pointers (8 bytes) for leaf nodes these are nulls. Internal node points to child nodes
+- Offsets (2 bytes) uses to locate key value pairs within the node
+- Key-Value pairs data stored in the node
+
+Key operations:
+- Insert
+- Delete
+- Search
+
+Balancing Operations:
+- Splitting when node boecomes full (exceeds BTREE_PAGE_SIZE)
+- Merging when node becomes too small (less than BTREE_MIN_FILL)
