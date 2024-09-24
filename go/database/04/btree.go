@@ -9,19 +9,26 @@ import (
 // | type | nkeys |  pointers  |   offsets  | key-values
 // |  2B  |   2B  | nkeys * 8B | nkeys * 2B | ...
 
-// key-value format:
+// key-value format for leaf nodes:
 // | klen | vlen | key | val |
 // |  2B  |  2B  | ... | ... |
 
+// key format for internal nodes:
+// | klen | key |
+// |  2B  | ... |
+
 const HEADER = 4
 
-const BTREE_PAGE_SIZE = 4096
-const BTREE_MAX_KEY_SIZE = 1000
-const BTREE_MAX_VAL_SIZE = 3000
+const BTREE_PAGE_SIZE = 256
+const BTREE_MAX_KEY_SIZE = 50
+const BTREE_MAX_VAL_SIZE = 150
 
 func init() {
+	// Adjusted max node size calculation
 	node1max := HEADER + 8 + 2 + 4 + BTREE_MAX_KEY_SIZE + BTREE_MAX_VAL_SIZE
-	assert(node1max <= BTREE_PAGE_SIZE)
+	if node1max > BTREE_PAGE_SIZE {
+		panic("node size exceeds page size")
+	}
 }
 
 const (
@@ -60,8 +67,6 @@ func (node BNode) getPtr(idx uint16) uint64 {
 }
 func (node BNode) setPtr(idx uint16, val uint64) {
 	assert(idx < node.nkeys())
-	// assert(node.btype() == BNODE_LEAF || val != 0)
-	// assert(node.btype() == BNODE_NODE || val == 0)
 	pos := HEADER + 8*idx
 	binary.LittleEndian.PutUint64(node[pos:], val)
 }
@@ -84,20 +89,28 @@ func (node BNode) setOffset(idx uint16, offset uint16) {
 // key-values
 func (node BNode) kvPos(idx uint16) uint16 {
 	assert(idx <= node.nkeys())
-	return HEADER + 8*node.nkeys() + 2*node.nkeys() + node.getOffset(idx)
+	base := HEADER + 8*node.nkeys() + 2*node.nkeys()
+	return base + node.getOffset(idx)
 }
 func (node BNode) getKey(idx uint16) []byte {
 	assert(idx < node.nkeys())
 	pos := node.kvPos(idx)
 	klen := binary.LittleEndian.Uint16(node[pos:])
-	return node[pos+4:][:klen]
+	if node.btype() == BNODE_LEAF {
+		return node[pos+4:][:klen]
+	} else {
+		return node[pos+2:][:klen]
+	}
 }
 func (node BNode) getVal(idx uint16) []byte {
-	assert(idx < node.nkeys())
-	pos := node.kvPos(idx)
-	klen := binary.LittleEndian.Uint16(node[pos+0:])
-	vlen := binary.LittleEndian.Uint16(node[pos+2:])
-	return node[pos+4+klen:][:vlen]
+	if node.btype() == BNODE_LEAF {
+		pos := node.kvPos(idx)
+		klen := binary.LittleEndian.Uint16(node[pos:])
+		vlen := binary.LittleEndian.Uint16(node[pos+2:])
+		return node[pos+4+klen:][:vlen]
+	} else {
+		return nil
+	}
 }
 
 // node size in bytes
@@ -136,9 +149,9 @@ func leafInsert(
 	key []byte, val []byte,
 ) {
 	new.setHeader(BNODE_LEAF, old.nkeys()+1)
-	nodeAppendRange(new, old, 0, 0, idx)
-	nodeAppendKV(new, idx, 0, key, val)
-	nodeAppendRange(new, old, idx+1, idx, old.nkeys()-idx)
+	nodeAppendRange(new, old, 0, 0, idx, BNODE_LEAF)
+	nodeAppendKV(new, idx, 0, key, val, BNODE_LEAF)
+	nodeAppendRange(new, old, idx+1, idx, old.nkeys()-idx, BNODE_LEAF)
 }
 
 // update an existing key from a leaf node
@@ -147,9 +160,9 @@ func leafUpdate(
 	key []byte, val []byte,
 ) {
 	new.setHeader(BNODE_LEAF, old.nkeys())
-	nodeAppendRange(new, old, 0, 0, idx)
-	nodeAppendKV(new, idx, 0, key, val)
-	nodeAppendRange(new, old, idx+1, idx+1, old.nkeys()-(idx+1))
+	nodeAppendRange(new, old, 0, 0, idx, BNODE_LEAF)
+	nodeAppendKV(new, idx, 0, key, val, BNODE_LEAF)
+	nodeAppendRange(new, old, idx+1, idx+1, old.nkeys()-(idx+1), BNODE_LEAF)
 }
 
 // replace a link with the same key
@@ -171,11 +184,11 @@ func nodeReplaceKidN(
 	}
 
 	new.setHeader(BNODE_NODE, old.nkeys()+inc-1)
-	nodeAppendRange(new, old, 0, 0, idx)
+	nodeAppendRange(new, old, 0, 0, idx, BNODE_NODE)
 	for i, node := range kids {
-		nodeAppendKV(new, idx+uint16(i), tree.new(node), node.getKey(0), nil)
+		nodeAppendKV(new, idx+uint16(i), tree.new(node), node.getKey(0), nil, BNODE_NODE)
 	}
-	nodeAppendRange(new, old, idx+inc, idx+1, old.nkeys()-(idx+1))
+	nodeAppendRange(new, old, idx+inc, idx+1, old.nkeys()-(idx+1), BNODE_NODE)
 }
 
 // replace 2 adjacent links with 1
@@ -184,29 +197,36 @@ func nodeReplace2Kid(
 	ptr uint64, key []byte,
 ) {
 	new.setHeader(BNODE_NODE, old.nkeys()-1)
-	nodeAppendRange(new, old, 0, 0, idx)
-	nodeAppendKV(new, idx, ptr, key, nil)
-	nodeAppendRange(new, old, idx+1, idx+2, old.nkeys()-(idx+2))
+	nodeAppendRange(new, old, 0, 0, idx, BNODE_NODE)
+	nodeAppendKV(new, idx, ptr, key, nil, BNODE_NODE)
+	nodeAppendRange(new, old, idx+1, idx+2, old.nkeys()-(idx+2), BNODE_NODE)
 }
 
 // copy a KV into the position
-func nodeAppendKV(new BNode, idx uint16, ptr uint64, key []byte, val []byte) {
+func nodeAppendKV(new BNode, idx uint16, ptr uint64, key []byte, val []byte, btype uint16) {
 	// ptrs
 	new.setPtr(idx, ptr)
 	// KVs
 	pos := new.kvPos(idx)
 	binary.LittleEndian.PutUint16(new[pos+0:], uint16(len(key)))
-	binary.LittleEndian.PutUint16(new[pos+2:], uint16(len(val)))
-	copy(new[pos+4:], key)
-	copy(new[pos+4+uint16(len(key)):], val)
-	// the offset of the next key
-	new.setOffset(idx+1, new.getOffset(idx)+4+uint16((len(key)+len(val))))
+	if btype == BNODE_LEAF {
+		binary.LittleEndian.PutUint16(new[pos+2:], uint16(len(val)))
+		copy(new[pos+4:], key)
+		copy(new[pos+4+uint16(len(key)):], val)
+		// the offset of the next key
+		new.setOffset(idx+1, new.getOffset(idx)+4+uint16(len(key)+len(val)))
+	} else {
+		// internal node, no val
+		copy(new[pos+2:], key)
+		// the offset of the next key
+		new.setOffset(idx+1, new.getOffset(idx)+2+uint16(len(key)))
+	}
 }
 
 // copy multiple KVs into the position
 func nodeAppendRange(
 	new BNode, old BNode,
-	dstNew uint16, srcOld uint16, n uint16,
+	dstNew uint16, srcOld uint16, n uint16, btype uint16,
 ) {
 	assert(srcOld+n <= old.nkeys())
 	assert(dstNew+n <= new.nkeys())
@@ -250,7 +270,7 @@ func nodeSplit2(left BNode, right BNode, old BNode) {
 
 	// try to fit the right half
 	right_bytes := func() uint16 {
-		return old.nbytes() - left_bytes() + HEADER
+		return old.nbytes() - old.kvPos(nleft) + HEADER
 	}
 	for right_bytes() > BTREE_PAGE_SIZE {
 		nleft++
@@ -260,8 +280,8 @@ func nodeSplit2(left BNode, right BNode, old BNode) {
 
 	left.setHeader(old.btype(), nleft)
 	right.setHeader(old.btype(), nright)
-	nodeAppendRange(left, old, 0, 0, nleft)
-	nodeAppendRange(right, old, 0, nleft, nright)
+	nodeAppendRange(left, old, 0, 0, nleft, old.btype())
+	nodeAppendRange(right, old, 0, nleft, nright, old.btype())
 	// the left half may be still too big
 	assert(right.nbytes() <= BTREE_PAGE_SIZE)
 }
@@ -335,15 +355,15 @@ func nodeInsert(
 // remove a key from a leaf node
 func leafDelete(new BNode, old BNode, idx uint16) {
 	new.setHeader(BNODE_LEAF, old.nkeys()-1)
-	nodeAppendRange(new, old, 0, 0, idx)
-	nodeAppendRange(new, old, idx, idx+1, old.nkeys()-(idx+1))
+	nodeAppendRange(new, old, 0, 0, idx, BNODE_LEAF)
+	nodeAppendRange(new, old, idx, idx+1, old.nkeys()-(idx+1), BNODE_LEAF)
 }
 
 // merge 2 nodes into 1
 func nodeMerge(new BNode, left BNode, right BNode) {
 	new.setHeader(left.btype(), left.nkeys()+right.nkeys())
-	nodeAppendRange(new, left, 0, 0, left.nkeys())
-	nodeAppendRange(new, right, left.nkeys(), 0, right.nkeys())
+	nodeAppendRange(new, left, 0, 0, left.nkeys(), left.btype())
+	nodeAppendRange(new, right, left.nkeys(), 0, right.nkeys(), right.btype())
 	assert(new.nbytes() <= BTREE_PAGE_SIZE)
 }
 
@@ -439,8 +459,8 @@ func (tree *BTree) Insert(key []byte, val []byte) {
 		root.setHeader(BNODE_LEAF, 2)
 		// a dummy key, this makes the tree cover the whole key space.
 		// thus a lookup can always find a containing node.
-		nodeAppendKV(root, 0, 0, nil, nil)
-		nodeAppendKV(root, 1, 0, key, val)
+		nodeAppendKV(root, 0, 0, nil, nil, BNODE_LEAF)
+		nodeAppendKV(root, 1, 0, key, val, BNODE_LEAF)
 		tree.root = tree.new(root)
 		return
 	}
@@ -454,7 +474,7 @@ func (tree *BTree) Insert(key []byte, val []byte) {
 		root.setHeader(BNODE_NODE, nsplit)
 		for i, knode := range split[:nsplit] {
 			ptr, key := tree.new(knode), knode.getKey(0)
-			nodeAppendKV(root, uint16(i), ptr, key, nil)
+			nodeAppendKV(root, uint16(i), ptr, key, nil, BNODE_NODE)
 		}
 		tree.root = tree.new(root)
 	} else {
