@@ -6,7 +6,9 @@ https://www.youtube.com/watch?v=mKo0cxBlGwM
 Course  
 Coursera - Introduction to Parallel Programming with CUDA
 
-# Exercises
+# Module 1 - Overview
+
+Examples
 
 | Directory  | Description                  |
 | ---------- | ---------------------------- |
@@ -14,3 +16,19 @@ Coursera - Introduction to Parallel Programming with CUDA
 | add        | Adding to numbers on GPU     |
 | simple     | Simple vector multiplication |
 | mandelbrot | Mandelbrot calculation       |
+
+# Module 2 - Threads, Blocks and Grids
+
+## Converting CPU Divide and Conquer to Parallel Kernel Execution
+
+Search vector 
+Coursera submission
+
+| Directory  | Description                  |
+| ---------- | ---------------------------- |
+| search     | Searching vector             |
+
+
+[Understanding search method](./module2_search.md)
+
+## Defining Kernel Thread and Data Layout via Blocks
