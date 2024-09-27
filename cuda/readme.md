@@ -4,7 +4,16 @@ Introduction
 https://www.youtube.com/watch?v=mKo0cxBlGwM
 
 Course  
-Coursera - Introduction to Parallel Programming with CUDA
+Coursera - Introduction to Parallel Programming with CUDA  
+
+# Introduction
+
+https://developer.nvidia.com/blog/even-easier-introduction-cuda/  
+
+Easier introduction  
+Source Dir: easy 
+
+![Blocks](images/blocks.png)
 
 # Module 1 - Overview
 
