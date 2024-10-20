@@ -5,7 +5,7 @@ Star Schema Benchmark (SSB)
 Link: https://github.com/pingcap/tidb-bench
 
 ```bash
-sudo apt-get install build-essentials
+sudo apt-get install build-essential
 sudo git clone https://github.com/pingcap/tidb-bench
 cd /tidb-bench/ssb/dbgen
 make -j8
@@ -33,10 +33,10 @@ local_infile=1
 # Import Data
 
 ```bash
-mysql ssb -u root -pXXX --local-infile=1 -e "load data local infile 'dbgen/supplier.tbl'  into table supplier  fields terminated by '|' lines terminated by '\n';"
-mysql ssb -u root -pXXX --local-infile=1 -e "load data local infile 'dbgen/customer.tbl'  into table customer  fields terminated by '|' lines terminated by '\n';"
-mysql ssb -u root -pXXX --local-infile=1 -e "load data local infile 'dbgen/date.tbl'      into table date      fields terminated by '|' lines terminated by '\n';"
-mysql ssb -u root -pXXX --local-infile=1 -e "load data local infile 'dbgen/lineorder.tbl' into table lineorder fields terminated by '|' lines terminated by '\n';"
+mysql ssb -u root -pXXX --local-infile=1 -e "load data local infile 'supplier.tbl'  into table supplier  fields terminated by '|' lines terminated by '\n';"
+mysql ssb -u root -pXXX --local-infile=1 -e "load data local infile 'customer.tbl'  into table customer  fields terminated by '|' lines terminated by '\n';"
+mysql ssb -u root -pXXX --local-infile=1 -e "load data local infile 'date.tbl'      into table date      fields terminated by '|' lines terminated by '\n';"
+mysql ssb -u root -pXXX --local-infile=1 -e "load data local infile 'lineorder.tbl' into table lineorder fields terminated by '|' lines terminated by '\n';"
 ```
 
 # Run benchmark

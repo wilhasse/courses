@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 # Check if IP address is provided
 if [ $# -eq 0 ]; then
@@ -15,14 +15,34 @@ QUERY_DB_USER="root"
 QUERY_DB_PASS=""
 
 # MySQL connection details for the local database to store results
-RESULT_DB_NAME="performance_results"
+RESULT_DB_NAME="ssb_results"
 RESULT_DB_USER="root"
 RESULT_DB_PASS=""
 
+# Function to create MySQL connection string
+mysql_connect() {
+    local db_user=$1
+    local db_pass=$2
+    local db_name=$3
+    local host=$4
+
+    connect_string="mysql"
+    [ -n "$host" ] && connect_string+=" -h $host"
+    connect_string+=" -u $db_user"
+    if [ -n "$db_pass" ]; then
+        connect_string+=" -p$db_pass"
+    else
+        connect_string+=""
+    fi
+    connect_string+=" $db_name"
+    echo "$connect_string"
+}
+
 # Create a table to store the results if it doesn't exist (on local machine)
-mysql -u $RESULT_DB_USER -p$RESULT_DB_PASS $RESULT_DB_NAME <<EOF
+$(mysql_connect "$RESULT_DB_USER" "$RESULT_DB_PASS" "$RESULT_DB_NAME") <<EOF
 CREATE TABLE IF NOT EXISTS query_performance (
     query_id INT,
+    remote_ip VARCHAR(15),
     execution_time FLOAT,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -32,13 +52,14 @@ EOF
 run_query() {
     query_id=$1
     start_time=$(date +%s.%N)
-    mysql -h $REMOTE_IP -u $QUERY_DB_USER -p$QUERY_DB_PASS $QUERY_DB_NAME < "queries/${query_id}.sql" > "~/ssb/result/${query_id}_res.txt"
+    $(mysql_connect "$QUERY_DB_USER" "$QUERY_DB_PASS" "$QUERY_DB_NAME" "$REMOTE_IP") < ~/ssb/queries/${query_id}.sql > ~/ssb/result/${query_id}_res.txt
     end_time=$(date +%s.%N)
     execution_time=$(echo "$end_time - $start_time" | bc)
 
     # Insert result into the local performance results database
-    mysql -u $RESULT_DB_USER -p$RESULT_DB_PASS $RESULT_DB_NAME <<EOF
-INSERT INTO query_performance (query_id, execution_time) VALUES ($query_id, $execution_time);
+    $(mysql_connect "$RESULT_DB_USER" "$RESULT_DB_PASS" "$RESULT_DB_NAME") <<EOF
+INSERT INTO query_performance (query_id, remote_ip, execution_time) 
+VALUES ($query_id, '$REMOTE_IP', $execution_time);
 EOF
 
     echo "Query $query_id executed in $execution_time seconds"
