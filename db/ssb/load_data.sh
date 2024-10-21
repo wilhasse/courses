@@ -8,6 +8,7 @@ fi
 
 # Assign the first argument to the IP variable
 IP=$1
+LABEL="$2"
 
 # MySQL connection details for remote server (where we load data)
 REMOTE_USER="root"
@@ -40,10 +41,10 @@ mysql_connect_local() {
 # Create table to store execution time if it doesn't exist
 $(mysql_connect_local) -e "
 CREATE TABLE IF NOT EXISTS query_performance (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    remote_ip VARCHAR(15),
     query_id INT,
-    execution_time INT,
+    label VARCHAR(200),
+    remote_ip VARCHAR(15),
+    execution_time FLOAT,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );"
 
@@ -70,12 +71,13 @@ run_mysql_command "lineorder.tbl" "lineorder"
 
 # Calculate total execution time
 total_end_time=$(date +%s)
-total_execution_time=$((total_end_time - total_start_time))
+total_execution_time=$(echo "$total_end_time - $total_start_time" | bc)
+
 echo "Total execution time: $total_execution_time seconds"
 
 # Save total execution time to local database as query_id 0
 $(mysql_connect_local) -e "
-INSERT INTO query_performance (remote_ip, query_id, execution_time) 
-VALUES ('$IP', 0, $total_execution_time);"
+INSERT INTO query_performance (remote_ip, label, query_id, execution_time)
+VALUES ('$IP', '$LABEL', 0, $total_execution_time);"
 
 echo "Data loading completed. Total load time saved to local database."

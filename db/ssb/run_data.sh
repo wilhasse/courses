@@ -8,6 +8,7 @@ fi
 
 # Remote host IP
 REMOTE_IP=$1
+LABEL="$2"
 
 # MySQL connection details for the remote database to run queries on
 QUERY_DB_NAME="ssb"
@@ -42,6 +43,7 @@ mysql_connect() {
 $(mysql_connect "$RESULT_DB_USER" "$RESULT_DB_PASS" "$RESULT_DB_NAME") <<EOF
 CREATE TABLE IF NOT EXISTS query_performance (
     query_id INT,
+    label VARCHAR(200),
     remote_ip VARCHAR(15),
     execution_time FLOAT,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -56,12 +58,10 @@ run_query() {
     end_time=$(date +%s.%N)
     execution_time=$(echo "$end_time - $start_time" | bc)
 
-    # Insert result into the local performance results database
     $(mysql_connect "$RESULT_DB_USER" "$RESULT_DB_PASS" "$RESULT_DB_NAME") <<EOF
-INSERT INTO query_performance (query_id, remote_ip, execution_time) 
-VALUES ($query_id, '$REMOTE_IP', $execution_time);
+INSERT INTO query_performance (query_id, label, remote_ip, execution_time)
+VALUES ($query_id, "$LABEL", '$REMOTE_IP', $execution_time);
 EOF
-
     echo "Query $query_id executed in $execution_time seconds"
 }
 
