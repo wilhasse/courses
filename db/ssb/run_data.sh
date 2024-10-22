@@ -42,11 +42,13 @@ mysql_connect() {
 # Create a table to store the results if it doesn't exist (on local machine)
 $(mysql_connect "$RESULT_DB_USER" "$RESULT_DB_PASS" "$RESULT_DB_NAME") <<EOF
 CREATE TABLE IF NOT EXISTS query_performance (
+    id INT NOT NULL AUTO_INCREMENT,
     query_id INT,
     label VARCHAR(200),
     remote_ip VARCHAR(15),
     execution_time FLOAT,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id) USING BTREE
 );
 EOF
 

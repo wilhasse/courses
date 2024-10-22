@@ -1,14 +1,16 @@
 #!/bin/bash
 
-# Check if IP address is provided
-if [ $# -eq 0 ]; then
-    echo "Please provide an IP address as an argument."
+# Check if required parameters are provided
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 <IP> <LABEL> [LOAD_METHOD]"
+    echo "LOAD_METHOD: 1 for LOAD DATA LOCAL INFILE, 0 for pigz method (default)"
     exit 1
 fi
 
-# Assign the first argument to the IP variable
+# Assign the arguments to variables
 IP=$1
 LABEL="$2"
+LOAD_METHOD=${3:-0}  # Default to 0 if not provided
 
 # MySQL connection details for remote server (where we load data)
 REMOTE_USER="root"
@@ -41,22 +43,29 @@ mysql_connect_local() {
 # Create table to store execution time if it doesn't exist
 $(mysql_connect_local) -e "
 CREATE TABLE IF NOT EXISTS query_performance (
+    id INT NOT NULL AUTO_INCREMENT,
     query_id INT,
     label VARCHAR(200),
     remote_ip VARCHAR(15),
     execution_time FLOAT,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id) USING BTREE
 );"
 
 # Function to run MySQL command for data loading
 run_mysql_command() {
-    local file=$1
-    local table=$2
-
-    # Load table
+    local table=$1
     echo "Truncating and loading data into $table table..."
     $(mysql_connect_remote) -e "SET FOREIGN_KEY_CHECKS=0;TRUNCATE TABLE $table;"
-    $(mysql_connect_remote) -e "LOAD DATA LOCAL INFILE '~/ssb/data/$file' INTO TABLE $table FIELDS TERMINATED BY '|' LINES TERMINATED BY '\n';"
+
+    if [ "$LOAD_METHOD" -eq 1 ]; then
+        echo "Using LOAD DATA LOCAL INFILE method..."
+        $(mysql_connect_remote) -e "LOAD DATA LOCAL INFILE '~/ssb/data/${table}.tbl' INTO TABLE $table FIELDS TERMINATED BY '|' LINES TERMINATED BY '\n';"
+    else
+        echo "Using pigz method..."
+        pigz -c -d ~/ssb/data/${table}.sql.gz | $(mysql_connect_remote)
+    fi
+
     echo "----------------------------------------"
 }
 
@@ -64,15 +73,14 @@ run_mysql_command() {
 total_start_time=$(date +%s)
 
 # Run commands
-run_mysql_command "supplier.tbl" "supplier"
-run_mysql_command "customer.tbl" "customer"
-run_mysql_command "date.tbl" "date"
-run_mysql_command "lineorder.tbl" "lineorder"
+run_mysql_command "supplier"
+run_mysql_command "customer"
+run_mysql_command "date"
+run_mysql_command "lineorder"
 
 # Calculate total execution time
 total_end_time=$(date +%s)
 total_execution_time=$(echo "$total_end_time - $total_start_time" | bc)
-
 echo "Total execution time: $total_execution_time seconds"
 
 # Save total execution time to local database as query_id 0
