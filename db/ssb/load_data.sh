@@ -10,7 +10,7 @@ fi
 # Assign the arguments to variables
 IP=$1
 LABEL="$2"
-LOAD_METHOD=${3:-0}  # Default to 0 if not provided
+LOAD_METHOD=${3:-1}  # Default to 1 if not provided
 
 # MySQL connection details for remote server (where we load data)
 REMOTE_USER="root"

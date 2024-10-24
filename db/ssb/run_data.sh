@@ -56,7 +56,7 @@ EOF
 run_query() {
     query_id=$1
     start_time=$(date +%s.%N)
-    $(mysql_connect "$QUERY_DB_USER" "$QUERY_DB_PASS" "$QUERY_DB_NAME" "$REMOTE_IP") < ~/ssb/queries/${query_id}.sql > ~/ssb/result/${query_id}_res.txt
+    $(mysql_connect "$QUERY_DB_USER" "$QUERY_DB_PASS" "$QUERY_DB_NAME" "$REMOTE_IP") < queries/${query_id}.sql > ~/ssb/result/${query_id}_res.txt
     end_time=$(date +%s.%N)
     execution_time=$(echo "$end_time - $start_time" | bc)
 
