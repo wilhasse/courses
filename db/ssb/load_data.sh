@@ -2,7 +2,7 @@
 
 # Check if required parameters are provided
 if [ $# -lt 2 ]; then
-    echo "Usage: $0 <IP> <LABEL> [LOAD_METHOD]"
+    echo "Usage: $0 <IP> <LABEL> <DATA_DIR> [LOAD_METHOD]"
     echo "LOAD_METHOD: 1 for LOAD DATA LOCAL INFILE, 0 for pigz method (default)"
     exit 1
 fi
@@ -10,7 +10,8 @@ fi
 # Assign the arguments to variables
 IP=$1
 LABEL="$2"
-LOAD_METHOD=${3:-1}  # Default to 1 if not provided
+DIR="$3"
+LOAD_METHOD=${4:-1}  # Default to 1 LOAD DATA
 
 # MySQL connection details for remote server (where we load data)
 REMOTE_USER="root"
@@ -60,10 +61,10 @@ run_mysql_command() {
 
     if [ "$LOAD_METHOD" -eq 1 ]; then
         echo "Using LOAD DATA LOCAL INFILE method..."
-        $(mysql_connect_remote) -e "LOAD DATA LOCAL INFILE '~/ssb/data/${table}.tbl' INTO TABLE $table FIELDS TERMINATED BY '|' LINES TERMINATED BY '\n';"
+        $(mysql_connect_remote) -e "SET autocommit = 0;SET UNIQUE_CHECKS = 0;SET FOREIGN_KEY_CHECKS = 0;LOAD DATA LOCAL INFILE '${DIR}/${table}.tbl' INTO TABLE $table FIELDS TERMINATED BY '|' LINES TERMINATED BY '\n';commit"
     else
         echo "Using pigz method..."
-        pigz -c -d ~/ssb/data/${table}.sql.gz | $(mysql_connect_remote)
+        pigz -c -d ${DIR}/${table}.sql.gz | $(mysql_connect_remote)
     fi
 
     echo "----------------------------------------"
