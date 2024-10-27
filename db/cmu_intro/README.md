@@ -1,17 +1,17 @@
 # Course
 
-Fall 2023
+Fall 2024
 Database Systems  
-https://15445.courses.cs.cmu.edu/fall2023/
+https://15445.courses.cs.cmu.edu/fall2024/
 
 Playlist
-https://www.youtube.com/playlist?list=PLSE8ODhjZXjbj8BMuIrRcacnQh20hmY9g
+https://www.youtube.com/playlist?list=PLSE8ODhjZXjYDBpQnSymaectKjxCy6BYq  
 
 Slides List  
-https://15445.courses.cs.cmu.edu/fall2023/slides
+https://15445.courses.cs.cmu.edu/fall2024/slides  
 
 Notes list  
-https://15445.courses.cs.cmu.edu/fall2023/notes
+https://15445.courses.cs.cmu.edu/fall2024/notes  
 
 # Videos
 
@@ -143,7 +143,16 @@ Optimizations
 - Bulk Insert
 - Buffered Updates
 
-## 09 -Index Concurrency Control
+## 09 - Vector Indexes, Inverted Indexes, Filters, Tries
+
+Bloom Filters  
+Skip Lists  
+Trie Index  
+Radix Tree  
+Inverted Indexes  
+Vector Indexes  
+
+## 10 -Index Concurrency Control
 
 Concurrency Control  
 
@@ -166,7 +175,7 @@ B+Tree - Multi Threaded
 B+Tree - Delete / Insert  
 Leaf Node Scan  
 
-## 10 -Sorting
+## 11 -Sorting & Aggregations
 
 Top-N Heap Sort  
 External Merge Sort  
@@ -176,7 +185,7 @@ Aggregations
 Partitions  
 Rehash  
 
-## 11- Join Algorithms
+## 12- Join Algorithms
 
 Query Plan  
 Join Operators  
@@ -193,3 +202,41 @@ Optimizations: Bloom Filters
 Partitioned Hash Join  
 Recursive Partitioning  
 Optimizations: Hybrid Hash Join  
+
+## 13- Query Execution Part 1
+
+Processing Model
+- Iterator Model
+- Materialization Model
+- Vectorized / Batch Model
+
+Plan Processing Direction
+- Top-to-Bottom (Pull)
+- Bottom-to-Top (Push)
+
+Push-Based Iterator Model  
+Sequential Scan  
+Zone Maps  
+Index Scan  
+Multi-Index Scan  
+Modification Queries  
+Update Query Problem  
+Expression Evaluation  
+
+## 14- Query Execution Part 2
+
+Process Model
+- Process per Worker  
+- Process per Thread  
+- Embedded DBMS  
+
+Parallel Query Execution      
+Inter-Query Parallelism  
+Parallel Grace Hash Join   
+Intra-Query Parallelism   
+Exchange Operator  
+Inter-Operator Parallelism  
+Bushy Parallelism  
+I/O Parallelism  
+Multi-Disk Parallelism  
+Partitioning  
