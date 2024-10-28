@@ -6,7 +6,7 @@ Useful commands
 ## Authenticate
 
 ```bash
-git remote set-url origin https://wilhasse:***TOKEN***@github.com/wilhasse/course
+git remote set-url origin https://wilhasse:***TOKEN***@github.com/wilhasse/courses
 git config --global credential.helper store
 git push
 ```
