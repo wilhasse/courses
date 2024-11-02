@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 # Set these variables according to your setup
 MYSQL_BASEDIR="/data/percona-server/build/runtime_output_directory"
@@ -9,4 +9,4 @@ MYSQL_USER="cslog"  # The user under which MySQL will run
 sudo chown -R $MYSQL_USER:$MYSQL_USER $MYSQL_DATADIR
 
 # Initialize the data directory
-sudo $MYSQL_BASEDIR/mysqld --defaults-file=/data/my.cnf --user=$MYSQL_USER --datadir=$MYSQL_DATADIR --log-error=/data/mysql_error.log
+sudo $MYSQL_BASEDIR/mysqld --defaults-file=/data/my.cnf --user=$MYSQL_USER --datadir=$MYSQL_DATADIR --log-error=/data/mysql-error.log
