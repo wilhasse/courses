@@ -239,4 +239,31 @@ Inter-Operator Parallelism
 Bushy Parallelism  
 I/O Parallelism  
 Multi-Disk Parallelism  
-Partitioning  
+Partitioning
+
+## 15 - Query Planning and Optimization
+
+Logical vs. Physical Plans    
+Query Optimization  
+Logical Plan Optimization    
+Predicate Pushdown  
+Cost-Based Query Optimization  
+Bottom Up Optimization  
+Top-Down Optimization  
+Nested Subqueries  
+Decomposing Queries  
+Expression Rewriting  
+Statistics  
+Histograms  
+Sampling  
+
+## 16 - Concurrency Control
+
+Atomicity of Transactions  
+Consistency  
+Isolation  
+Interliving Transactions    
+Conflicting Operations  
+Depencdency Graph  
+Serializability  
+Transaction Durability  
