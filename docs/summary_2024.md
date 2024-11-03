@@ -1,4 +1,4 @@
-# WEB (3 and half months)
+# WEB (4 months)
 
 ## Short Courses (01/01 ~ 11/01)
 
@@ -38,7 +38,7 @@ Javascript: From Fist Steps to Professional
 Mini Project CH  
 Mini Project ConBD
 
-# Databases / Language (5 months)
+# Databases / Language (8 months)
 
 ## TiDB Database (18/03 ~03/05)
 
@@ -67,3 +67,20 @@ Ardan Labs Kubernetes
 
 Ziglings Course  
 Zig/RocksDB Project
+
+## Database (14/08 ~ 27/08)
+
+Monet/DuckDB  
+Postgresql/Hydra  
+Course CMU Databases  
+
+## Apache Doris (28/08 ~ 20/09)
+
+Doris Test  
+Apache Flink / CDC  
+
+## MySQL Custom Storage Engine (21/09 ~ 31/12)
+
+Test with InnoDB / Processing ibd fies   
+Study Memory Storage Engine  
+CSLOG Storage: Memory + RocksDB  
