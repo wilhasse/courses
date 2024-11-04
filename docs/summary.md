@@ -8,6 +8,6 @@
 
 # 2024
 
-## WEB (2.5m)
+## WEB (4m)
 
-## Database (5m)
+## Database (8m)
