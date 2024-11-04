@@ -1,3 +1,3 @@
 #!/bin/bash
 
-mysqladmin shutdown -u root -S /data/mysql/mysql.sock
+mysqladmin shutdown -u root -S /var/run/mysqld/mysqld.sock

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # MySQL socket path
-MYSQL_SOCK="/data/mysql/mysql.sock"
+MYSQL_SOCK="/var/run/mysqld/mysqld.sock"
 
 # Check if socket file exists
 if [ ! -S "$MYSQL_SOCK" ]; then
