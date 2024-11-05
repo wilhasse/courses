@@ -2,8 +2,9 @@
 
 | Folder                                           | Status      | Date       | Description                                     |
 | ------------------------------------------------ | ----------- | ---------- | ----------------------------------------------- |
-| [cuda](./cuda/)                                  | In progress | 18/09/2024 | Coursera - Cuda Programming                     |
-| [cmu-intro-db](./db/cmu_intro/)                  | Stopped     | 18/08/2024 | Carnegie Mellon - Database Systems              |
+| [memory management](./c/memory/)                 | In progress | 05/11/2024 | BootDev - Learn Memory Management               |
+| [cmu-intro-db](./db/cmu_intro/)                  | In progress | 18/08/2024 | Carnegie Mellon - Database Systems              |
+| [cuda](./cuda/)                                  | Stopped     | 18/09/2024 | Coursera - Cuda Programming                     |
 | [vimified](./one-page/vimified.md)               | Stopped     | 02/08/2024 | Vimified Course                                 |
 | [grpc-zig](./one-page/grpc-zig.md)               | Finished    | 24/08/2024 | gRPC and Zig                                    |
 | [zigrocksdb](./zig/rocksmin/)                    | Finished    | 18/08/2024 | Project RocksDB and Zig                         |
@@ -61,6 +62,7 @@ Git
 Docker  
 Webservers  
 Http
+Learn Memory Management
 
 ## assembly / C
 
