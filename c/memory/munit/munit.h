@@ -6,8 +6,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <math.h>
+#include <string.h>
 
 // Test function type
 typedef void (*MunitTestFunc)(void);
@@ -32,10 +32,19 @@ typedef struct {
     } \
 } while (0)
 
+// Add this new macro for integer assertions
+#define assert_int(actual, op, expected, message) do { \
+    if (!((actual) op (expected))) { \
+        printf("Assertion failed: %s\nExpected: %d %s %d\nActual: %d\n", \
+            message, actual, #op, expected, actual); \
+        exit(1); \
+    } \
+} while (0)
+
 #define munit_assert_double_equal(actual, expected, message) do { \
     if (fabs((actual) - (expected)) > 0.00001) { \
         printf("Assertion failed: %s\nExpected: %f\nActual: %f\n", \
-               message, (double)(expected), (double)(actual)); \
+            message, (double)(expected), (double)(actual)); \
         exit(1); \
     } \
 } while (0)

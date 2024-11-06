@@ -3,17 +3,17 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g -I../munit
 
 # Source files
-LOCAL_SOURCES = exercise.c main.c
+LOCAL_SOURCES = coord.c main.c
 MUNIT_SOURCES = ../munit/munit.c
 SOURCES = $(LOCAL_SOURCES) $(MUNIT_SOURCES)
 
 # Headers
-LOCAL_HEADERS = exercise.h
+LOCAL_HEADERS = coord.h
 MUNIT_HEADERS = ../munit/munit.h
 HEADERS = $(LOCAL_HEADERS) $(MUNIT_HEADERS)
 
 OBJECTS = $(SOURCES:.c=.o)
-TARGET = test_runner
+TARGET = test_coord
 
 # Default target
 all: $(TARGET)
