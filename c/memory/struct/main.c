@@ -4,18 +4,18 @@
 munit_case(RUN, test_new_coordinate, {
   coordinate_t c = new_coord(1, 2, 3);
 
-  assert_int(c.x, ==, 1, "should set x");
-  assert_int(c.y, ==, 2, "should set y");
-  assert_int(c.z, ==, 3, "should set z");
+  munit_assert_int(c.x, ==, 1, "should set x");
+  munit_assert_int(c.y, ==, 2, "should set y");
+  munit_assert_int(c.z, ==, 3, "should set z");
 });
 
 munit_case(RUN, test_scale_coordinate, {
   coordinate_t c = new_coord(1, 2, 3);
   coordinate_t scaled = scale_coordinate(c, 2);
 
-  assert_int(scaled.x, ==, 2, "should scale x");
-  assert_int(scaled.y, ==, 4, "should scale y");
-  assert_int(scaled.z, ==, 6, "should scale z");
+  munit_assert_int(scaled.x, ==, 2, "should scale x");
+  munit_assert_int(scaled.y, ==, 4, "should scale y");
+  munit_assert_int(scaled.z, ==, 6, "should scale z");
 });
 
 int main() {

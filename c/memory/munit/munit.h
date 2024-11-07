@@ -33,7 +33,7 @@ typedef struct {
 } while (0)
 
 // Add this new macro for integer assertions
-#define assert_int(actual, op, expected, message) do { \
+#define munit_assert_int(actual, op, expected, message) do { \
     if (!((actual) op (expected))) { \
         printf("Assertion failed: %s\nExpected: %d %s %d\nActual: %d\n", \
             message, actual, #op, expected, actual); \
@@ -45,6 +45,24 @@ typedef struct {
     if (fabs((actual) - (expected)) > 0.00001) { \
         printf("Assertion failed: %s\nExpected: %f\nActual: %f\n", \
             message, (double)(expected), (double)(actual)); \
+        exit(1); \
+    } \
+} while (0)
+
+// Pointer assertion - not equal
+#define munit_assert_ptr_not_equal(ptr1, ptr2, message) do { \
+    if ((ptr1) == (ptr2)) { \
+        printf("Assertion failed: %s\nPointers are equal: %p\n", \
+            message, (void*)(ptr1)); \
+        exit(1); \
+    } \
+} while (0)
+
+// Pointer assertion - equal
+#define munit_assert_ptr_equal(ptr1, ptr2, message) do { \
+    if ((ptr1) != (ptr2)) { \
+        printf("Assertion failed: %s\nExpected: %p\nActual: %p\n", \
+            message, (void*)(ptr2), (void*)(ptr1)); \
         exit(1); \
     } \
 } while (0)
