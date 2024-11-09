@@ -2,7 +2,8 @@
 
 # Check if required parameters are provided
 if [ $# -lt 2 ]; then
-    echo "Usage: $0 <IP> <LABEL> <DATA_DIR> [LOAD_METHOD]"
+    echo "Usage: $0 <IP> <LABEL> <DATA_DIR> [APPEND] [LOAD_METHOD]"
+    echo "APPEND: 1 for no truncate data"
     echo "LOAD_METHOD: 1 for LOAD DATA LOCAL INFILE, 0 for pigz method (default)"
     exit 1
 fi
@@ -11,7 +12,8 @@ fi
 IP=$1
 LABEL="$2"
 DIR="$3"
-LOAD_METHOD=${4:-1}  # Default to 1 LOAD DATA
+APPEND="${4:-0}"
+LOAD_METHOD=${5:-1}  # Default to 1 LOAD DATA
 
 # MySQL connection details for remote server (where we load data)
 REMOTE_USER="root"
@@ -56,9 +58,13 @@ CREATE TABLE IF NOT EXISTS query_performance (
 # Function to run MySQL command for data loading
 run_mysql_command() {
     local table=$1
-    echo "Truncating and loading data into $table table..."
-    $(mysql_connect_remote) -e "SET FOREIGN_KEY_CHECKS=0;TRUNCATE TABLE $table;"
 
+    if [ "$APPEND" -eq 0 ]; then
+        echo "Truncating data in $table..."
+        $(mysql_connect_remote) -e "SET FOREIGN_KEY_CHECKS=0;TRUNCATE TABLE $table;"
+    fi
+
+    echo "Loading data into $table table..."
     if [ "$LOAD_METHOD" -eq 1 ]; then
         echo "Using LOAD DATA LOCAL INFILE method..."
         $(mysql_connect_remote) -e "SET autocommit = 0;SET UNIQUE_CHECKS = 0;SET FOREIGN_KEY_CHECKS = 0;LOAD DATA LOCAL INFILE '${DIR}/${table}.tbl' INTO TABLE $table FIELDS TERMINATED BY '|' LINES TERMINATED BY '\n';commit"
