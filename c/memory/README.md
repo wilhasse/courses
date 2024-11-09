@@ -15,3 +15,4 @@ Bootdev Course
 - [Simple Union example](union)
 - [Union example with Helper Fields](union_helper)
 - [Example showing problem using stack memory , different ways to solve it](stack)
+- [Using malloc to initialize an array](malloc)

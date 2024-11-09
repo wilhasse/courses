@@ -36,6 +36,32 @@ typedef struct {
     } \
 } while (0)
 
+// Add this macro for false comparison
+#define munit_assert_false(condition, message) do { \
+    if (condition) { \
+        printf("Assertion failed: %s\nExpected: false\nActual: true\n", message); \
+        exit(1); \
+    } \
+} while (0)
+
+// Add this macro for null comparison
+#define munit_assert_null(ptr, message) do { \
+    if ((ptr) != NULL) { \
+        printf("Assertion failed: %s\nExpected: NULL\nActual: %p\n", \
+            message, (void*)(ptr)); \
+        exit(1); \
+    } \
+} while (0)
+
+// Add this macro for not null comparison
+#define munit_assert_not_null(ptr, message) do { \
+    if ((ptr) == NULL) { \
+        printf("Assertion failed: %s\nExpected: not NULL\nActual: NULL\n", \
+            message); \
+        exit(1); \
+    } \
+} while (0)
+
 // Add this macro for string comparison
 #define munit_assert_string_equal(actual, expected, message) do { \
     if (strcmp((actual), (expected)) != 0) { \
