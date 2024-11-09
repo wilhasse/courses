@@ -10,3 +10,7 @@ Bootdev Course
 - [Passing struct to a function (copy vs in-place)](structp)
 - [Using pointer to a struct](pointer)
 - [Interating over an array of struct using a flat pointer](flatp)
+- [String helper functions](string)
+- [Forward, Mutual Struct and typedef](mstruct)
+- [Simple Union example](union)
+- [Union example with Helper Fields](union_helper)

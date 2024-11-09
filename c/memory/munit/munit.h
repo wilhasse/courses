@@ -9,6 +9,10 @@
 #include <math.h>
 #include <string.h>
 
+// Test case types
+#define RUN 1
+#define SUBMIT 2
+
 // Test function type
 typedef void (*MunitTestFunc)(void);
 
@@ -28,6 +32,15 @@ typedef struct {
 #define munit_assert(condition, message) do { \
     if (!(condition)) { \
         printf("Assertion failed: %s\n", message); \
+        exit(1); \
+    } \
+} while (0)
+
+// Add this macro for string comparison
+#define munit_assert_string_equal(actual, expected, message) do { \
+    if (strcmp((actual), (expected)) != 0) { \
+        printf("Assertion failed: %s\nExpected: \"%s\"\nActual: \"%s\"\n", \
+            message, expected, actual); \
         exit(1); \
     } \
 } while (0)
@@ -63,6 +76,51 @@ typedef struct {
     if ((ptr1) != (ptr2)) { \
         printf("Assertion failed: %s\nExpected: %p\nActual: %p\n", \
             message, (void*)(ptr2), (void*)(ptr1)); \
+        exit(1); \
+    } \
+} while (0)
+
+// Size comparison macro
+#define munit_assert_size(actual, op, expected, message) do { \
+    if (!((actual) op (expected))) { \
+        printf("Assertion failed: %s\nExpected: %zu %s %zu\n", \
+            message, (size_t)(expected), #op, (size_t)(actual)); \
+        exit(1); \
+    } \
+} while (0)
+
+// uint8_t comparison macro
+#define munit_assert_uint8(actual, op, expected, message) do { \
+    if (!((actual) op (expected))) { \
+        printf("Assertion failed: %s\nExpected: 0x%02X %s 0x%02X\n", \
+            message, (uint8_t)(expected), #op, (uint8_t)(actual)); \
+        exit(1); \
+    } \
+} while (0)
+
+// uint16_t comparison macro
+#define munit_assert_uint16(actual, op, expected, message) do { \
+    if (!((actual) op (expected))) { \
+        printf("Assertion failed: %s\nExpected: 0x%04X %s 0x%04X\n", \
+            message, (uint16_t)(expected), #op, (uint16_t)(actual)); \
+        exit(1); \
+    } \
+} while (0)
+
+// uint32_t comparison macro
+#define munit_assert_uint32(actual, op, expected, message) do { \
+    if (!((actual) op (expected))) { \
+        printf("Assertion failed: %s\nExpected: 0x%08X %s 0x%08X\n", \
+            message, (uint32_t)(expected), #op, (uint32_t)(actual)); \
+        exit(1); \
+    } \
+} while (0)
+
+// uint64_t comparison macro
+#define munit_assert_uint64(actual, op, expected, message) do { \
+    if (!((actual) op (expected))) { \
+        printf("Assertion failed: %s\nExpected: 0x%016lX %s 0x%016lX\n", \
+            message, (uint64_t)(expected), #op, (uint64_t)(actual)); \
         exit(1); \
     } \
 } while (0)
