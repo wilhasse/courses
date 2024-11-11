@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 typedef enum SnekObjectKind {
   INTEGER,
   FLOAT,
@@ -19,4 +21,4 @@ typedef struct SnekBool {
   unsigned int value;
 } snek_bool_t;
 
-void snek_zero_out(void *ptr, snek_object_kind_t kind);
+bool snek_zero_out(void *ptr, snek_object_kind_t kind);
