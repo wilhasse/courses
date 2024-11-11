@@ -33,7 +33,7 @@ int munit_suite_main(MunitSuite* suite, void* user_data, int argc, char* const* 
 
     MunitTest* current_test = suite->tests;
     int test_count = 0;
-    
+
     while (current_test->name != NULL && current_test->test != NULL) {
         run_test(current_test);
         current_test++;
@@ -45,3 +45,4 @@ int munit_suite_main(MunitSuite* suite, void* user_data, int argc, char* const* 
 
     return 0;
 }
+

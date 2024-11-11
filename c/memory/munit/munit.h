@@ -36,6 +36,15 @@ typedef struct {
     } \
 } while (0)
 
+// Assert true condition
+#define munit_assert_true(condition) do { \
+    if (!(condition)) { \
+        printf("Error: %s:%d: assertion failed: %s is not true\n", \
+               __FILE__, __LINE__, #condition); \
+        exit(1); \
+    } \
+} while (0)
+
 // Add this macro for false comparison
 #define munit_assert_false(condition, message) do { \
     if (condition) { \
@@ -74,7 +83,7 @@ typedef struct {
 // Add this new macro for integer assertions
 #define munit_assert_int(actual, op, expected, message) do { \
     if (!((actual) op (expected))) { \
-        printf("Assertion failed: %s\nExpected: %d %s %d\nActual: %d\n", \
+        printf("Assertion failed: %s\nExpected: %ld %s %d\nActual: %d\n", \
             message, actual, #op, expected, actual); \
         exit(1); \
     } \
