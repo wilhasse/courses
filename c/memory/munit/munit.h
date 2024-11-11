@@ -152,7 +152,10 @@ typedef struct {
 } while (0)
 
 // Test case macros
-#define munit_case(type, name, body) void name(void) body
+#define munit_case(type, name, ...) \
+    void name(void) { \
+        __VA_ARGS__ \
+    }
 
 // Test creation helper
 #define munit_test(name, func) { name, func }
