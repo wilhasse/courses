@@ -17,3 +17,5 @@ Bootdev Course
 - [Example showing problem using stack memory , different ways to solve it](stack)
 - [Using malloc to initialize an array](malloc)
 - [Why do I need pointer to pointer?](ppointer)
+- [Array of pointers example](token)
+- [Void pointers](void_pointer)

@@ -80,6 +80,15 @@ typedef struct {
     } \
 } while (0)
 
+// Add this new macro for float assertions
+#define munit_assert_float(actual, op, expected, message) do { \
+    if (!((actual) op (expected))) { \
+        printf("Assertion failed: %s\nExpected: %f %s %f\nActual: %f\n", \
+            message, actual, #op, expected, actual); \
+        exit(1); \
+    } \
+} while (0)
+
 #define munit_assert_double_equal(actual, expected, message) do { \
     if (fabs((actual) - (expected)) > 0.00001) { \
         printf("Assertion failed: %s\nExpected: %f\nActual: %f\n", \
