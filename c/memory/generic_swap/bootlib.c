@@ -31,7 +31,7 @@ void* tracked_malloc(size_t size, const char* file, int line) {
 
 void tracked_free(void* ptr, const char* file, int line) {
     if (!ptr) return;
-    
+
     for (size_t i = 0; i < tracker.count; i++) {
         if (tracker.allocations[i].ptr == ptr) {
             tracker.allocations[i] = tracker.allocations[--tracker.count];
@@ -40,7 +40,7 @@ void tracked_free(void* ptr, const char* file, int line) {
             return;
         }
     }
-    
+
     printf("Warning: Attempting to free untracked pointer at %s:%d\n", file, line);
     free(ptr);
 }
@@ -49,7 +49,7 @@ bool boot_all_freed(void) {
     if (tracker.count > 0) {
         printf("Memory leak detected! %zu allocations not freed:\n", tracker.count);
         for (size_t i = 0; i < tracker.count; i++) {
-            printf("  Leaked memory at %p, allocated at %s:%d\n", 
+            printf("  Leaked memory at %p, allocated at %s:%d\n",
                    tracker.allocations[i].ptr,
                    tracker.allocations[i].file,
                    tracker.allocations[i].line);
