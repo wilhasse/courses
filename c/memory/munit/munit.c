@@ -3,6 +3,14 @@
 */
 #include "munit.h"
 
+// Global verbose mode flag
+int munit_verbose_mode = 0;
+
+// Add this to your main function or test runner
+void enable_verbose_mode() {
+    munit_verbose_mode = 1;
+}
+
 MunitSuite munit_suite(const char* name, MunitTest* tests) {
     MunitSuite suite = {
         .name = name,
@@ -27,6 +35,9 @@ int munit_suite_main(MunitSuite* suite, void* user_data, int argc, char* const* 
     (void)user_data;  // Unused parameters
     (void)argc;
     (void)argv;
+
+    // Enable verbose mode if desired
+    enable_verbose_mode();
 
     printf("\nRunning test suite: %s\n", suite->name);
     printf("----------------------------------------\n");

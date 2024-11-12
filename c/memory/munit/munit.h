@@ -9,6 +9,9 @@
 #include <math.h>
 #include <string.h>
 
+// Add verbose mode flag
+extern int munit_verbose_mode;
+
 // Test case types
 #define RUN 1
 #define SUBMIT 2
@@ -30,153 +33,199 @@ typedef struct {
     MunitTest* tests;
 } MunitSuite;
 
-// Assertion macros
+// Basic assert with verbose output
 #define munit_assert(condition, message) do { \
+    if (munit_verbose_mode) { \
+        printf("Assert: %s - ", message); \
+    } \
     if (!(condition)) { \
-        printf("Assertion failed: %s\n", message); \
+        printf("FAILED\nAssertion failed: %s\n", message); \
         exit(1); \
+    } else if (munit_verbose_mode) { \
+        printf("PASSED\n"); \
     } \
 } while (0)
 
-// Assert true condition
-#define munit_assert_true(condition) do { \
-    if (!(condition)) { \
-        printf("Error: %s:%d: assertion failed: %s is not true\n", \
-               __FILE__, __LINE__, #condition); \
-        exit(1); \
-    } \
-} while (0)
-
-// Add this macro for false comparison
-#define munit_assert_false(condition, message) do { \
-    if (condition) { \
-        printf("Assertion failed: %s\nExpected: false\nActual: true\n", message); \
-        exit(1); \
-    } \
-} while (0)
-
-// Add this macro for null comparison
-#define munit_assert_null(ptr, message) do { \
-    if ((ptr) != NULL) { \
-        printf("Assertion failed: %s\nExpected: NULL\nActual: %p\n", \
-            message, (void*)(ptr)); \
-        exit(1); \
-    } \
-} while (0)
-
-// Add this macro for not null comparison
-#define munit_assert_not_null(ptr, message) do { \
-    if ((ptr) == NULL) { \
-        printf("Assertion failed: %s\nExpected: not NULL\nActual: NULL\n", \
-            message); \
-        exit(1); \
-    } \
-} while (0)
-
-// Add this macro for string comparison
-#define munit_assert_string_equal(actual, expected, message) do { \
-    if (strcmp((actual), (expected)) != 0) { \
-        printf("Assertion failed: %s\nExpected: \"%s\"\nActual: \"%s\"\n", \
-            message, expected, actual); \
-        exit(1); \
-    } \
-} while (0)
-
-// Add this new macro for integer assertions
+// Integer assertion with verbose output
 #define munit_assert_int(actual, op, expected, message) do { \
+    if (munit_verbose_mode) { \
+        printf("Assert Int: %s - ", message); \
+    } \
     if (!((actual) op (expected))) { \
-        printf("Assertion failed: %s\nExpected: %ld %s %d\nActual: %d\n", \
-            message, actual, #op, expected, actual); \
+        printf("FAILED\nExpected: %d %s %d\nActual: %d\n", \
+            expected, #op, expected, actual); \
         exit(1); \
+    } else if (munit_verbose_mode) { \
+        printf("PASSED (%d %s %d)\n", actual, #op, expected); \
     } \
 } while (0)
 
-// Add this new macro for float assertions
-#define munit_assert_float_equal(actual, expected, message) do { \
-    if (fabs((actual) - (expected)) > MUNIT_FLOAT_EPSILON) { \
-        printf("Assertion failed: %s\nExpected: %f to be approximately equal to %f\n" \
-               "Actual: %f\nDifference: %f\n", \
-               message, actual, expected, actual, fabs((actual) - (expected))); \
+// String assertion with verbose output
+#define munit_assert_string_equal(actual, expected, message) do { \
+    if (munit_verbose_mode) { \
+        printf("Assert String: %s - ", message); \
+    } \
+    if (strcmp((actual), (expected)) != 0) { \
+        printf("FAILED\nExpected: \"%s\"\nActual: \"%s\"\n", \
+            expected, actual); \
         exit(1); \
+    } else if (munit_verbose_mode) { \
+        printf("PASSED (\"%s\" == \"%s\")\n", actual, expected); \
+    } \
+} while (0)
+
+// Not null assertion with verbose output
+#define munit_assert_not_null(ptr, message) do { \
+    if (munit_verbose_mode) { \
+        printf("Assert Not Null: %s - ", message); \
+    } \
+    if ((ptr) == NULL) { \
+        printf("FAILED\nExpected: not NULL\nActual: NULL\n"); \
+        exit(1); \
+    } else if (munit_verbose_mode) { \
+        printf("PASSED (ptr = %p)\n", (void*)(ptr)); \
+    } \
+} while (0)
+
+// String comparison
+#define munit_assert_string_equal(actual, expected, message) do { \
+    if (munit_verbose_mode) printf("Assert String: %s - ", message); \
+    if (strcmp((actual), (expected)) != 0) { \
+        printf("FAILED\nExpected: \"%s\"\nActual: \"%s\"\n", \
+            expected, actual); \
+        exit(1); \
+    } else if (munit_verbose_mode) { \
+        printf("PASSED (\"%s\" == \"%s\")\n", actual, expected); \
+    } \
+} while (0)
+
+// Integer assertions
+#define munit_assert_int(actual, op, expected, message) do { \
+    if (munit_verbose_mode) printf("Assert Int: %s - ", message); \
+    if (!((actual) op (expected))) { \
+        printf("FAILED\nExpected: %ld %s %d\nActual: %d\n", \
+            actual, #op, expected, actual); \
+        exit(1); \
+    } else if (munit_verbose_mode) { \
+        printf("PASSED (%d %s %d)\n", actual, #op, expected); \
+    } \
+} while (0)
+
+// Float assertions
+#define munit_assert_float_equal(actual, expected, message) do { \
+    if (munit_verbose_mode) printf("Assert Float Equal: %s - ", message); \
+    if (fabs((actual) - (expected)) > MUNIT_FLOAT_EPSILON) { \
+        printf("FAILED\nExpected: %f to be approximately equal to %f\n" \
+               "Actual: %f\nDifference: %f\n", \
+               actual, expected, actual, fabs((actual) - (expected))); \
+        exit(1); \
+    } else if (munit_verbose_mode) { \
+        printf("PASSED (%f ≈ %f)\n", actual, expected); \
     } \
 } while (0)
 
 #define munit_assert_float(actual, op, expected, message) do { \
+    if (munit_verbose_mode) printf("Assert Float: %s - ", message); \
     if (!((actual) op (expected))) { \
-        printf("Assertion failed: %s\nExpected: %f %s %f\nActual: %f\n", \
-            message, actual, #op, expected, actual); \
+        printf("FAILED\nExpected: %f %s %f\nActual: %f\n", \
+            actual, #op, expected, actual); \
         exit(1); \
+    } else if (munit_verbose_mode) { \
+        printf("PASSED (%f %s %f)\n", actual, #op, expected); \
     } \
 } while (0)
 
 #define munit_assert_double_equal(actual, expected, message) do { \
+    if (munit_verbose_mode) printf("Assert Double: %s - ", message); \
     if (fabs((actual) - (expected)) > 0.00001) { \
-        printf("Assertion failed: %s\nExpected: %f\nActual: %f\n", \
-            message, (double)(expected), (double)(actual)); \
+        printf("FAILED\nExpected: %f\nActual: %f\n", \
+            (double)(expected), (double)(actual)); \
         exit(1); \
+    } else if (munit_verbose_mode) { \
+        printf("PASSED (%f == %f)\n", (double)(actual), (double)(expected)); \
     } \
 } while (0)
 
-// Pointer assertion - not equal
+// Pointer assertions
 #define munit_assert_ptr_not_equal(ptr1, ptr2, message) do { \
+    if (munit_verbose_mode) printf("Assert Ptr Not Equal: %s - ", message); \
     if ((ptr1) == (ptr2)) { \
-        printf("Assertion failed: %s\nPointers are equal: %p\n", \
-            message, (void*)(ptr1)); \
+        printf("FAILED\nPointers are equal: %p\n", (void*)(ptr1)); \
         exit(1); \
+    } else if (munit_verbose_mode) { \
+        printf("PASSED (%p != %p)\n", (void*)(ptr1), (void*)(ptr2)); \
     } \
 } while (0)
 
-// Pointer assertion - equal
 #define munit_assert_ptr_equal(ptr1, ptr2, message) do { \
+    if (munit_verbose_mode) printf("Assert Ptr Equal: %s - ", message); \
     if ((ptr1) != (ptr2)) { \
-        printf("Assertion failed: %s\nExpected: %p\nActual: %p\n", \
-            message, (void*)(ptr2), (void*)(ptr1)); \
+        printf("FAILED\nExpected: %p\nActual: %p\n", \
+            (void*)(ptr2), (void*)(ptr1)); \
         exit(1); \
+    } else if (munit_verbose_mode) { \
+        printf("PASSED (%p == %p)\n", (void*)(ptr1), (void*)(ptr2)); \
     } \
 } while (0)
 
-// Size comparison macro
+// Size comparison
 #define munit_assert_size(actual, op, expected, message) do { \
+    if (munit_verbose_mode) printf("Assert Size: %s - ", message); \
     if (!((actual) op (expected))) { \
-        printf("Assertion failed: %s\nExpected: %zu %s %zu\n", \
-            message, (size_t)(expected), #op, (size_t)(actual)); \
+        printf("FAILED\nExpected: %zu %s %zu\n", \
+            (size_t)(expected), #op, (size_t)(actual)); \
         exit(1); \
+    } else if (munit_verbose_mode) { \
+        printf("PASSED (%zu %s %zu)\n", (size_t)(actual), #op, (size_t)(expected)); \
     } \
 } while (0)
 
-// uint8_t comparison macro
+// Integer type assertions
 #define munit_assert_uint8(actual, op, expected, message) do { \
+    if (munit_verbose_mode) printf("Assert uint8: %s - ", message); \
     if (!((actual) op (expected))) { \
-        printf("Assertion failed: %s\nExpected: 0x%02X %s 0x%02X\n", \
-            message, (uint8_t)(expected), #op, (uint8_t)(actual)); \
+        printf("FAILED\nExpected: 0x%02X %s 0x%02X\n", \
+            (uint8_t)(expected), #op, (uint8_t)(actual)); \
         exit(1); \
+    } else if (munit_verbose_mode) { \
+        printf("PASSED (0x%02X %s 0x%02X)\n", \
+            (uint8_t)(actual), #op, (uint8_t)(expected)); \
     } \
 } while (0)
 
-// uint16_t comparison macro
 #define munit_assert_uint16(actual, op, expected, message) do { \
+    if (munit_verbose_mode) printf("Assert uint16: %s - ", message); \
     if (!((actual) op (expected))) { \
-        printf("Assertion failed: %s\nExpected: 0x%04X %s 0x%04X\n", \
-            message, (uint16_t)(expected), #op, (uint16_t)(actual)); \
+        printf("FAILED\nExpected: 0x%04X %s 0x%04X\n", \
+            (uint16_t)(expected), #op, (uint16_t)(actual)); \
         exit(1); \
+    } else if (munit_verbose_mode) { \
+        printf("PASSED (0x%04X %s 0x%04X)\n", \
+            (uint16_t)(actual), #op, (uint16_t)(expected)); \
     } \
 } while (0)
 
-// uint32_t comparison macro
 #define munit_assert_uint32(actual, op, expected, message) do { \
+    if (munit_verbose_mode) printf("Assert uint32: %s - ", message); \
     if (!((actual) op (expected))) { \
-        printf("Assertion failed: %s\nExpected: 0x%08X %s 0x%08X\n", \
-            message, (uint32_t)(expected), #op, (uint32_t)(actual)); \
+        printf("FAILED\nExpected: 0x%08X %s 0x%08X\n", \
+            (uint32_t)(expected), #op, (uint32_t)(actual)); \
         exit(1); \
+    } else if (munit_verbose_mode) { \
+        printf("PASSED (0x%08X %s 0x%08X)\n", \
+            (uint32_t)(actual), #op, (uint32_t)(expected)); \
     } \
 } while (0)
 
-// uint64_t comparison macro
 #define munit_assert_uint64(actual, op, expected, message) do { \
+    if (munit_verbose_mode) printf("Assert uint64: %s - ", message); \
     if (!((actual) op (expected))) { \
-        printf("Assertion failed: %s\nExpected: 0x%016lX %s 0x%016lX\n", \
-            message, (uint64_t)(expected), #op, (uint64_t)(actual)); \
+        printf("FAILED\nExpected: 0x%016lX %s 0x%016lX\n", \
+            (uint64_t)(expected), #op, (uint64_t)(actual)); \
         exit(1); \
+    } else if (munit_verbose_mode) { \
+        printf("PASSED (0x%016lX %s 0x%016lX)\n", \
+            (uint64_t)(actual), #op, (uint64_t)(expected)); \
     } \
 } while (0)
 
