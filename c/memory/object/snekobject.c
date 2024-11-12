@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "snekobject.h"
-
+#include "bootlib.h"
 #include <string.h>
 #include <stdlib.h>
 

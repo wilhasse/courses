@@ -46,6 +46,30 @@ typedef struct {
     } \
 } while (0)
 
+// Assert true condition
+#define munit_assert_true(condition) do { \
+    if (munit_verbose_mode) printf("Assert True: %s - ", #condition); \
+    if (!(condition)) { \
+        printf("FAILED\nError: %s:%d: assertion failed: %s is not true\n", \
+            __FILE__, __LINE__, #condition); \
+        exit(1); \
+    } else if (munit_verbose_mode) { \
+        printf("PASSED (%s is true)\n", #condition); \
+    } \
+} while (0)
+
+// Add this macro for false comparison
+#define munit_assert_false(condition, message) do { \
+    if (munit_verbose_mode) printf("Assert False: %s - ", message); \
+    if (condition) { \
+        printf("FAILED\nAssertion failed: %s\nExpected: false\nActual: true\n", \
+            message); \
+        exit(1); \
+    } else if (munit_verbose_mode) { \
+        printf("PASSED (%s is false)\n", #condition); \
+    } \
+} while (0)
+
 // Integer assertion with verbose output
 #define munit_assert_int(actual, op, expected, message) do { \
     if (munit_verbose_mode) { \

@@ -1,16 +1,18 @@
 # Compiler settings
 CC = gcc
-CFLAGS = -Wall -Wextra -Wno-unused-but-set-parameter -g -I../munit
+CFLAGS = -Wall -Wextra -Wno-unused-but-set-parameter -g -I../munit -I../bootlib
 
 # Source files
 LOCAL_SOURCES = exercise.c main.c
 MUNIT_SOURCES = ../munit/munit.c
-SOURCES = $(LOCAL_SOURCES) $(MUNIT_SOURCES)
+BOOT_SOURCES  = ../bootlib/bootlib.c
+SOURCES = $(LOCAL_SOURCES) $(BOOT_SOURCES) $(MUNIT_SOURCES)
 
 # Headers
 LOCAL_HEADERS = exercise.h
 MUNIT_HEADERS = ../munit/munit.h
-HEADERS = $(LOCAL_HEADERS) $(MUNIT_HEADERS)
+BOOT_HEADERS = ../bootlib/bootlib.h
+HEADERS = $(LOCAL_HEADERS) $(BOOT_HEADERS) $(MUNIT_HEADERS)
 
 OBJECTS = $(SOURCES:.c=.o)
 TARGET = test_exercise

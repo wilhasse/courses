@@ -15,7 +15,7 @@ munit_case(RUN, test_integer_add, {
   free(one);
   free(three);
   free(four);
-  //munit_assert_true(boot_all_freed());
+  munit_assert_true(boot_all_freed());
 });
 
 munit_case(RUN, test_float_add, {
@@ -30,7 +30,7 @@ munit_case(RUN, test_float_add, {
   free(one);
   free(three);
   free(five);
-  //munit_assert_true(boot_all_freed());
+  munit_assert_true(boot_all_freed());
 });
 
 munit_case(RUN, test_string_add, {
@@ -50,7 +50,7 @@ munit_case(RUN, test_string_add, {
   free(world);
   free(greeting->data.v_string);
   free(greeting);
-  //munit_assert_true(boot_all_freed());
+  munit_assert_true(boot_all_freed());
 });
 
 munit_case(SUBMIT, test_string_add_self, {
@@ -69,7 +69,7 @@ munit_case(SUBMIT, test_string_add_self, {
   free(repeated);
   free(result->data.v_string);
   free(result);
-  //munit_assert_true(boot_all_freed());
+  munit_assert_true(boot_all_freed());
 });
 
 munit_case(SUBMIT, test_vector3_add, {
@@ -106,7 +106,7 @@ munit_case(SUBMIT, test_vector3_add, {
   free(result->data.v_vector3.y);
   free(result->data.v_vector3.z);
   free(result);
-  //munit_assert_true(boot_all_freed());
+  munit_assert_true(boot_all_freed());
 });
 
 munit_case(SUBMIT, test_array_add, {
@@ -142,7 +142,7 @@ munit_case(SUBMIT, test_array_add, {
     free(hellos);
     free(result->data.v_array.elements);
     free(result);
-    //munit_assert_true(boot_all_freed(), "Memory leak detected");
+    munit_assert_true(boot_all_freed());
 })
 
 int main() {
