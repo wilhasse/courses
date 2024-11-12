@@ -1,17 +1,32 @@
 # Heap Storage Engine
 
-From Percona MySQL 5.7
-It uses Percona sources but compile only Heap Storage Engne and uses MySQL Embedded (removed in MySQL 8)
+Extracted from Percona MySQL 5.7 
+
+You need Percona sources (header files and MySQL Embedded) (removed in MySQL 8) 
+
+The reason I am using 5.7 is because embedded server was removed in MySQL 8.
+
+The purpose is to study the heap storage engine and apply some modifications to it. 
+
+Starts with:
+- hp_test1.c
+- hp_test2.c
+
 
 # Percona MySQL 5.7
 
 ```bash
+# Install dependencies
+sudo apt-get install libaio-dev libssl-dev libncurses5-dev libreadline-dev libcurl4-openssl-dev pkg-config
+
+# Clone Percona sources
 git clone https://github.com/percona/percona-server.git -b 5.7 percona-server-57
 cd percona-server-57
 git submodule init
 git submodule update
-sudo apt-get install libaio-dev libssl-dev libncurses5-dev libreadline-dev libcurl4-openssl-dev pkg-config
 mkdir build
+
+# Configure build 
 cmake . \
     -DCMAKE_BUILD_TYPE=Debug \
     -DWITH_SSL=system \
@@ -29,11 +44,14 @@ cmake . \
     -DWITH_EMBEDDED_SERVER=ON \
     -DWITH_EMBEDDED_SHARED_LIBRARY=ON \
     -B build
-```
 
+# Build
+cd build
+make
+```
 # Heap
 
-MySQL Include
+Link to MySQL headers file
 
 ```bash
 cd heap

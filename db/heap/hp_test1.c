@@ -32,10 +32,11 @@
 #include <mysql_com.h>
 #include "heap.h"
 #include "my_thread_local.h"
+#include <errno.h>
 
 static int get_options(int argc, char *argv[]);
 
-static int flag=0,verbose=0,remove_ant=0,flags[50];
+static int flag=0,verbose=1,remove_ant=0,flags[50];  // Set verbose to 1 by default
 
 int main(int argc, char **argv)
 {
@@ -51,8 +52,27 @@ int main(int argc, char **argv)
   my_bool unused;
   MY_INIT(argv[0]);
 
-  filename= "test1";
+  // Initialize thread system
+  if (my_thread_init())
+  {
+      fprintf(stderr, "my_thread_init failed\n");
+      exit(1);
+  }
+
+  // Initialize HEAP storage engine
+  // It doesn't work outside MySQL because of some initialization outside this storage engine
+  //
+  //if (hp_init())
+  //{
+  //    fprintf(stderr, "hp_init failed\n");
+  //    exit(1);
+  //}
+
+  // Use absolute path in /tmp
+  filename = "/tmp/heap_test1";
   get_options(argc,argv);
+
+  printf("Initializing with filename: %s\n", filename);
 
   memset(&hp_create_info, 0, sizeof(hp_create_info));
   hp_create_info.max_table_size= 1024L*1024L;
@@ -88,11 +108,19 @@ int main(int argc, char **argv)
   memset(flags, 0, sizeof(flags));
 
   printf("- Creating heap-file\n");
-  if (heap_create(filename, &hp_create_info,
-                  &tmp_share, &unused) ||
-      !(file= heap_open(filename, 2)))
+  error = heap_create(filename, &hp_create_info, &tmp_share, &unused);
+  if (error) {
+    printf("heap_create failed with error: %d, my_errno: %d\n", error, my_errno());
     goto err;
-  printf("- Writing records:s\n");
+  }
+
+  file = heap_open(filename, 2);
+  if (!file) {
+    printf("heap_open failed with my_errno: %d\n", my_errno());
+    goto err;
+  }
+
+  printf("- Writing records:\n");
   my_stpcpy((char*) record,"          ..... key           ");
 
   for (i=49 ; i>=1 ; i-=2 )
@@ -107,15 +135,23 @@ int main(int argc, char **argv)
       goto err;
     }
     flags[j]=1;
-    if (verbose || error) printf("J= %2d  heap_write: %d  my_errno: %d\n",
-                                 j,error,my_errno());
+    printf("J= %2d  heap_write: %d  my_errno: %d\n", j, error, my_errno());
   }
+
+/*
   if (heap_close(file))
+  {
+    printf("heap_close failed with my_errno: %d\n", my_errno());
     goto err;
+  }
+
   printf("- Reopening file\n");
   if (!(file=heap_open(filename, 2)))
+  {
+    printf("Second heap_open failed with my_errno: %d\n", my_errno());
     goto err;
-
+  }
+  */
   printf("- Removing records\n");
   for (i=1 ; i<=10 ; i++)
   {
@@ -161,10 +197,19 @@ int main(int argc, char **argv)
 
   if (heap_close(file) || hp_panic(HA_PANIC_CLOSE))
     goto err;
+
+  //hp_end();
+  my_thread_end();
+
   my_end(MY_GIVE_INFO);
   return(0);
 err:
   printf("got error: %d when using heap-database\n",my_errno());
+
+  // Deinitialize in case of error as well
+  //hp_end();
+  my_thread_end();
+
   return(1);
 } /* main */
 
