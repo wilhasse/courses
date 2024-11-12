@@ -13,6 +13,8 @@
 #define RUN 1
 #define SUBMIT 2
 
+#define MUNIT_FLOAT_EPSILON 0.000001
+
 // Test function type
 typedef void (*MunitTestFunc)(void);
 
@@ -90,6 +92,15 @@ typedef struct {
 } while (0)
 
 // Add this new macro for float assertions
+#define munit_assert_float_equal(actual, expected, message) do { \
+    if (fabs((actual) - (expected)) > MUNIT_FLOAT_EPSILON) { \
+        printf("Assertion failed: %s\nExpected: %f to be approximately equal to %f\n" \
+               "Actual: %f\nDifference: %f\n", \
+               message, actual, expected, actual, fabs((actual) - (expected))); \
+        exit(1); \
+    } \
+} while (0)
+
 #define munit_assert_float(actual, op, expected, message) do { \
     if (!((actual) op (expected))) { \
         printf("Assertion failed: %s\nExpected: %f %s %f\nActual: %f\n", \
