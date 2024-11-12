@@ -22,3 +22,4 @@ Bootdev Course
 - [generic_swap](generic_swap) -> Swapping two values with generic types using pointer
 - [my_stack](my_stack) -> Implementing a simple stack data structure using void pointer
 - [object](object) -> Complete exercise using structs to hold values arrays of different type
+- [gc_obj](gc_obj) -> Implementing garbage collector in the snekobjects
