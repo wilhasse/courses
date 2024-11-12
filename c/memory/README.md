@@ -21,3 +21,4 @@ Bootdev Course
 - [void_pointer](void_pointer) -> Using void pointer to point to different types using switch. Elegant solution in [Zig](../../zig/zig-exercises/void_pointer.zig) using comptime
 - [generic_swap](generic_swap) -> Swapping two values with generic types using pointer
 - [my_stack](my_stack) -> Implementing a simple stack data structure using void pointer
+- [object](object) -> Complete exercise using structs to hold values arrays of different type
