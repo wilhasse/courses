@@ -2,8 +2,8 @@
 
 | Folder                                           | Status      | Date       | Description                                     |
 | ------------------------------------------------ | ----------- | ---------- | ----------------------------------------------- |
-| [memory management](./c/memory/)                 | In progress | 05/11/2024 | BootDev - Learn Memory Management               |
 | [cmu-intro-db](./db/cmu_intro/)                  | In progress | 18/08/2024 | Carnegie Mellon - Database Systems              |
+| [memory management](./c/memory/)                 | Finished    | 13/11/2024 | BootDev - Learn Memory Management               |
 | [cuda](./cuda/)                                  | Stopped     | 18/09/2024 | Coursera - Cuda Programming                     |
 | [vimified](./one-page/vimified.md)               | Stopped     | 02/08/2024 | Vimified Course                                 |
 | [grpc-zig](./one-page/grpc-zig.md)               | Finished    | 24/08/2024 | gRPC and Zig                                    |
@@ -14,7 +14,7 @@
 | [svelte5](./js/svelte5-concepts/)                | Finished    | 05/08/2024 | Svelte 5 - Video Series                         |
 | [js-bootdev](./js/bootdev/)                      | Finished    | 01/08/2024 | BootDev Javascript Course                       |
 | [webserver](./go/webserver/)                     | Finished    | 21/07/2024 | BootDev Webservers Go                           |
-| [kubernetes](./one-page/kubernetes-ardan.md)     | Stopped     | 19/07/2024 | Ardan Labs Kubernetes Course                    |
+| [kubernetes](./one-page/kubernetes-ardan.md)     | Cancelled   | 19/07/2024 | Ardan Labs Kubernetes Course                    |
 | [docker-ardan](./one-page/docker-ardan.md)       | Finished    | 18/07/2024 | Ardan Labs Docker Course                        |
 | [0de5](./c/0de5)                                 | Incomplete  | 16/07/2024 | Assembly / C                                    |
 | [docker-bootdev](./one-page/docker-bootdev.md)   | Finished    | 11/07/2024 | BootDev Docker Course                           |
