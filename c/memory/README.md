@@ -1,10 +1,25 @@
-# Memory Management
+# Bootdev Course Exercises 🎓
 
-Bootdev Course
+Repository containing exercises solved during Bootdev Course using the playground environment. Claude 3.5 Sonnet (Anthropic AI) assisted in generating utility classes and Makefiles.
+
+## Project Structure 🗂️
+
+### Core Utilities
+- **munit/** - Testing framework that asserts exercise results, providing detailed feedback for failures and successes
+- **bootlib/** - Memory leak detector that wraps malloc functionality
+
+## Tools Used 🛠️
+- Bootdev Course Playground
+- Claude 3.5 Sonnet for utility code generation
+- C Programming Language
+
+## Note 📝
+This repository serves as documentation of my learning journey through the Bootdev Course, highlighting both the exercises completed and the tools utilized along the way.
 
 # Exercises
 
 - [munit](munit) -> Helper for all unit test assert using different types 
+- [bootlib](bootlib) -> Units to verify if malloc produced any leak
 - [unittest](unittest) -> How to use an unittest example
 - [struct](struct) -> Simple struct example
 - [structp](structp) -> Passing struct to a function (copy vs in-place)
