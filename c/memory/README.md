@@ -23,3 +23,4 @@ Bootdev Course
 - [my_stack](my_stack) -> Implementing a simple stack data structure using void pointer
 - [object](object) -> Complete exercise using structs to hold values arrays of different type
 - [gc_obj](gc_obj) -> Implementing garbage collector in the snekobjects
+- [sweep](sweep) -> Implementing garbage collector Mark and Sweep to handle cycles while referencing objects

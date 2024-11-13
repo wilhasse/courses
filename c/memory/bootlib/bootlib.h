@@ -8,6 +8,7 @@
 void* tracked_malloc(size_t size, const char* file, int line);
 void tracked_free(void* ptr, const char* file, int line);
 bool boot_all_freed(void);
+bool boot_is_freed(void* ptr);
 
 // Undefine malloc/free first in case they were already defined
 #ifdef malloc

@@ -57,3 +57,17 @@ bool boot_all_freed(void) {
     }
     return tracker.count == 0;
 }
+
+bool boot_is_freed(void* ptr) {
+    if (!ptr) return true;
+
+    // Check if the pointer exists in our tracking system
+    for (size_t i = 0; i < tracker.count; i++) {
+        if (tracker.allocations[i].ptr == ptr) {
+            // If we find the pointer in our tracker, it means it's NOT freed
+            return false;
+        }
+    }
+    // If we don't find the pointer in our tracker, it means it's been freed
+    return true;
+}
