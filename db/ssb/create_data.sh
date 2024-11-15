@@ -12,14 +12,18 @@ CREATE="$2"
 
 # MySQL connection details for remote server (where we load data)
 REMOTE_USER="root"
+REMOTE_PORT=3306
+#REMOTE_USER="polardbx_root"
+#REMOTE_PWD="xYXptQYe"
+#REMOTE_PORT=50129
 
 # Function to create MySQL connection string for remote server
 mysql_connect_remote() {
     local connect_string="mysql -h $IP -u $REMOTE_USER"
-    if [ -n "$MYSQL_PWD" ]; then
-        connect_string+=" -p$MYSQL_PWD"
+    if [ -n "$REMOTE_PWD" ]; then
+        connect_string+=" -p$REMOTE_PWD"
     fi
-    echo "$connect_string"
+    echo "$connect_string -P$REMOTE_PORT"
 }
 
 # Function to run MySQL command for data loading
