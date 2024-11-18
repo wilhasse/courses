@@ -8,3 +8,4 @@ https://github.com/polardb
 
 - [Introduction](./introduction.md)
 - [Build Components](./build.md)
+- [PolarDB vs PolarDBX](./db_vs_dbx.md)
