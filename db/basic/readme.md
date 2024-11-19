@@ -2,7 +2,7 @@
 
 Link: https://build-your-own.org/database/
 
-[Claude Summary of each chapter](Claude_summary)
+[Claude Summary of each chapter](claude_summary)
 # Chapter 1
 
 1.1 Updating files in-lace
