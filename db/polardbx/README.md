@@ -7,5 +7,6 @@ https://github.com/polardb
 # Files
 
 - [Introduction](./introduction.md)
-- [Build Components](./build.md)
 - [PolarDB vs PolarDBX](./db_vs_dbx.md)
+- [Build Components from source](./build.md)
+- [Run SQL and Engine](./run.md)
