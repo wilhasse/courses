@@ -1,4 +1,4 @@
-# Bootdev Course Exercises 🎓
+# Bootdev Memory Management 🎓
 
 Repository containing exercises solved during Bootdev Course using the playground environment. Claude 3.5 Sonnet (Anthropic AI) assisted in generating utility classes and Makefiles.
 

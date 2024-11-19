@@ -35,9 +35,11 @@ chown -R mysql:mysql /mysql
 Note: need to stop both mysqls (origin and destination)
 
 ```bash
-Source
-tar -cf - /mysql | pigz -c | nc -l -p 9999
+# source
+tar -cf - /mysql | pigz -c | nc -w 10 -l -p 9999
 
-Destination
+# Destination
 nc <ip_address> 9999 | pigz -d | tar -xf -
+
+# if sources end , space bar to finish destination
 ```
