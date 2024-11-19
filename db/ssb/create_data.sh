@@ -11,11 +11,11 @@ IP=$1
 CREATE="$2"
 
 # MySQL connection details for remote server (where we load data)
-REMOTE_USER="root"
-REMOTE_PORT=3306
-#REMOTE_USER="polardbx_root"
-#REMOTE_PWD="xYXptQYe"
-#REMOTE_PORT=50129
+#REMOTE_USER="root"
+#REMOTE_PORT=3306
+REMOTE_USER="polardbx_root"
+REMOTE_PWD="123456"
+REMOTE_PORT=8527
 
 # Function to create MySQL connection string for remote server
 mysql_connect_remote() {

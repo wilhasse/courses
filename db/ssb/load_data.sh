@@ -18,12 +18,12 @@ LOAD_METHOD=${5:-1}  # Default to 1 LOAD DATA
 # MySQL connection details for remote server (where we load data)
 REMOTE_DATABASE="ssb"
 
-REMOTE_USER="root"
-REMOTE_PORT=3306
+#REMOTE_USER="root"
+#REMOTE_PORT=3306
 
-#REMOTE_USER="polardbx_root"
-#REMOTE_PWD="xYXptQYe"
-#REMOTE_PORT=50129
+REMOTE_USER="polardbx_root"
+REMOTE_PWD="123456"
+REMOTE_PORT=8527
 
 # MySQL connection details for local server (to store execution time)
 LOCAL_USER="root"

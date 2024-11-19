@@ -9,7 +9,7 @@ create table part (
     p_size bigint,
     p_container char(10),
     primary key(p_partkey)
-)  ENGINE = InnoDB DEFAULT CHARSET = latin1;
+) ENGINE='CSLOG';
 
 create table supplier(
     s_suppkey bigint,
@@ -20,7 +20,7 @@ create table supplier(
     s_region char(20),
     s_phone char(20),
     primary key(s_suppkey)
-) ENGINE = InnoDB DEFAULT CHARSET = latin1;
+) ENGINE='CSLOG';
 
 create table customer(
     c_custkey bigint,
@@ -32,7 +32,7 @@ create table customer(
     c_phone char(20),
     c_mktsegment char(20),
     primary key(c_custkey)
-)ENGINE = InnoDB DEFAULT CHARSET = latin1;
+) ENGINE='CSLOG';
 
 create table date(
     d_datekey bigint,
@@ -52,7 +52,7 @@ create table date(
     d_holidayfl bigint,
     d_weekdayfl bigint,
     primary key(d_datekey)
-)ENGINE = InnoDB DEFAULT CHARSET = latin1;
+) ENGINE='CSLOG';
 
 create table lineorder (
     lo_orderkey bigint,
@@ -73,4 +73,4 @@ create table lineorder (
     lo_commitdate bigint,
     lo_shipmode char(10),
     primary key(lo_orderkey, lo_linenumber)
-)ENGINE = InnoDB DEFAULT CHARSET = latin1;
+) ENGINE='CSLOG';
