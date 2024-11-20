@@ -48,3 +48,7 @@ Project menu, configure to JDK 1.8
 Also in Setting Maven select JDK 1.8
 
 ![](images/intellij_jdk2.png)
+
+Run/Debug Config
+
+![](images/intellij_debug.png)

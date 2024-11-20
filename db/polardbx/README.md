@@ -11,3 +11,4 @@ https://github.com/polardb
 - [Build Components from source](./build.md)
 - [Run SQL and Engine](./run.md)
 - [Configure IntelliJ IDEA](./intellij.md)
+- [Extension Loader in IntelliJ IDEA](./intellij_extension.md)
