@@ -143,6 +143,14 @@ Error: change polardbx-parser to version already compiled
 +       <polardbx-parser.version>5.4.19-SNAPSHOT</polardbx-parser.version>
 ```
 
+mvn install -D maven.test.skip=true -D env=release -e
+
+If error on Windows:
+D:\polardbx\polardbx-cdc\polardbx-cdc-client\target\classes\metrics.txt failed with UnmappableCharacterException: Input length = 1 -> [Help 1]
+
+```bash
+mvn clean install -Dproject.build.sourceEncoding=UTF-8 -Dproject.reporting.outputEncoding=UTF-8 -D maven.test.skip=true -D env=release -e
+```
 
 4) polaerdbx-glue
 

@@ -10,3 +10,4 @@ https://github.com/polardb
 - [PolarDB vs PolarDBX](./db_vs_dbx.md)
 - [Build Components from source](./build.md)
 - [Run SQL and Engine](./run.md)
+- [Configure IntelliJ IDEA](./intellij.md)
