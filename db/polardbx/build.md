@@ -12,6 +12,12 @@ Packages:
 apt install make automake cmake git bison libaio-dev libncurses-dev libsasl2-dev libldap2-dev libssl-dev pkg-config ligtool
 apt install libsnappy-dev libbz2-dev liblz4-dev
 ```
+Fork PolarDBX Engine
+
+```bash
+git clone https://github.com/polardb/polardbx-engine  
+git submodule update --init  
+```
 
 Compile:
 

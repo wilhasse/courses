@@ -12,3 +12,4 @@ https://github.com/polardb
 - [Run SQL and Engine](./run.md)
 - [Configure IntelliJ IDEA](./intellij.md)
 - [Extension Loader in IntelliJ IDEA](./intellij_extension.md)
+- [Debug DBX Engine in Visual Code](./debug_engine_vc.md)
