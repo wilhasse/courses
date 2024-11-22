@@ -14,3 +14,4 @@ https://github.com/polardb
 - [Extension Loader in IntelliJ IDEA](./intellij_extension.md)
 - [Debug DBX Engine in Visual Code](./debug_engine_vc.md)
 - [Studying the source code](./study)
+- [Simple Shard Test](./shard_test.md)

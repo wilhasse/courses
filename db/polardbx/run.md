@@ -25,6 +25,36 @@ mysql -u root -p -S /data/my3306/run/mysql.sock
 server.properties in config copy to
 /home/admin/drds-server/env/config.properties
 
+Pay attention to IP and port and protocol version its need to match between sql and engine.
+
+```ini
+# MetaDB Address
+metaDbAddr=10.1.1.148:4886
+# MetaDB X-Protocol Port
+metaDbXprotoPort=32886
+galaxyXProtocol=2
+```
+
+```java
+String galaxyXProtocol = serverProps.getProperty("galaxyXProtocol");
+if (!StringUtil.isEmpty(galaxyXProtocol)) {
+    final int i = Integer.parseInt(galaxyXProtocol);
+    if (1 == i) {
+        XConfig.GALAXY_X_PROTOCOL = true;
+        XConfig.OPEN_XRPC_PROTOCOL = false;
+    } else if (2 == i) {
+        XConfig.GALAXY_X_PROTOCOL = false;
+        XConfig.OPEN_XRPC_PROTOCOL = true;
+    } else {
+        XConfig.GALAXY_X_PROTOCOL = false;
+        XConfig.OPEN_XRPC_PROTOCOL = false;
+    }
+} else {
+    XConfig.GALAXY_X_PROTOCOL = false;
+    XConfig.OPEN_XRPC_PROTOCOL = false;
+}
+```
+
 ```shell
 bin/startup.sh \
 	-I \
