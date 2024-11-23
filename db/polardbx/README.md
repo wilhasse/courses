@@ -11,6 +11,7 @@ https://github.com/polardb
 - [Columnar Storage](./columnar.md)
 - [Build Components from source](./build.md)
 - [Run SQL and Engine](./run.md)
+- [Deploy using PXD Docker in 3 nodes](./deploy_pxd.md)
 - [Configure IntelliJ IDEA](./intellij.md)
 - [Extension Loader in IntelliJ IDEA](./intellij_extension.md)
 - [Debug DBX Engine in Visual Code](./debug_engine_vc.md)
