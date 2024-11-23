@@ -18,9 +18,10 @@ Run and create root user:
 
 ```shell
 mysql -u root -p -S /data/my3306/run/mysql.sock
-mysql> create user root@'%';
-mysql> grant all privileges on *.* to root@'%';
-mysql> set password for root@'%' = 'abc123';
+mysql> 
+create user root@'%';
+grant all privileges on *.* to root@'%' with grant option;
+set password for root@'%' = 'abc123';
 ```
 
 # PolarDBX SQL
@@ -64,7 +65,6 @@ bin/startup.sh \
 	-I \
 	-P asdf1234ghjk5678 \
     -d 10.1.1.158:4886:32886 \
-    -r "" \
     -u polardbx_root \
     -S "123456" \
     -r "abc123"
