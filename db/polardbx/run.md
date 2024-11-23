@@ -5,19 +5,22 @@ https://github.com/polardb/polardbx-sql/blob/main/docs/en/quickstart-development
 # PolarDBX Engine
 
 Start MySQL with normal user (not root)：
-my.cnf in config
 
 ```shell
-mkdir -p /data/my3306/{data,log,run,tmp,mysql}
+mkdir -p /data/my3306/{data,log,run,tmp,mysql,conf}
+# my.cnf in config git, copy to conf
 cd polardbx-engine/runtime_output_directory
-./mysqld --defaults-file=my.cnf --initialize-insecure
-./mysqld --defaults-file=my.cnf
+./mysqld --defaults-file=/data/my3306/conf/my.cnf --initialize-insecure
+./mysqld --defaults-file=/data/my3306/conf/my.cnf
 ```
 
-Run:
+Run and create root user: 
 
 ```shell
 mysql -u root -p -S /data/my3306/run/mysql.sock
+mysql> create user root@'%';
+mysql> grant all privileges on *.* to root@'%';
+mysql> set password for root@'%' = 'abc123';
 ```
 
 # PolarDBX SQL
@@ -56,14 +59,20 @@ if (!StringUtil.isEmpty(galaxyXProtocol)) {
 ```
 
 ```shell
+cd polardbx-sql/polardbx-server/target/polardbx-server/
 bin/startup.sh \
 	-I \
 	-P asdf1234ghjk5678 \
-    -d 127.0.0.1:4886:32886 \
+    -d 10.1.1.158:4886:32886 \
     -r "" \
     -u polardbx_root \
-    -S "123456"
+    -S "123456" \
+    -r "abc123"
 ```
+
+Note:  
+where 10.1.1.158 is the PolarDBX Engine (mysql fork)  
+-r "" - password the root user you created in engine  
 
 It generates metaDBPasswd, add to server.properties
 
@@ -90,7 +99,8 @@ Initialize polardbx success
 Run again:
 
 ```shell
-bin/startup.sh -P asdf1234ghjk5678
+./bin/startup.sh -P asdf1234ghjk5678
+#[enter] go back to prompt 
 ps -ef | grep java
 ```
 
@@ -99,4 +109,3 @@ Access polardbx sql:
 ```sql
 mysql -h127.1 -P8527 -upolardbx_root
 ```
-

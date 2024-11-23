@@ -4,7 +4,7 @@ https://github.com/polardb/polardbx-sql/blob/main/docs/en/quickstart-development
 
 # PolarDBX Engine
 
-Debian 12
+## Debian 12
 
 Packages:  
 
@@ -19,7 +19,7 @@ git clone https://github.com/polardb/polardbx-engine
 git submodule update --init  
 ```
 
-Compile:
+## Compile DEBUG:
 
 ```bash
 cmake .     \
@@ -62,6 +62,20 @@ Run make with locale in English
 
 ```bash
 LC_ALL=C make
+```
+
+## Compile RELEASE:
+
+```bash
+cmake .     \
+-DFORCE_INSOURCE_BUILD=ON      \
+-DCMAKE_BUILD_TYPE="Release"   \
+-DSYSCONFDIR="/data/mysql"     \
+-DCMAKE_INSTALL_PREFIX="/data/mysql"     \
+-DMYSQL_DATADIR="/data/mysql/data"       \
+-DWITH_BOOST="./extra/boost/boost_1_77_0.tar.gz" \    
+-DDOWNLOAD_BOOST=1     \
+-DCMAKE_CXX_FLAGS="-Wno-error=unused-value -Wno-error=restrict -Wno-error=use-after-free" \ -DWITH_JEMALLOC=ON
 ```
 
 # PolarDBX SQL
