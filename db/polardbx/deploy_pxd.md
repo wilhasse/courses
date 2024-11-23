@@ -57,7 +57,7 @@ ssh-copy-id 10.1.1.121
 ssh-copy-id 10.1.1.129
 ```
 
-# Deploy
+# Cluster config
 
 Topoloy Yaml file example
 
@@ -94,7 +94,7 @@ cluster:
       mem_limit: 4G
 ```
 
-# Test Docker API
+# Docker API
 
 In all nodes check Docker API response  
 Example: curl http://10.1.1.121:2375/version  
@@ -159,6 +159,8 @@ def get_client(host):
     client = docker.DockerClient(base_url=docker_url, timeout=60, max_pool_size=100)
     return client
 ```
+
+# Deploy
 
 Finally create the cluster:
 
