@@ -10,6 +10,8 @@ Note: encrypted based (if not remove --keyring-file)
 
 ```bash
 # perform copy
+# IP_DESTINATION - ip address
+# -w 10 - time to wait after that time without receiving data it will close the connection
 xtrabackup --backup --stream=xbstream --keyring-file-data=/var/lib/mysql-keyring/keyring-encrypted -u root -p | pigz -c | nc -w 10 $IP_DESTINATION 9999
 ```
 
@@ -19,7 +21,9 @@ Note: if encrypted copy keyring-file to destination
 
 ```bash
 # receive copy
-nc -l -p 9999 | pigz -c -d |  xbstream -x /mysql
+# -x extract
+# -C indicates the directory where to stream data
+nc -l -p 9999 | pigz -c -d |  xbstream -x -C /mysql
 
 # copy keyring
 scp $IP_ORIGIN:/var/lib/mysql-keyring/keyring-encrypted /var/lib/mysql-keyring
