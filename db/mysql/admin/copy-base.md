@@ -10,7 +10,7 @@ Note: encrypted based (if not remove --keyring-file)
 
 ```bash
 # perform copy
-xtrabackup --backup --stream=xbstream --keyring-file-data=/var/lib/mysql-keyring/keyring-encrypted -u root -p | pigz -c | nc -w $IP_DESTINATION 9999
+xtrabackup --backup --stream=xbstream --keyring-file-data=/var/lib/mysql-keyring/keyring-encrypted -u root -p | pigz -c | nc -w 10 $IP_DESTINATION 9999
 ```
 
 Destination
