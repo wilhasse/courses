@@ -8,10 +8,11 @@ https://github.com/polardb
 
 - [Introduction](./introduction.md)
 - [PolarDB vs PolarDBX](./db_vs_dbx.md)
+- [Columnar Storage](./columnar.md)
 - [Build Components from source](./build.md)
 - [Run SQL and Engine](./run.md)
 - [Configure IntelliJ IDEA](./intellij.md)
 - [Extension Loader in IntelliJ IDEA](./intellij_extension.md)
 - [Debug DBX Engine in Visual Code](./debug_engine_vc.md)
-- [Studying the source code](./study)
 - [Simple Shard Test](./shard_test.md)
+- [Studying the source code](./study)
