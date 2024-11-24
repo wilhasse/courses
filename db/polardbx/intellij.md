@@ -38,6 +38,12 @@ galaxyXProtocol=2 # protocol version
 metaDbPasswd=2nhGcH1ckXt5XWQ9vRvJMGS7TB1RbOV6alTrlYTQQdk= # metadb password
 ```
 
+Prompt
+
+```bash
+mysql -hlocalhost -P8527 -upolardbx_root
+```
+
 Project menu, configure to JDK 1.8
 
 ![](images/intellij_project.png)
