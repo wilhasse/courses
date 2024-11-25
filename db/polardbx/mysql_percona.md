@@ -52,11 +52,8 @@ make[2]:  [plugin/polarx_rpc/CMakeFiles/polarx_rpc.dir/build.make:76: plugin/pol
 make[1]:  [CMakeFiles/Makefile2:14639: plugin/polarx_rpc/CMakeFiles/polarx_rpc.dir/all] 
 ```
 
-Copy files extra definitions
-
-```bash
-cp ~/polardbx-engine/sql/sys_vars_ext.* ../sql/
-```
+First I copied sys_vars_ext.h and sys_vars.ext.cc because it has a lot of dependencies.
+I figured out that it only need rpc port configuration
 
 ### Error
 
@@ -71,7 +68,7 @@ In file included from /data/percona-server/plugin/polarx_rpc/server/listener.h:5
 
 It seems that Polar uses unireg_abort function but it was removed in mysql 8.
 Comparing mysql.h and sql/mysqld.c and sql/mysqld.h they introduced this function
-I copied back the definition from sql/mysqld.h
+I copied back the definition from sql/mysqld.h and removed static in mysqld.cc
 
 
 ### Error
@@ -129,7 +126,7 @@ File: sql/sql_class
   413 |     thd->variables.innodb_current_snapshot_gcn = true;
 ```
 
-Lizzard code, commented out all in session.cc and
+Lizzard code, commented out all in session.cc and session_base.cc
 
 ### Error
 
@@ -145,8 +142,9 @@ make[1]: *** [CMakeFiles/Makefile2:14922: plugin/polarx_rpc/CMakeFiles/polarx_rp
 make: *** [Makefile:166: all] Erro 2
 ```
 
-Added new classes
-cp ~/polardbx-engine/sql/timestamp_service.* ../sql
+It seems to be used for generating sequential transactions.
+I am not going to use for rpc communication
+Commented out the reference and code in session_manager.cc
 
 ### Error
 
@@ -175,9 +173,9 @@ Changed to public in: sql/handler.h line 5752
       |                                                                         ^~~~~~~
 ```
 
-```c
 Add definitions
 
+```c
 #ifndef O_SHARE
 #define O_SHARE 0
 #endif
