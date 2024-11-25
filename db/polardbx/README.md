@@ -18,3 +18,4 @@ https://github.com/polardb
 - [Debug DBX Engine in Visual Code](./debug_engine_vc.md)
 - [Simple Shard Test](./shard_test.md)
 - [Studying the source code](./study)
+- [Compiling polarx-rpc plugin in MySQL Percona](./mysql_percona.md)
