@@ -188,3 +188,16 @@ Add definitions
 #endif
 #endif
 ```
+
+### Error
+
+```bash
+[ 79%] Built target polarx_rpc_client
+[ 79%] Building CXX object plugin/polarx_rpc/CMakeFiles/polarx_rpc_test.dir/tests/driver/driver_command_line_options.cc.o
+[ 79%] Building CXX object plugin/polarx_rpc/CMakeFiles/polarx_rpc_test.dir/tests/driver/json_to_any_handler.cc.o
+In file included from /usr/include/rapidjson/allocators.h:18,
+ from /usr/include/rapidjson/reader.h:20,
+```
+
+The last part, testing, some conflict with RapidJson that I can solve later.
+For a while I disabled all tests in 

@@ -22,7 +22,7 @@ Run / Shutdown
 ```bash
 # inside screen (it will block terminal)
 ./run_mysql.sh
-# shutdown mysqç
+# shutdown mysql
 ```
 Add root grants 
 

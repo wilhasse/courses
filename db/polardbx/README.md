@@ -19,3 +19,4 @@ https://github.com/polardb
 - [Simple Shard Test](./shard_test.md)
 - [Studying the source code](./study)
 - [Compiling polarx-rpc plugin in MySQL Percona](./mysql_percona.md)
+- [Testing MySQL XPlugin Protocol](./xplugin_test.md)
