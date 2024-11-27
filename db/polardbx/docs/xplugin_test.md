@@ -1,5 +1,21 @@
 # Preparation
 
+Plugin enable
+
+```bash
+show plugins;
+| mysqlx                           | ACTIVE   | DAEMON             | NULL          | GPL     |
+```
+
+Listen default port 33060
+
+```bash
+cat mysql-error.log
+2024-11-27T02:28:27.275744Z 0 [Note] [MY-011240] [Server] Plugin mysqlx reported: 'Using SSL configuration from MySQL Server'
+2024-11-27T02:28:27.278335Z 0 [Note] [MY-011243] [Server] Plugin mysqlx reported: 'Using OpenSSL for TLS connections'
+2024-11-27T02:28:27.278711Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Bind-address: '::' port: 33060, socket: /tmp/mysqlx.sock
+```
+
 Test bind listening to all interfaces
 
 ```bash
