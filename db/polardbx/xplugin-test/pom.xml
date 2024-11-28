@@ -5,40 +5,36 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.example</groupId>
-    <artifactId>polardbx-test</artifactId>
+    <artifactId>mysql-xplugin-test</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
-        <polardbx.version>5.4.19-SNAPSHOT</polardbx.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencies>
-        <!-- PolarDB-X RPC -->
+        <!-- MySQL Connector/J -->
         <dependency>
-            <groupId>com.alibaba.polardbx</groupId>
-            <artifactId>polardbx-rpc</artifactId>
-            <version>${polardbx.version}</version>
-        </dependency>
-
-        <!-- PolarDB-X Common -->
-        <dependency>
-            <groupId>com.alibaba.polardbx</groupId>
-            <artifactId>polardbx-common</artifactId>
-            <version>${polardbx.version}</version>
-        </dependency>
-
-        <!-- Protocol Buffers -->
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-            <version>3.19.4</version>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.33</version>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                </configuration>
+            </plugin>
+            
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -62,7 +58,7 @@
                             </filters>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>SimpleDbQueryApp</mainClass>
+                                    <mainClass>ListDBs</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

@@ -21,3 +21,5 @@ https://github.com/polardb
 - [Compiling polarx-rpc plugin in MySQL Percona](./docs/mysql_percona.md)
 - [Testing MySQL XPlugin Protocol](./docs/xplugin_test.md)
 - [Generating source code documentation](./docs/doxygen_basic.md)
+- [PolarDBX Protocol Java example](./polardbx-test)
+- [MYSQL XPlugin Java example](./xplugin-test)
