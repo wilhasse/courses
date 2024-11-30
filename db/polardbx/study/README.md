@@ -4,14 +4,13 @@ Studying PolarDB-X Source Code
 
 https://github.com/polardb  
 
-# An Interpretation of PolarDB-X Source Codes
+# Computer Node
 
-Claude summary:
-
-- [CN Code Structure](./cn_article_1.md)
-- [CN Sartup Process](./cn_article_2.md)
+- [Java Libraries](./cn-libraries.md)
+- [Code Structure](./cn_article_1.md)
+- [Sartup Process](./cn_article_2.md)
 - [CDC Code Structure](./cn_article_3.md)
-- [CN Life of SQL](./cn_article_4.md)
+- [Life of SQL](./cn_article_4.md)
 
 # Analyzing Polarx RPC Plugin
 
