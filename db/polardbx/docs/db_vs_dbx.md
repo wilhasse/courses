@@ -9,7 +9,7 @@
   2. Modified InnoDB optimized for shared storage
   3. X-Engine 
 
-![](images/polardb.png)
+![](../images/polardb.png)
 
 ### PolarDBX (Open Source)
 - Uses distributed storage architecture
@@ -18,7 +18,7 @@
 - Uses modified InnoDB called Lizard
 - Currently does not support X-Engine as storage layer
 
-![](images/polardbx.png)
+![](../images/polardbx.png)
 
 ## X-Engine Details
 ### Architecture
@@ -27,7 +27,7 @@
 - Focuses on write-intensive workloads
 - Provides better compression than InnoDB
 
-![](images/xengine.png)
+![](../images/xengine.png)
 
 ### Key Features
 - Multi-version concurrency control (MVCC)

@@ -8,7 +8,7 @@ https://www.alibabacloud.com/blog/official-open-source-of-polardb-x-v2-4-columna
 
 # Data Flow
 
-![](images/columnar_storage.png)
+![](../images/columnar_storage.png)
 
 # Files
 

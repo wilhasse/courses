@@ -1,6 +1,6 @@
 # The Evolution of Alibaba's Database Architecture
 
-![](images/intro_1.png)
+![](../images/intro_1.png)
 
 ## Early Stages: Simple Architecture  
 In the early days of Alibaba, the database architecture was straightforward:  
@@ -17,7 +17,7 @@ When faced with performance and cost challenges, Alibaba made several adaptation
    - Handle data distribution  
    - This solution worked well but had high maintenance costs
 
-![](images/intro_2.png)
+![](../images/intro_2.png)
 
 ## Introduction of Polardb-X  
 POLARDB-X emerged as Alibaba's native distributed database solution, featuring:  
@@ -76,11 +76,11 @@ The overall architecture is similar, the biggest difference is: PolarDB-X is a s
 
 # Architecture
 
-![](images/intro_3.png)
+![](../images/intro_3.png)
 
 # What is shared-nothing ?
 
-![](images/intro_4.png)
+![](../images/intro_4.png)
 
 Shared-nothing architecture is a distributed computing architecture where each node is independent and self-sufficient. Let me break this down:
 

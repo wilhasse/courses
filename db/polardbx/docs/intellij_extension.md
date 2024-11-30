@@ -62,7 +62,7 @@ The issue was resolved by ensuring the SPI configuration files were present in t
 2. Add resources in Intellij for polardbx.transaction for target/classes/META-INF/services.
 The source src/main/resources is already there.
 
-![](images/intellij_spi_problem.png)
+![](../images/intellij_spi_problem.png)
 
 ## Verification
 

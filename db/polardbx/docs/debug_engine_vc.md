@@ -106,4 +106,4 @@ Create settings.json
 Now you can use breakpoints in UI.
 Test here:
 
-![](images/vs_breakpoint.png)
+![](../images/vs_breakpoint.png)

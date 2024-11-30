@@ -2,8 +2,13 @@
 
 Software for generating documentation and call graph  
 
+Install Doxygen  
 https://www.doxygen.nl/  
 
+Install Graphziz  
+https://graphviz.org/download/
+
+Note: Graphziz select Add Graphviz to the system PATH 
 
 # Config
 

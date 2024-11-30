@@ -16,14 +16,14 @@ Maven config where you copied maven.
 https://maven.apache.org/download.cgi  
 
 
-![](images/intellij_maven.png)
+![](../images/intellij_maven.png)
 
 Also change adjust the memory limit of IDEA compilation to 8000 (guide item 6)
 
 
 Configure server.properties 
 
-![](images/intellij_properties.png)
+![](../images/intellij_properties.png)
 
 Pay attention to:
 
@@ -46,15 +46,15 @@ mysql -hlocalhost -P8527 -upolardbx_root
 
 Project menu, configure to JDK 1.8
 
-![](images/intellij_project.png)
+![](../images/intellij_project.png)
 
 
-![](images/intellij_jdk.png)
+![](../images/intellij_jdk.png)
 
 Also in Setting Maven select JDK 1.8
 
-![](images/intellij_jdk2.png)
+![](../images/intellij_jdk2.png)
 
 Run/Debug Config
 
-![](images/intellij_debug.png)
+![](../images/intellij_debug.png)
