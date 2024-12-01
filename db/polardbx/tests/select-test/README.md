@@ -1,6 +1,10 @@
 # Introduction
 
 Select XProtocol Test
+Code from this Alibaba's article:  
+https://www.alibabacloud.com/blog/an-interpretation-of-polardb-x-source-codes-7-life-of-private-protocol-connection-cn_599458
+
+You can follow along to understand better the X Protocol
 
 # Run
 

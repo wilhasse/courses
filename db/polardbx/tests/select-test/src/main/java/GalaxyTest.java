@@ -6,13 +6,14 @@ import com.mysql.cj.polarx.protobuf.PolarxResultset;
 import com.alibaba.polardbx.common.utils.Pair;
 import com.google.protobuf.ByteString;
 
-import java.util.Properties;
 import java.util.ArrayList;
 import java.util.List;
 
 public class GalaxyTest {
-    public final static String SERVER_IP = "10.1.1.158";
-    public final static int SERVER_PORT = 32886;
+    //public final static String SERVER_IP = "10.1.1.158";
+    //public final static int SERVER_PORT = 32886;
+    public final static String SERVER_IP = "10.1.1.148";
+    public final static int SERVER_PORT = 33660;
     public final static String SERVER_USR = "teste";
     public final static String SERVER_PSW = "teste";
     private final static String DATABASE = "mysql";
@@ -22,12 +23,8 @@ public class GalaxyTest {
         new XDataSource(SERVER_IP, SERVER_PORT, SERVER_USR, SERVER_PSW, DATABASE, "Test");
 
     public static void main(String[] args) throws Exception {
-        try (XConnection conn = getConn()) {
-            conn.setStreamMode(true);
-            final XResult result = conn.execQuery("select 1");
             GalaxyTest test = new GalaxyTest();
-            test.show(result);
-        }
+            test.playground();
     }
 
     public static XConnection getConn() throws Exception {

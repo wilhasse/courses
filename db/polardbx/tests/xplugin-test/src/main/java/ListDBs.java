@@ -5,7 +5,7 @@ import java.util.List;
 public class ListDBs {
     public static void main(String[] args) {
         // Connection parameters
-        String host = "10.1.1.158";
+        String host = "10.1.1.148";
         int port = 33060;
         String user = "teste";
         String password = "teste";
