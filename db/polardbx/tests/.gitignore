@@ -15,3 +15,4 @@ je.info.*
 logs
 package-info.java
 target/
+dependency-reduced-pom.xml
