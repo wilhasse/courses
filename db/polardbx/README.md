@@ -17,9 +17,15 @@ https://github.com/polardb
 - [Extension Loader in IntelliJ IDEA](./docs/intellij_extension.md)
 - [Debug DBX Engine in Visual Code](./docs/debug_engine_vc.md)
 - [Simple Shard Test](./docs/shard_test.md)
-- [Studying the source code](./docs/study)
+- [Studying the source code](./study/README.md)
 - [Compiling polarx-rpc plugin in MySQL Percona](./docs/mysql_percona.md)
 - [Testing MySQL XPlugin Protocol](./docs/xplugin_test.md)
 - [Generating source code documentation](./docs/doxygen_basic.md)
-- [PolarDBX Protocol Java example](./polardbx-test)
-- [MYSQL XPlugin Java example](./xplugin-test)
+
+# Tests
+
+Detail of [all tests](./tests/README.md)
+
+- [MYSQL XPlugin Java example](./tests/xplugin-test)
+- [Simple Select test with XProtocol](./tests/select-test)
+- [PolarDBX Protocol Java example](./tests/polardbx-test)
