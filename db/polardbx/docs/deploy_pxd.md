@@ -162,6 +162,14 @@ def get_client(host):
 
 # Deploy
 
+Where pxd is running:
+
+```bash
+source venv/bin/activate
+pxd
+pxd list
+```
+
 Finally create the cluster:
 
 ```bash

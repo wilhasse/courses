@@ -21,6 +21,7 @@ https://github.com/polardb
 - [Compiling polarx-rpc plugin in MySQL Percona](./docs/mysql_percona.md)
 - [Testing MySQL XPlugin Protocol](./docs/xplugin_test.md)
 - [Generating source code documentation](./docs/doxygen_basic.md)
+- [Running Unit tests](./docs/run_tests.md)
 
 # Tests
 
