@@ -2,7 +2,7 @@
 
 | Folder                                           | Status      | Date       | Description                                     |
 | ------------------------------------------------ | ----------- | ---------- | ----------------------------------------------- |
-| [cmu-intro-db](./db/cmu_intro/)                  | In progress | 18/08/2024 | Carnegie Mellon - Database Systems              |
+| [cmu-intro-db](./one-page/cmu-intro.md)          | In progress | 18/08/2024 | Carnegie Mellon - Database Systems              |
 | [memory management](./c/memory/)                 | Finished    | 13/11/2024 | BootDev - Learn Memory Management               |
 | [cuda](./cuda/)                                  | Stopped     | 18/09/2024 | Coursera - Cuda Programming                     |
 | [vimified](./one-page/vimified.md)               | Stopped     | 02/08/2024 | Vimified Course                                 |
