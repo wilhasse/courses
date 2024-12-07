@@ -108,4 +108,20 @@ docker ps
 
 # list all
 docker ps -a
+
+# starts a container listed in ps as exited
+docker start container_id
+
+# see what happened to the container
+docker logs container_id
+
+# execute a command
+docker exec -it container_id /bin/bash
+
+# list images
+docker images
+
+# remove an image
+# docker rmi percona/percona-server:8.4.2-2.1
+docker rmi image:version
 ```
