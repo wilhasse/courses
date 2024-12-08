@@ -1,0 +1,903 @@
+polardbx-engine/plugin/polarx_rpc/protocol/polarx.proto
+
+syntax = "proto2";
+package PolarXRPC;
+option java_package = "com.mysql.cj.x.protobuf";
+
+message ClientMessages {
+  enum Type {
+    CON_CAPABILITIES_GET = 1;
+    CON_CAPABILITIES_SET = 2;
+    CON_CLOSE = 3;
+
+    SESS_AUTHENTICATE_START = 4;
+    SESS_AUTHENTICATE_CONTINUE = 5;
+    SESS_RESET = 6;
+    SESS_CLOSE = 7;
+
+    SQL_STMT_EXECUTE = 12;
+
+    CRUD_FIND = 17;
+    CRUD_INSERT = 18;
+    CRUD_UPDATE = 19;
+    CRUD_DELETE = 20;
+
+    EXPECT_OPEN = 24;
+    EXPECT_CLOSE = 25;
+
+    EXEC_PLAN_READ = 100;
+    EXEC_SQL = 101;
+
+    SESS_NEW = 110;
+    SESS_KILL = 111;
+
+    TOKEN_OFFER = 112;
+
+    GET_TSO = 113;
+
+    AUTO_SP = 115;
+
+    FILE_OPERATION_GET_FILE_INFO = 116;
+    FILE_OPERATION_TRANSFER_FILE_DATA = 117;
+    FILE_OPERATION_FILE_MANAGE = 118;
+
+    MSG_MAX = 127;
+  }
+}
+
+message ServerMessages {
+  enum Type {
+    OK = 0;
+    ERROR = 1;
+
+    CONN_CAPABILITIES = 2;
+
+    SESS_AUTHENTICATE_CONTINUE = 3;
+    SESS_AUTHENTICATE_OK = 4;
+
+    // NOTICE has to stay at 11 forever
+    NOTICE = 11;
+
+    RESULTSET_COLUMN_META_DATA = 12;
+    RESULTSET_ROW = 13;
+    RESULTSET_FETCH_DONE = 14;
+    RESULTSET_FETCH_SUSPENDED = 15;
+    RESULTSET_FETCH_DONE_MORE_RESULTSETS = 16;
+
+    SQL_STMT_EXECUTE_OK = 17;
+    RESULTSET_FETCH_DONE_MORE_OUT_PARAMS = 18;
+
+    RESULTSET_TOKEN_DONE = 19;
+
+    RESULTSET_TSO = 20;
+
+    RESULTSET_CHUNK = 21;
+
+    RESULTSET_GET_FILE_INFO_OK = 22;
+    RESULTSET_TRANSFER_FILE_DATA_OK = 23;
+    RESULTSET_FILE_MANAGE_OK = 24;
+  }
+}
+
+message Ok {
+  optional string msg = 1;
+}
+
+message Error {
+  optional Severity severity = 1 [default = ERROR];
+  required uint32 code = 2;
+  required string sql_state = 4;
+  required string msg = 3;
+
+  enum Severity {
+    ERROR = 0;
+    FATAL = 1;
+  }
+
+}
+
+polardbx-engine/plugin/polarx_rpc/protocol/polarx_connection.proto
+
+syntax = "proto2";
+import "polarx_datatypes.proto";
+
+package PolarXRPC.Connection;
+option java_package = "com.mysql.cj.polarx.protobuf";
+
+message Capability {
+  required string name = 1;
+  required PolarXRPC.Datatypes.Any value = 2;
+}
+
+message Capabilities {
+  repeated Capability capabilities = 1;
+}
+
+message CapabilitiesGet {
+};
+
+message CapabilitiesSet {
+  required Capabilities capabilities = 1;
+};
+
+message Close {
+};
+
+
+polardbx-engine/plugin/polarx_rpc/protocol/polarx_datatypes.proto
+
+syntax = "proto2";
+package PolarXRPC.Datatypes;
+option java_package = "com.mysql.cj.x.protobuf";
+
+
+message Scalar {
+  // a string with a charset/collation
+  message String {
+    required bytes value = 1;
+    optional uint64 collation = 2 /* ifdef PROTOBUF3 [jstype = JS_STRING] */;
+  };
+
+  // an opaque octet sequence, with an optional content_type
+  // See ``PolarXRPC.Resultset.ContentType_BYTES`` for list of known values.
+  message Octets {
+    required bytes value = 1;
+    optional uint32 content_type = 2;
+  };
+
+  enum Type {
+    V_SINT = 1;
+    V_UINT = 2;
+    V_NULL = 3;
+    V_OCTETS = 4;
+    V_DOUBLE = 5;
+    V_FLOAT = 6;
+    V_BOOL = 7;
+    V_STRING = 8;
+    V_PLACEHOLDER = 9; // 绑定动态参数
+    V_IDENTIFIER = 10; // 用于表示表名，库名，列名等
+    V_RAW_STRING = 11; // 用于表示字符串的decimal，复用v_string
+  };
+
+  required Type type = 1;
+
+  optional sint64 v_signed_int = 2 /* ifdef PROTOBUF3 [jstype = JS_STRING] */;
+  optional uint64 v_unsigned_int = 3 /* ifdef PROTOBUF3 [jstype = JS_STRING] */;
+  // 4 is unused, was Null which doesn't have a storage anymore
+  optional Octets v_octets = 5;
+  optional double v_double = 6;
+  optional float  v_float = 7;
+  optional bool   v_bool = 8;
+  optional String v_string = 9;
+  optional uint32 v_position = 10; // 动态参数的ID，从0开始
+  optional String v_identifier = 11; // 用于表示表名，库名，列名等
+}
+
+// a object
+message Object {
+  message ObjectField {
+    required string key = 1;
+    required Any value = 2;
+  }
+
+  repeated ObjectField fld = 1;
+}
+
+// a Array
+message Array {
+  repeated Any value = 1;
+}
+
+// a helper to allow all field types
+message Any {
+  enum Type {
+    SCALAR = 1;
+    OBJECT = 2;
+    ARRAY = 3;
+  };
+
+  required Type type = 1;
+
+  optional Scalar scalar = 2;
+  optional Object obj = 3;
+  optional Array  array = 4;
+}
+
+message SessionVariable {
+  required string key = 1;
+  required PolarXRPC.Datatypes.Scalar value = 2;
+}
+
+polardbx-engine/plugin/polarx_rpc/protocol/polarx_exec_plan.proto
+
+syntax = "proto2";
+package PolarXRPC.ExecPlan;
+option java_package = "com.mysql.cj.x.protobuf";
+
+import "polarx_expr.proto";
+import "polarx_datatypes.proto";
+
+message NewSession {
+}
+
+message CloseSession {
+}
+
+message EnumSession {
+}
+
+message SessionInfo {
+}
+
+message SessionInfos {
+  repeated SessionInfo sessions = 1;
+}
+
+message TableInfo {
+  optional int64 version = 1; // Multi-version?
+  required PolarXRPC.Datatypes.Scalar name = 2; // Need support string and place holder.
+  optional PolarXRPC.Datatypes.Scalar schema_name = 3; // Need support string and place holder.
+}
+
+message IndexInfo {
+  required PolarXRPC.Datatypes.Scalar name = 1; // Need support string and place holder.
+  optional int32 use_parts = 2;
+}
+
+message Transaction {
+}
+
+message BloomFilter {
+  required uint32 total_bits = 1;
+  required uint32 number_hash = 2;
+  required bytes strategy = 3; // 'murmur3_128'
+  required bytes data = 4;
+}
+
+//Client send GetTSO message to Server
+message GetTSO {
+  required bytes leader_name = 1;
+  required int32 batch_count = 2;
+}
+
+//Server return ResultTSO message to Client
+message ResultTSO {
+  required int32 error_no = 1;
+  required uint64 ts = 2;
+}
+
+//Client send AutoSp message to Server
+message AutoSp {
+  enum Operation {
+    SET = 0;
+    RELEASE = 1;
+    ROLLBACK = 2;
+  }
+  required Operation op = 1;
+  required bytes sp_name = 2;
+  optional bool reset_error = 3;
+}
+
+//
+// Exec plan.
+//
+
+// 单个列条件
+message KeyExpr {
+  required PolarXRPC.Datatypes.Scalar field = 1; // 需要能处理列名或列id，列id从0开始
+  required PolarXRPC.Datatypes.Scalar value = 2; // 需要能处理动态参数
+}
+
+// 完整的行条件，可包含多个列条件，and关系
+message GetExpr {
+  repeated KeyExpr keys = 1;
+}
+
+message GetPlan {
+  required TableInfo table_info = 1;
+  optional IndexInfo index_info = 2; // 如果没指定，默认走primary
+  repeated GetExpr keys = 3; // 索引列过滤条件，如果为空就报错，全表扫描走TableScanPlan
+}
+
+
+message TableScanPlan {
+  required TableInfo table_info = 1;
+  optional IndexInfo index_info = 2; // 如果没指定，默认走primary
+  optional bool reverse = 3; // 扫描顺序，默认正向
+}
+
+message KeyOnlyRangeScan {
+  optional Transaction snapshot = 1;                   // 读取快照，只有作为 top plan 时填写
+  optional TableInfo table_info = 3;                // 读取的目标 table
+  optional IndexInfo index_info = 4;                // 读取的目标 index
+  // optional PolarXRPC.Expr.Expr key_expr = 5;           // scan 的条件
+  // 这里写的应该是是索引列中的条件，类似
+  // idx_field1 > 5 and idx_field2 > 1
+
+  optional GetExpr key = 5;
+  optional GetExpr end_key = 6;                // end 条件，可选
+  optional bool reverse = 8;                        // 扫描顺序
+  optional int64 flag = 9;                          // 预留
+}
+
+message RangeScan {
+  optional Transaction snapshot = 1;                   // 读取快照，只有作为 top plan 时填写
+  optional TableInfo table_info = 3;                // 读取的目标 table
+  optional IndexInfo index_info = 4;                // 读取的目标 index
+  // optional PolarXRPC.Expr.Expr key_expr = 5;           // scan 的条件
+  // 这里写的应该是是索引列中的条件，类似
+  // idx_field1 > 5 and idx_field2 > 1
+
+  optional GetExpr key = 5;
+  optional GetExpr end_key = 6;                // end 条件，可选
+  optional bool reverse = 8;                        // 扫描顺序
+  optional int64 flag = 9;                          // 预留
+}
+
+message TableProject {
+  required AnyPlan sub_read_plan = 1; // 只支持GET和SCAN两种就行
+  repeated PolarXRPC.Datatypes.Scalar fields = 2; // 支持列名和列id（int uint），从0开始
+}
+
+message Project {
+  required AnyPlan sub_read_plan = 1;
+  repeated PolarXRPC.Datatypes.Scalar fields = 2; // 输出列名
+  repeated PolarXRPC.Expr.Expr exprs = 3; // 支持使用Expr全部功能，包括新增的ref，引用sub_read_plan的输出
+}
+
+message Filter {
+  required AnyPlan sub_read_plan = 1;
+  required PolarXRPC.Expr.Expr expr = 2;
+}
+
+message Aggr {
+  enum AggrType {
+    COUNT_FUNC = 1;          // COUNT
+    COUNT_DISTINCT_FUNC = 2; // COUNT(DISTINCT)
+    SUM_FUNC = 3;            // SUM
+    SUM_DISTINCT_FUNC = 4;  // SUM(DISTINCT)
+    AVG_FUNC = 5;            // AVG
+    AVG_DISTINCT_FUNC = 6;  // AVG(DISTINCT)
+    MIN_FUNC = 7;            // MIN
+    MAX_FUNC = 8;           // MAX
+  };
+
+  required AnyPlan sub_read_plan = 1;
+  required AggrType type = 2;  //聚集函数类型
+  required PolarXRPC.Datatypes.Scalar field = 3;  //列名
+  required PolarXRPC.Expr.Expr expr = 4; //聚集函数对应的表达式
+}
+
+message AnyPlan {
+  enum PlanType {
+    GET = 1;
+    TABLE_SCAN = 2;
+    TABLE_PROJECT = 3;
+    PROJECT = 4;
+    FILTER = 5;
+    RANGE_SCAN = 8;
+    //LIMIT = 7;
+    AGGR = 9;
+  };
+  required PlanType plan_type = 1;
+  optional GetPlan get_plan = 2;
+  optional TableScanPlan table_scan_plan = 3;
+  optional TableProject table_project = 4;
+  optional Project project = 5;
+  optional Filter filter = 6;
+  optional RangeScan range_scan = 8;
+  optional Aggr aggr = 9;
+
+  // SortPlan sort_plan = 5;
+  // ProjectPlan project_plan = 6;
+  // FilterPlan filter_plan = 7;
+  // LimitPlan limit_plan = 8;
+  // AggPlan agg_plan = 9;
+}
+
+// server接收的plan
+message ExecPlan {
+  optional Transaction transaction = 1;
+  optional AnyPlan plan = 2;
+  optional bytes plan_digest = 3;
+  repeated PolarXRPC.Datatypes.Scalar parameters = 4; // 动态参数记录在这，从0开始 **有修改**
+
+  repeated PolarXRPC.Datatypes.SessionVariable session_variables = 5;
+  optional int32 token = 6;
+  optional bool reset_error = 7;
+  optional bool compact_metadata = 8 [default = false];
+  optional uint64 snapshot_seq = 9;
+  optional uint64 commit_seq = 10;
+  optional bool use_cts_transaction = 12;
+
+  optional bool chunk_result = 11 [default = false];
+  optional bool feed_back = 13 [default = false];
+  optional bytes trace_id = 14;
+  optional bytes audit_str = 15;
+
+  // capabilities
+  optional uint64 capabilities = 16;
+
+  // innodb_mark_distributed
+  optional bool mark_distributed = 17;
+
+  // Flashback area
+  optional bool query_via_flashback_area = 18;
+}
+
+polardbx-engine/plugin/polarx_rpc/protocol/polarx_expect.proto
+
+syntax = "proto2";
+
+// ifdef PROTOBUF_LITE: option optimize_for = LITE_RUNTIME;
+
+// Expect operations
+package PolarXRPC.Expect;
+option java_package = "com.mysql.cj.polarx.protobuf";
+
+message Open {
+  message Condition {
+    enum ConditionOperation {
+      // set the condition
+      //
+      // set, if not set
+      // overwrite, if set
+      EXPECT_OP_SET = 0;
+      // unset the condition
+      EXPECT_OP_UNSET = 1;
+    };
+    required uint32 condition_key = 1;
+    optional bytes condition_value = 2;
+    optional ConditionOperation op = 3 [default = EXPECT_OP_SET];
+  };
+  enum CtxOperation {
+    // copy the operations from the parent Expect-block
+    EXPECT_CTX_COPY_PREV = 0;
+    // start with a empty set of operations
+    EXPECT_CTX_EMPTY = 1;
+  };
+  optional CtxOperation op = 1 [default = EXPECT_CTX_COPY_PREV];
+  repeated Condition cond = 2;
+}
+
+message Close {
+}
+
+
+polardbx-engine/plugin/polarx_rpc/protocol/polarx_expr.proto
+
+syntax = "proto2";
+
+package PolarXRPC.Expr;
+option java_package = "com.mysql.cj.x.protobuf";
+
+import "polarx_datatypes.proto";
+
+message Expr {
+  enum Type {
+    IDENT = 1;
+    LITERAL = 2;
+    VARIABLE = 3;
+    FUNC_CALL = 4;
+    OPERATOR = 5;
+    PLACEHOLDER = 6;
+    OBJECT = 7;
+    ARRAY = 8;
+    REF = 9; // Reference output of children's input. Start from 0.
+  };
+
+  required Type type = 1;
+
+  optional ColumnIdentifier identifier = 2;
+  optional string       variable = 3;
+  optional PolarXRPC.Datatypes.Scalar literal = 4;
+  optional FunctionCall function_call = 5;
+  optional Operator     operator = 6;
+  optional uint32       position = 7;
+  optional Object       object = 8;
+  optional Array        array = 9;
+  optional uint32       ref_id = 10;
+}
+
+message Identifier {
+  required string name = 1;
+  optional string schema_name = 2;
+}
+
+message DocumentPathItem {
+  enum Type {
+    MEMBER = 1;             // .member
+    MEMBER_ASTERISK = 2;    // .*
+    ARRAY_INDEX = 3;        // [index]
+    ARRAY_INDEX_ASTERISK = 4; // [*]
+    DOUBLE_ASTERISK = 5;    // **
+  };
+  required Type type = 1;
+  optional string value = 2;
+  optional uint32 index = 3;
+}
+
+message ColumnIdentifier {
+  repeated PolarXRPC.Expr.DocumentPathItem document_path = 1;
+  optional string name = 2;
+  optional string table_name = 3;
+  optional string schema_name = 4;
+}
+
+message FunctionCall {
+  required Identifier name = 1;
+  repeated Expr param = 2;
+}
+
+message Operator {
+  required string name = 1;
+  repeated Expr param = 2;
+}
+
+// an object (with expression values)
+message Object {
+  message ObjectField {
+    required string key = 1;
+    required Expr value = 2;
+  }
+
+  repeated ObjectField fld = 1;
+}
+
+// a Array of expressions
+message Array {
+  repeated Expr value = 1;
+}
+
+polardbx-engine/plugin/polarx_rpc/protocol/polarx_notice.proto
+
+// tell protobuf 3.0 to use protobuf 2.x rules
+syntax = "proto2";
+
+package PolarXRPC.Notice;
+option java_package = "com.mysql.cj.polarx.protobuf";
+
+import "polarx_datatypes.proto";
+
+message Frame {
+  enum Scope {
+    GLOBAL = 1;
+    LOCAL = 2;
+  };
+  enum Type {
+    WARNING = 1;
+    SESSION_VARIABLE_CHANGED = 2;
+    SESSION_STATE_CHANGED = 3;
+    GROUP_REPLICATION_STATE_CHANGED = 4;
+    SERVER_HELLO = 5;
+  };
+  required uint32 type = 1;
+  optional Scope  scope = 2 [default = GLOBAL];
+  optional bytes payload = 3;
+}
+
+message Warning {
+  enum Level {
+    NOTE = 1;
+    WARNING = 2;
+    ERROR = 3;
+  };
+  optional Level  level = 1 [default = WARNING];
+  required uint32 code = 2;
+  required string msg = 3;
+}
+
+message SessionVariableChanged {
+  required string param = 1;
+  optional PolarXRPC.Datatypes.Scalar value = 2;
+}
+
+message SessionStateChanged {
+  enum Parameter {
+    CURRENT_SCHEMA = 1;
+    ACCOUNT_EXPIRED = 2;
+    GENERATED_INSERT_ID = 3;
+    ROWS_AFFECTED = 4;
+    ROWS_FOUND = 5;
+    ROWS_MATCHED = 6;
+    TRX_COMMITTED = 7;
+    TRX_ROLLEDBACK = 9;
+    PRODUCED_MESSAGE = 10;
+    CLIENT_ID_ASSIGNED = 11;
+    // .. more to be added
+  }
+  required Parameter param = 1;
+  optional PolarXRPC.Datatypes.Scalar value = 2;
+}
+
+
+polardbx-engine/plugin/polarx_rpc/protocol/polarx_physical_backfill.proto
+
+syntax = "proto2";
+
+// ifdef PROTOBUF_LITE: option optimize_for = LITE_RUNTIME;
+
+package PolarXRPC.PhysicalBackfill;
+option java_package = "com.mysql.cj.polarx.protobuf";
+
+message TableInfo {
+  required string table_schema = 1;
+  required string table_name = 2;
+  required bool partitioned = 3;
+  repeated string physical_partition_name = 4;
+  repeated FileInfo file_info = 5;
+}
+
+message FileInfo {
+  required string directory = 1;
+  required string file_name = 2;
+  required string partition_name = 3 [default = ""];
+  optional uint64 data_size = 4;
+  optional bool existence = 5;
+  optional bool temp_file = 6;
+}
+
+message DiskInfo {
+  required string directory = 1;
+  optional uint64 total_size = 2;
+  optional uint64 free_size = 3;
+  optional uint64 used_size = 4;
+}
+
+message GetFileInfoOperator {
+  enum Type {
+    CHECK_SRC_FILE_EXISTENCE = 1;
+    CHECK_TAR_FILE_EXISTENCE = 2;
+    GET_TAR_IBD_DIR = 3;
+    GET_SRC_FILE_LEN = 4;
+    GET_SRC_DIR_FREE_SPACE = 5;
+    GET_TAR_DIR_FREE_SPACE = 6;
+    GET_SRC_IBD_TEMP_DIR = 7;
+    GET_TAR_FILE_LEN = 8;
+  };
+  required Type operator_type = 1;
+  optional TableInfo table_info = 2;
+  optional DiskInfo disk_info = 3;
+}
+
+message TransferFileDataOperator {
+  enum Type {
+    GET_DATA_FROM_SRC_IBD = 1;
+    PUT_DATA_TO_TAR_IBD = 2;
+  };
+  required Type operator_type = 1;
+  required FileInfo file_info = 2;
+  optional DiskInfo disk_info = 3;
+  required uint64 buffer_len = 4;
+  optional bytes buffer = 5;
+  required uint64 offset = 6;
+}
+
+message FileManageOperator {
+  enum Type {
+    CREATE_TEMP_DIR_IN_SRC = 1;
+    COPY_IBD_TO_TEMP_DIR_IN_SRC = 2;
+    DELETE_IBD_FROM_TEMP_DIR_IN_SRC = 3;
+    FLUSH_TABLE_IN_SRC = 4;
+    UNLOCK_TABLE_IN_SRC = 5;
+    DELETE_TEMP_DIR_IN_SRC = 6;
+    FALLOCATE_IBD = 7;
+  };
+  required Type operator_type = 1;
+  optional TableInfo table_info = 2;
+}
+
+message FileManageOperatorResponse {
+  required bool result = 1;
+  optional string detail = 2;
+}
+
+polardbx-engine/plugin/polarx_rpc/protocol/polarx_resultset.proto
+
+syntax = "proto2";
+
+package PolarXRPC.Resultset;
+option java_package = "com.mysql.cj.polarx.protobuf";
+
+message FetchDoneMoreOutParams {
+}
+
+message FetchDoneMoreResultsets {
+}
+
+message FetchDone {
+  optional uint64 examined_row_count = 1;
+  optional bytes chosen_index = 2;
+}
+
+message ColumnMetaData {
+  enum FieldType {
+    SINT = 1;
+    UINT = 2;
+
+    DOUBLE = 5;
+    FLOAT = 6;
+
+    BYTES = 7;
+
+    TIME = 10;
+    DATETIME = 12;
+    SET = 15;
+    ENUM = 16;
+    BIT = 17;
+
+    DECIMAL = 18;
+  }
+
+  enum OriginalType {
+    MYSQL_TYPE_DECIMAL = 0;
+    MYSQL_TYPE_TINY = 1;
+    MYSQL_TYPE_SHORT = 2;
+    MYSQL_TYPE_LONG = 3;
+    MYSQL_TYPE_FLOAT = 4;
+    MYSQL_TYPE_DOUBLE = 5;
+    MYSQL_TYPE_NULL = 6;
+    MYSQL_TYPE_TIMESTAMP = 7;
+    MYSQL_TYPE_LONGLONG = 8;
+    MYSQL_TYPE_INT24 = 9;
+    MYSQL_TYPE_DATE = 10;
+    MYSQL_TYPE_TIME = 11;
+    MYSQL_TYPE_DATETIME = 12;
+    MYSQL_TYPE_YEAR = 13;
+    MYSQL_TYPE_NEWDATE = 14;
+    MYSQL_TYPE_VARCHAR = 15;
+    MYSQL_TYPE_BIT = 16;
+    MYSQL_TYPE_TIMESTAMP2 = 17;
+    MYSQL_TYPE_DATETIME2 = 18;
+    MYSQL_TYPE_TIME2 = 19;
+    MYSQL_TYPE_JSON = 245;
+    MYSQL_TYPE_NEWDECIMAL = 246;
+    MYSQL_TYPE_ENUM = 247;
+    MYSQL_TYPE_SET = 248;
+    MYSQL_TYPE_TINY_BLOB = 249;
+    MYSQL_TYPE_MEDIUM_BLOB = 250;
+    MYSQL_TYPE_LONG_BLOB = 251;
+    MYSQL_TYPE_BLOB = 252;
+    MYSQL_TYPE_VAR_STRING = 253;
+    MYSQL_TYPE_STRING = 254;
+    MYSQL_TYPE_GEOMETRY = 255;
+  }
+
+  // datatype of the field in a row
+  required FieldType type = 1;
+  required OriginalType original_type = 2;
+
+  optional bytes name = 3;
+  optional bytes original_name = 4;
+
+  optional bytes table = 5;
+  optional bytes original_table = 6;
+
+  optional bytes schema = 7;
+  optional bytes catalog = 8;
+
+  optional uint64 collation = 9;
+
+  optional uint32 fractional_digits = 10;
+
+  optional uint32 length = 11;
+
+  optional uint32 flags = 12;
+
+  optional uint32 content_type = 13;
+
+  optional uint32 original_flags = 14;
+}
+
+message Row {
+  repeated bytes field = 1;
+}
+
+message TokenDone {
+  optional int32 token_left = 1 [default = 0];
+}
+
+// One chunk of a result set.
+message Chunk {
+  required uint32 row_count = 1;
+  repeated Column columns = 2;
+}
+
+message Column {
+  optional bytes null_bitmap = 1;
+  optional FixedSizeColumn fixed_size_column = 2;
+  optional VariableSizeColumn variable_size_column = 3;
+}
+
+message FixedSizeColumn {
+  required bytes value = 1;
+}
+
+message VariableSizeColumn {
+  required bytes value = 1;
+}
+
+polardbx-engine/plugin/polarx_rpc/protocol/polarx_session.proto
+
+syntax = "proto2";
+package PolarXRPC.Session;
+option java_package = "com.mysql.cj.polarx.protobuf";
+
+message AuthenticateStart {
+  required string mech_name = 1;
+  optional bytes auth_data = 2;
+  optional bytes initial_response = 3;
+}
+
+message AuthenticateContinue {
+  required bytes auth_data = 1;
+}
+
+message AuthenticateOk {
+  optional bytes auth_data = 1;
+}
+
+message NewSession {
+}
+
+message KillSession {
+  enum KillType {
+    QUERY = 1;
+    CONNECTION = 2;
+  }
+  required KillType type = 1;
+  required uint64 x_session_id = 2;
+}
+
+message Reset {
+}
+
+message Close {
+}
+
+polardbx-engine/plugin/polarx_rpc/protocol/polarx_sql.proto
+
+syntax = "proto2";
+package PolarXRPC.Sql;
+option java_package = "com.mysql.cj.polarx.protobuf";
+
+import "polarx_datatypes.proto";
+
+message StmtExecute {
+  optional string namespace = 3 [default = "sql"];
+  optional bytes stmt = 1;
+  optional bytes stmt_digest = 12;
+  optional bytes hint = 13;
+  optional bool chunk_result = 14 [default = false];
+  optional bool feed_back = 16 [default = false];
+  repeated PolarXRPC.Datatypes.Any args = 2;
+  optional bool compact_metadata = 4 [default = false];
+
+  // For auto commit request.
+  optional string schema_name = 5;
+  repeated PolarXRPC.Datatypes.SessionVariable session_variables = 6;
+  optional string encoding = 7;
+  optional int32 token = 8;
+
+  optional bool reset_error = 9;
+  optional uint64 snapshot_seq = 10;
+  optional uint64 commit_seq = 11;
+  optional bool use_cts_transaction = 15;
+
+  // capabilities
+  optional uint64 capabilities = 17;
+
+  // innodb_mark_distributed
+  optional bool mark_distributed = 18;
+
+  // Flashback area
+  optional bool query_via_flashback_area = 19;
+}
+
+// statement executed successful
+message StmtExecuteOk {
+}
+
+message TokenOffer {
+  optional int32 token = 1 [default = -1];
+}

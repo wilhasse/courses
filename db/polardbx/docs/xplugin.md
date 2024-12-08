@@ -67,8 +67,11 @@ On errors, the server sends an ERROR message detailing the SQL state, code, and 
 
 ## CRUD Messages
 Although not exclusively used for standard SQL, the protocol supports messages like CRUD_FIND, CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE for direct document-store style operations. In a standard SQL scenario, these might not be frequently used, but they show the protocol’s extensibility.  
+
 ExecPlan and Query Plans**: For more advanced features, the protocol defines messages such as EXEC_PLAN_READ or EXEC_SQL and ExecPlan messages that encode a query plan. This allows the front-end to send a pre-compiled or pre-analyzed plan structure to the server, indicating which tables, indexes, filters, and projections are involved.  
+
 ExecPlan messages contain AnyPlan structures describing various plan types (GET, TABLE_SCAN, PROJECT, FILTER, AGGR, etc.), dynamic parameters, session variables, and execution capabilities.  
+
 The server executes this plan and returns result sets similarly to how it returns them for StmtExecute.    
 Expect Blocks (Condition Checking): The protocol includes EXPECT_OPEN and EXPECT_CLOSE messages to define conditional execution blocks. The front-end can specify conditions (like no_error, gtid_executed_contains) that must be met for subsequent commands to run. If conditions fail, the server aborts the enclosed commands.
 
