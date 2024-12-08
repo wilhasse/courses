@@ -4,6 +4,12 @@ PolarDB-X is a cloud native distributed SQL Database compatible with MySQL
 
 https://github.com/polardb  
 
+# Understanding
+
+- [Life of an single query (not distributed)](./docs/single_query.md)
+- [Mapping query to polardbx sql modules or libraries](./docs/single_query_code.md)
+- [Polar RPC XPlugin Protocol](./docs/xplugin.md)
+
 # Files
 
 - [Introduction](./docs/introduction.md)
@@ -22,11 +28,6 @@ https://github.com/polardb
 - [Testing MySQL XPlugin Protocol](./docs/xplugin_test.md)
 - [Generating source code documentation](./docs/doxygen_basic.md)
 - [Running Unit tests](./docs/run_tests.md)
-
-# Understanding
-
-- [Life of an single query (not distributed)](./docs/single_query.md)
-- [Mapping query to polardbx sql modules or libraries](./docs/single_query_code.md)
 
 # Tests
 
