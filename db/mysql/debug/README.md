@@ -1,6 +1,7 @@
 # Files
 
-- [Build](./build.md)
+- [Build Debian 11](./build_d11.md)
+- [Build Debian 12](./build.md)
 - [Environment](./environment.md)
 - [Logs](./logs.md)
 

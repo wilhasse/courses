@@ -9,3 +9,5 @@ Administration Procedures
 - [Authentication: different plugins](./authentication.md)
 
 - [Syncronize Source and Replicas](./checksum.md)
+
+- [Internal Innodb Sys Tables](./sys_tables.md)
