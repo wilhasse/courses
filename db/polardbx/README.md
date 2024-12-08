@@ -23,6 +23,11 @@ https://github.com/polardb
 - [Generating source code documentation](./docs/doxygen_basic.md)
 - [Running Unit tests](./docs/run_tests.md)
 
+# Understanding
+
+- [Life of an single query (not distributed)](./docs/single_query.md)
+- [Mapping query to polardbx sql modules or libraries](./docs/single_query_code.md)
+
 # Tests
 
 Detail of [all tests](./tests/README.md)
