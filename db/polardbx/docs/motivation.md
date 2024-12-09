@@ -20,19 +20,18 @@ On the storage side, rather than using a complex distributed engine, the plan is
 3.  **Incremental Integration**:  
     The Java-based integration allows for gradual adoption of the polardbx-sql components. Features can be added step by step, thoroughly tested, and validated before broader deployment.
     
+4. **Preservation of Native MySQL Semantics**:
+    By leveraging the existing MySQL engine as the storage layer, the architecture naturally inherits MySQL’s handling of foreign-key cascading operations (such as ON UPDATE and ON DELETE). In previous attempts with other frameworks, these cascades often posed a replication challenge because they do not appear in the binary logs. By retaining the native MySQL engine and integrating polardbx-sql on top, the system ensures that foreign-key cascades are captured and propagated as intended. This maintains data integrity and significantly reduces the complexity of implementing custom logic or additional replication layers.
 
 **Challenges and Considerations**:
 
 1.  **Compatibility and Maintenance**:  
     Extracting and adapting polardbx-sql components outside of their original distributed context may introduce compatibility issues. Ongoing maintenance efforts, including patching and updating the integrated code, will be required.
-    
-2.  **Foreign Key Cascading Replication**:  
-    A significant challenge encountered in previous tests with other frameworks involves maintaining foreign-key cascading operations (such as `ON UPDATE` and `ON DELETE`) in synchronization. These operations do not appear in MySQL’s binary logs, making it difficult to replicate them accurately. Ensuring that these cascaded changes are captured and propagated remains a key engineering problem that must be addressed to guarantee data integrity.
-    
-3.  **Performance Validation and Testing**:  
+     
+2.  **Performance Validation and Testing**:  
     While the polardbx-sql engine is designed for distributed execution, it remains an assumption that these query optimization benefits will translate effectively to a non-distributed setup. Rigorous performance testing, benchmarking, and validation will be essential to confirm that the intended improvements are realized.
     
-4.  **Development Learning Curve**:  
+3.  **Development Learning Curve**:  
     The team must gain sufficient understanding of polardbx-sql’s internal architecture. This includes how queries are parsed, optimized, and planned, and how these stages can be integrated smoothly with a single-node or minimally distributed storage engine.
     
 
