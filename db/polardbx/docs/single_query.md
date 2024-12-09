@@ -6,8 +6,8 @@ In a simple, non-distributed scenario—where the table or query doesn’t requi
 
 # Detailed Breakdown Step-by-Step
 
-Client Connection and Request Handling
-The client (e.g., a JDBC application, a command-line tool, or a service) connects to the PolarDB-X endpoint. This endpoint is the Java-based frontend layer.
+Client Connection and Request Handling  
+The client (e.g., a JDBC application, a command-line tool, or a service) connects to the PolarDB-X endpoint. This endpoint is the Java-based frontend layer.  
 
 The client submits a simple SQL query, for example:
 
@@ -19,12 +19,12 @@ SELECT * FROM employees WHERE id = 123;
 
 The PolarDB-X frontend includes a SQL parser implemented in Java. This parser is typically generated from a grammar (often using a parser generator tool or integrated parser libraries). It is responsible for:
 
-Lexing: Breaking the SQL string into tokens like SELECT, *, FROM, employees, WHERE, id, =, 123.
-Parsing: Constructing an Abstract Syntax Tree (AST) that represents the query structure. For our simple query, the AST might have a SELECT node, a TABLE node (employees), and a WHERE clause node (id = 123).  
+Lexing: Breaking the SQL string into tokens like SELECT, *, FROM, employees, WHERE, id, =, 123.  
+Parsing: Constructing an Abstract Syntax Tree (AST) that represents the query structure. For our simple query, the AST might have a SELECT node, a TABLE node (employees), and a WHERE clause node (id = 123).    
 
 Logical Plan Construction
-After parsing, the PolarDB-X frontend transforms the AST into a logical execution plan. The logical plan is a more structured representation of what the query wants to do, independent of physical execution details.  
-For a simple non-distributed query, the logical plan is quite direct:
+After parsing, the PolarDB-X frontend transforms the AST into a logical execution plan. The logical plan is a more structured representation of what the query wants to do, independent of physical execution details.    
+For a simple non-distributed query, the logical plan is quite direct:  
 
 A single table scan on employees filtered by id = 123.
 
@@ -41,10 +41,10 @@ Because our scenario isn’t distributed (let’s assume just one underlying bac
 
 In the distributed architecture, a key step is routing. The frontend determines which backend node(s) hold the relevant shards of the data. For a non-distributed scenario:
 
-Routing is trivial. There is only one backend node or one database instance. The query is mapped directly to that node.
+Routing is trivial. There is only one backend node or one database instance. The query is mapped directly to that node.  
 The routing layer (still part of the Java frontend) knows the topology. It sees that the employees table is stored on a particular backend node and chooses that node’s connection pool for execution.
 
-Physical Plan Generation
+Physical Plan Generation  
 Now the PolarDB-X frontend turns the logical plan into a physical execution plan. In a distributed scenario, this might involve generating multiple SQL statements, one per shard, and a merge operation afterward. In our simple scenario, the physical plan is just the direct SQL statement that will be sent to the backend MySQL instance. It might look identical or nearly identical to the original query, for example:
 
 ```sql
@@ -61,16 +61,16 @@ SELECT /*+ INDEX(employees id_index) */ * FROM employees WHERE id = 123;
 
 With the physical plan ready, the frontend uses its connection layer to send the SQL to the backend. PolarDB-X typically uses a standard MySQL protocol or a modified version of it to communicate with the backend MySQL engine. Under the hood:
 
-The Java frontend maintains a pool of connections to the backend.
-It picks a free connection from the pool.
-It sends the SQL text over the MySQL protocol.
-Since PolarDB-X backend nodes are MySQL forks (often based on Alibaba’s fork of MySQL or PolarDB for MySQL), they understand this protocol and the SQL statement just like a standard MySQL server would.
+The Java frontend maintains a pool of connections to the backend.  
+It picks a free connection from the pool.  
+It sends the SQL text over the MySQL protocol.  
+Since PolarDB-X backend nodes are MySQL forks (often based on Alibaba’s fork of MySQL or PolarDB for MySQL), they understand this protocol and the SQL statement just like a standard MySQL server would.  
 
-Query Execution in the Backend
+Query Execution in the Backend  
 The backend MySQL fork receives the query and executes it against its local storage engine. For a simple SELECT:
 
-The backend checks its indexes.
-Locates the row(s) with id = 123.  
+The backend checks its indexes.  
+Locates the row(s) with id = 123.   
 Reads the data pages from disk or memory.  
 Constructs the result set to return.  
 The backend node then sends the result rows back over the MySQL protocol to the frontend.
