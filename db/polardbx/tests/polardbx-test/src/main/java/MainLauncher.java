@@ -7,6 +7,7 @@ public class MainLauncher {
     static {
         COMMANDS.put("parsesql", new CommandInfo(ParseSQL.class, "Run SQL parsing tests"));
         COMMANDS.put("query", new CommandInfo(SimpleDbQueryApp.class, "Run database query tests"));
+        COMMANDS.put("server", new CommandInfo(SimpleServer.class, "Run simple server"));
     }
 
     private static class CommandInfo {

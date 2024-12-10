@@ -28,6 +28,12 @@
             <version>${polardbx.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.alibaba.polardbx</groupId>
+            <artifactId>polardbx-gms</artifactId>
+            <version>${polardbx.version}</version>
+        </dependency>
+
         <!-- PolarDB-X Parser -->
         <dependency>
             <groupId>com.alibaba.polardbx</groupId>
