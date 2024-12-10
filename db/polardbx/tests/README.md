@@ -1,5 +1,9 @@
 # Tests
 
+## [mysql-server](./mysql-server)
+
+Simple mysql server that respond to SELECT 1
+
 ## [calcite-test](./calcite-test)
 
 Simple query test using Apache Calcite
