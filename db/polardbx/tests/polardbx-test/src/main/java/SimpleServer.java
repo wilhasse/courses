@@ -2,6 +2,7 @@ import com.alibaba.polardbx.Fields;
 import com.alibaba.polardbx.net.FrontendConnection;
 import com.alibaba.polardbx.net.NIOAcceptor;
 import com.alibaba.polardbx.net.NIOProcessor;
+import com.alibaba.polardbx.net.buffer.BufferPool;
 import com.alibaba.polardbx.net.buffer.ByteBufferHolder;
 import com.alibaba.polardbx.net.compress.IPacketOutputProxy;
 import com.alibaba.polardbx.net.compress.PacketOutputProxyFactory;
@@ -15,10 +16,13 @@ import com.alibaba.polardbx.net.packet.RowDataPacket;
 import com.alibaba.polardbx.net.util.CharsetUtil;
 import com.alibaba.polardbx.net.util.TimeUtil;
 import com.alibaba.polardbx.common.utils.thread.ThreadCpuStatUtil;
-import com.taobao.tddl.common.privilege.EncrptPassword;
 import com.alibaba.polardbx.common.utils.thread.ServerThreadPool;
+import com.alibaba.polardbx.common.utils.logger.Logger;
+import com.alibaba.polardbx.common.utils.logger.LoggerFactory;
+import com.taobao.tddl.common.privilege.EncrptPassword;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -100,15 +104,50 @@ public class SimpleServer {
     }
 
     class DebugConnection extends FrontendConnection {
+        private final Logger logger = LoggerFactory.getLogger(DebugConnection.class);
+        private final BufferPool bufferPool;
+
         public DebugConnection(SocketChannel channel) {
             super(channel);
-            System.out.println("New connection created from: " + channel);
+            this.bufferPool = new BufferPool(1024 * 1024 * 16, 4096);
+            this.packetHeaderSize = 4;  // MySQL packet header size
+            this.maxPacketSize = 16 * 1024 * 1024;  // 16MB max packet
+            this.readBuffer = allocate();  // Initialize read buffer
+            System.out.println("Created new connection with buffer pool");
+        }
+
+        @Override
+        public ByteBufferHolder allocate() {
+            try {
+                ByteBufferHolder buffer = bufferPool.allocate();
+                if (buffer != null) {
+                    ByteBuffer nioBuffer = buffer.getBuffer();
+                    if (nioBuffer != null) {
+                        nioBuffer.clear();
+                        nioBuffer.position(0);
+                        nioBuffer.limit(nioBuffer.capacity());
+                    }
+                }
+                return buffer != null ? buffer : ByteBufferHolder.EMPTY;
+            } catch (Exception e) {
+                logger.error("Error allocating buffer", e);
+                return ByteBufferHolder.EMPTY;
+            }
+        }
+
+        public void recycleBuffer(ByteBufferHolder buffer) {
+            if (buffer != null && buffer != ByteBufferHolder.EMPTY) {
+                try {
+                    bufferPool.recycle(buffer);
+                } catch (Exception e) {
+                    logger.error("Error recycling buffer", e);
+                }
+            }
         }
 
         @Override
         public void handleError(com.alibaba.polardbx.common.exception.code.ErrorCode errorCode, Throwable t) {
-            System.err.println("Connection error - Code: " + errorCode + ", Message: " + t.getMessage());
-            t.printStackTrace();
+            logger.error("Connection error - Code: " + errorCode, t);
             close();
         }
 
@@ -142,19 +181,6 @@ public class SimpleServer {
 
         @Override
         public void fieldList(byte[] data) {
-        }
-
-        // Override other methods to add logging
-        @Override
-        public void read() throws IOException {
-            System.out.println("Reading from connection: " + this);
-            super.read();
-        }
-
-        @Override
-        public void write(ByteBufferHolder buffer) {
-            System.out.println("Writing to connection: " + this);
-            super.write(buffer);
         }
     }
 
@@ -253,57 +279,84 @@ public class SimpleServer {
         }
 
         private void sendVersionResponse() {
+            ByteBufferHolder buffer = null;
             try {
+                // Initialize buffer
                 byte packetId = 0;
-                ByteBufferHolder buffer = connection.allocate();
-                IPacketOutputProxy proxy = PacketOutputProxyFactory.getInstance().createProxy(connection, buffer);
+                buffer = connection.allocate();
+                buffer.clear();  // Reset buffer positions
+                System.out.println("Allocated buffer for version response");
 
-                System.out.println("Sending version response header");
+                // Create proxy
+                IPacketOutputProxy proxy = PacketOutputProxyFactory.getInstance().createProxy(connection, buffer);
+                proxy.packetBegin();
+
+                // Write header
+                System.out.println("Writing header packet");
                 ResultSetHeaderPacket header = new ResultSetHeaderPacket();
                 header.packetId = ++packetId;
                 header.fieldCount = 1;
                 header.write(proxy);
 
-                System.out.println("Sending field packet");
+                // Write field
+                System.out.println("Writing field packet");
                 FieldPacket field = new FieldPacket();
                 field.packetId = ++packetId;
                 field.charsetIndex = CharsetUtil.getIndex("utf8");
                 field.name = "VERSION()".getBytes();
                 field.type = Fields.FIELD_TYPE_VAR_STRING;
+                field.catalog = "def".getBytes();
+                field.db = new byte[0];
+                field.table = new byte[0];
+                field.orgTable = new byte[0];
+                field.orgName = field.name;
+                field.decimals = 0;
+                field.flags = 0;
+                field.length = 50;
                 field.write(proxy);
 
+                // Write EOF if needed
                 if (!connection.isEofDeprecated()) {
-                    System.out.println("Sending EOF packet");
+                    System.out.println("Writing first EOF packet");
                     EOFPacket eof = new EOFPacket();
                     eof.packetId = ++packetId;
                     eof.write(proxy);
                 }
 
-                System.out.println("Sending row data");
+                // Write row
+                System.out.println("Writing row packet");
                 RowDataPacket row = new RowDataPacket(1);
                 row.add("PolarDB-X 5.4.19-SNAPSHOT".getBytes());
                 row.packetId = ++packetId;
                 row.write(proxy);
 
-                System.out.println("Sending final EOF packet");
+                // Write final EOF
+                System.out.println("Writing final EOF packet");
                 EOFPacket lastEof = new EOFPacket();
                 lastEof.packetId = ++packetId;
                 lastEof.write(proxy);
 
-                System.out.println("Writing buffer to connection");
-                connection.write(buffer);
+                // Finish packet
+                proxy.packetEnd();
+
             } catch (Exception e) {
-                System.err.println("Error sending version response: " + e.getMessage());
+                System.err.println("Error in sendVersionResponse: " + e);
                 e.printStackTrace();
+                if (buffer != null) {
+                    connection.recycleBuffer(buffer);
+                }
             }
         }
 
         private void sendEmptyResponse() {
-            System.out.println("Sending empty response");
+            ByteBufferHolder buffer = null;
             try {
                 byte packetId = 0;
-                ByteBufferHolder buffer = connection.allocate();
+                buffer = connection.allocate();
+                buffer.clear();  // Reset buffer positions
+
                 IPacketOutputProxy proxy = PacketOutputProxyFactory.getInstance().createProxy(connection, buffer);
+                proxy.packetBegin();
 
                 ResultSetHeaderPacket header = new ResultSetHeaderPacket();
                 header.packetId = ++packetId;
@@ -314,10 +367,13 @@ public class SimpleServer {
                 lastEof.packetId = ++packetId;
                 lastEof.write(proxy);
 
-                connection.write(buffer);
+                proxy.packetEnd();
             } catch (Exception e) {
-                System.err.println("Error sending empty response: " + e.getMessage());
+                System.err.println("Error sending empty response: " + e);
                 e.printStackTrace();
+                if (buffer != null) {
+                    connection.recycleBuffer(buffer);
+                }
             }
         }
     }
