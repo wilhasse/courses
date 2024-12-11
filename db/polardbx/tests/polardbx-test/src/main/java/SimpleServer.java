@@ -16,6 +16,7 @@ import com.alibaba.polardbx.net.util.CharsetUtil;
 import com.alibaba.polardbx.net.util.TimeUtil;
 import com.alibaba.polardbx.common.utils.thread.ThreadCpuStatUtil;
 import com.taobao.tddl.common.privilege.EncrptPassword;
+import com.alibaba.polardbx.common.utils.thread.ServerThreadPool;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
@@ -63,7 +64,15 @@ public class SimpleServer {
 
         processors = new NIOProcessor[processorCount];
         for (int i = 0; i < processors.length; i++) {
-            processors[i] = new NIOProcessor(i, "Processor" + i, 4);
+            // Create a ServerThreadPool with 1 bucket to avoid divide by zero
+            ServerThreadPool handler = new ServerThreadPool(
+                    "ProcessorHandler-" + i,
+                    4,  // poolSize
+                    5000,  // deadLockCheckPeriod (5 seconds)
+                    1   // bucketSize
+            );
+
+            processors[i] = new NIOProcessor(i, "Processor" + i, handler);
             processors[i].startup();
             System.out.println("Processor " + i + " started");
         }
