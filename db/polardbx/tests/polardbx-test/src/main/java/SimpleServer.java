@@ -1,123 +1,190 @@
+import com.alibaba.polardbx.Fields;
+import com.alibaba.polardbx.net.FrontendConnection;
+import com.alibaba.polardbx.net.NIOAcceptor;
+import com.alibaba.polardbx.net.NIOProcessor;
+import com.alibaba.polardbx.net.buffer.ByteBufferHolder;
+import com.alibaba.polardbx.net.compress.IPacketOutputProxy;
+import com.alibaba.polardbx.net.compress.PacketOutputProxyFactory;
+import com.alibaba.polardbx.net.factory.FrontendConnectionFactory;
+import com.alibaba.polardbx.net.handler.QueryHandler;
+import com.alibaba.polardbx.net.packet.EOFPacket;
+import com.alibaba.polardbx.net.packet.FieldPacket;
+import com.alibaba.polardbx.net.packet.ResultSetHeaderPacket;
+import com.alibaba.polardbx.net.packet.RowDataPacket;
+import com.alibaba.polardbx.net.util.CharsetUtil;
+import com.alibaba.polardbx.net.util.TimeUtil;
+import com.alibaba.polardbx.common.utils.thread.ThreadCpuStatUtil;
+
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.Selector;
-import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.nio.channels.SocketChannel;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class SimpleServer {
-    private final int port;
-    private final Properties systemConfig;
-    private ServerSocketChannel serverChannel;
-    private Selector selector;
-    private ExecutorService serverExecutor;
-    private boolean running;
+    private static final int SERVER_PORT = 8507;
+    private NIOProcessor[] processors;
+    private NIOAcceptor server;
 
-    public SimpleServer(int port) {
-        this.port = port;
-        this.systemConfig = new Properties();
-        initializeDefaultConfig();
+    public static void main(String[] args) throws IOException {
+        SimpleServer server = new SimpleServer();
+        server.startup();
     }
 
-    private void initializeDefaultConfig() {
-        // Basic configuration similar to server.properties
-        systemConfig.setProperty("serverPort", String.valueOf(port));
-        systemConfig.setProperty("processors", String.valueOf(Runtime.getRuntime().availableProcessors()));
-        systemConfig.setProperty("processorHandler", "4");
-        systemConfig.setProperty("processorExecutor", "4");
-    }
-
-    public void start() throws Exception {
-        // Step 1: Initialize system components
-        initializeSystemComponents();
-
-        // Step 2: Create thread pools
-        createThreadPools();
-
-        // Step 3: Initialize network layer
-        initializeNetworkLayer();
-
-        // Step 4: Start server
-        startServer();
-
-        System.out.println("SimplePolarDBXServer started on port " + port);
-    }
-
-    private void initializeSystemComponents() {
-        // In a full implementation, this would:
-        // 1. Initialize MetaDB connection
-        // 2. Load system tables
-        // 3. Initialize configuration managers
-        System.out.println("Initializing system components...");
-    }
-
-    private void createThreadPools() {
-        int processors = Integer.parseInt(systemConfig.getProperty("processors"));
-        serverExecutor = Executors.newFixedThreadPool(processors);
-        System.out.println("Created server executor with " + processors + " threads");
-    }
-
-    private void initializeNetworkLayer() throws IOException {
-        selector = Selector.open();
-        serverChannel = ServerSocketChannel.open();
-        serverChannel.configureBlocking(false);
-        serverChannel.socket().bind(new InetSocketAddress(port));
-        serverChannel.register(selector, serverChannel.validOps());
-        System.out.println("Network layer initialized");
-    }
-
-    private void startServer() {
-        running = true;
-        // Start accept thread
-        new Thread(this::acceptLoop, "PolarDBX-Acceptor").start();
-    }
-
-    private void acceptLoop() {
-        while (running) {
-            try {
-                selector.select();
-                // In a full implementation, this would:
-                // 1. Accept new connections
-                // 2. Create FrontendConnection objects
-                // 3. Assign connections to NIOProcessors
-                Thread.sleep(100); // Simplified for demonstration
-            } catch (Exception e) {
-                e.printStackTrace();
+    public void startup() throws IOException {
+        // Initialize timer for time-based operations
+        Timer timer = new Timer("ServerTimer", true);
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                TimeUtil.update();
             }
+        }, 0L, 100L);
+
+        // Create processors based on CPU cores
+        processors = new NIOProcessor[ThreadCpuStatUtil.NUM_CORES];
+        for (int i = 0; i < processors.length; i++) {
+            processors[i] = new NIOProcessor(i, "Processor" + i, 4);
+            processors[i].startup();
+        }
+
+        // Create and start server
+        CustomConnectionFactory factory = new CustomConnectionFactory();
+        server = new NIOAcceptor("MySQLServer", SERVER_PORT, factory, true);
+        server.setProcessors(processors);
+        server.start();
+
+        System.out.println("MySQL server started on port " + SERVER_PORT);
+    }
+}
+
+class CustomConnectionFactory extends FrontendConnectionFactory {
+    @Override
+    protected FrontendConnection getConnection(SocketChannel channel) {
+        CustomConnection conn = new CustomConnection(channel);
+        conn.setQueryHandler(new VersionQueryHandler(conn));
+        return conn;
+    }
+}
+
+class CustomConnection extends FrontendConnection {
+    public CustomConnection(SocketChannel channel) {
+        super(channel);
+    }
+
+    @Override
+    public void handleError(com.alibaba.polardbx.common.exception.code.ErrorCode errorCode, Throwable t) {
+        System.err.println("Error: " + t.getMessage());
+        close();
+    }
+
+    @Override
+    public boolean checkConnectionCount() {
+        return true;
+    }
+
+    @Override
+    protected long genConnId() {
+        return 1; // Simplified for example
+    }
+
+    @Override
+    public boolean isPrivilegeMode() {
+        return false;  // Added missing method
+    }
+
+    @Override
+    public void addConnectionCount() {
+        // No-op for simple implementation
+    }
+
+    @Override
+    public boolean prepareLoadInfile(String sql) {
+        return false;  // We don't support LOAD INFILE
+    }
+
+    @Override
+    public void binlogDump(byte[] data) {
+        // No-op for simple implementation
+    }
+
+    @Override
+    public void fieldList(byte[] data) {
+        // No-op for simple implementation
+    }
+}
+
+class VersionQueryHandler implements QueryHandler {
+    private final CustomConnection connection;
+
+    public VersionQueryHandler(CustomConnection connection) {
+        this.connection = connection;
+    }
+
+    @Override
+    public void query(String sql) {
+        if (sql.toLowerCase().contains("select version()")) {
+            sendVersionResponse();
+        } else {
+            // For any other query, send empty result
+            sendEmptyResponse();
         }
     }
 
-    public void stop() {
-        running = false;
-        try {
-            if (serverChannel != null) {
-                serverChannel.close();
-            }
-            if (selector != null) {
-                selector.close();
-            }
-            if (serverExecutor != null) {
-                serverExecutor.shutdown();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void sendVersionResponse() {
+        byte packetId = 0;
+        ByteBufferHolder buffer = connection.allocate();
+        IPacketOutputProxy proxy = PacketOutputProxyFactory.getInstance().createProxy(connection, buffer);
+
+        // Header - 1 column
+        ResultSetHeaderPacket header = new ResultSetHeaderPacket();
+        header.packetId = ++packetId;
+        header.fieldCount = 1;
+        header.write(proxy);
+
+        // Field packet
+        FieldPacket field = new FieldPacket();
+        field.packetId = ++packetId;
+        field.charsetIndex = CharsetUtil.getIndex("utf8");
+        field.name = "VERSION()".getBytes();
+        field.type = Fields.FIELD_TYPE_VAR_STRING;
+        field.write(proxy);
+
+        // EOF packet after fields
+        if (!connection.isEofDeprecated()) {
+            EOFPacket eof = new EOFPacket();
+            eof.packetId = ++packetId;
+            eof.write(proxy);
         }
-        System.out.println("Server stopped");
+
+        // Row data
+        RowDataPacket row = new RowDataPacket(1);
+        row.add("PolarDB-X 5.4.19-SNAPSHOT".getBytes());
+        row.packetId = ++packetId;
+        row.write(proxy);
+
+        // EOF packet after rows
+        EOFPacket lastEof = new EOFPacket();
+        lastEof.packetId = ++packetId;
+        lastEof.write(proxy);
+
+        // Send the response
+        connection.write(buffer);
     }
 
-    // Main method for testing
-    public static void main(String[] args) {
-        try {
-            SimpleServer server = new SimpleServer(3306);
-            server.start();
+    private void sendEmptyResponse() {
+        byte packetId = 0;
+        ByteBufferHolder buffer = connection.allocate();
+        IPacketOutputProxy proxy = PacketOutputProxyFactory.getInstance().createProxy(connection, buffer);
 
-            // Keep the server running for a while
-            Thread.sleep(60000);
+        ResultSetHeaderPacket header = new ResultSetHeaderPacket();
+        header.packetId = ++packetId;
+        header.fieldCount = 0;
+        header.write(proxy);
 
-            server.stop();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        EOFPacket lastEof = new EOFPacket();
+        lastEof.packetId = ++packetId;
+        lastEof.write(proxy);
+
+        connection.write(buffer);
     }
 }
