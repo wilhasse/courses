@@ -20,7 +20,16 @@ import com.alibaba.polardbx.common.utils.thread.ServerThreadPool;
 import com.alibaba.polardbx.common.utils.logger.Logger;
 import com.alibaba.polardbx.common.utils.logger.LoggerFactory;
 import com.taobao.tddl.common.privilege.EncrptPassword;
+import com.mysql.cj.polarx.protobuf.PolarxResultset.ColumnMetaData;
+import com.alibaba.polardbx.net.packet.ErrorPacket;
 
+// PolarDBX Connection
+import com.alibaba.polardbx.rpc.pool.XConnection;
+import com.alibaba.polardbx.rpc.pool.XConnectionManager;
+import com.alibaba.polardbx.rpc.result.XResult;
+import com.alibaba.polardbx.rpc.result.XResultUtil;
+
+import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicLong;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -109,15 +118,28 @@ public class SimpleServer {
         private final BufferPool bufferPool;
         private final AtomicLong CONNECTION_ID = new AtomicLong(1);
         private final long connectionId;
+        private final SimpleQueryHandler queryHandler;
 
         public DebugConnection(SocketChannel channel) {
             super(channel);
             this.bufferPool = new BufferPool(1024 * 1024 * 16, 4096);
-            this.packetHeaderSize = 4;  // MySQL packet header size
-            this.maxPacketSize = 16 * 1024 * 1024;  // 16MB max packet
-            this.readBuffer = allocate();  // Initialize read buffer
+            this.packetHeaderSize = 4;
+            this.maxPacketSize = 16 * 1024 * 1024;
+            this.readBuffer = allocate();
+            this.queryHandler = new SimpleQueryHandler(this);
             this.connectionId = CONNECTION_ID.getAndIncrement();
             System.out.println("Created new connection " + connectionId + " with buffer pool");
+            System.out.println("Created new connection with buffer pool");
+        }
+
+        @Override
+        protected void cleanup() {
+            try {
+                //queryHandler.closeConnection();
+            } catch (Exception e) {
+                logger.error("Error closing PolarDB-X connection", e);
+            }
+            super.cleanup();
         }
 
         @Override
@@ -269,91 +291,112 @@ public class SimpleServer {
 
     class SimpleQueryHandler implements QueryHandler {
         private final DebugConnection connection;
+        private final XConnection polardbConnection;
+        private final XConnectionManager manager;
 
         public SimpleQueryHandler(DebugConnection connection) {
             this.connection = connection;
+            this.manager = XConnectionManager.getInstance();
             System.out.println("Created query handler for connection: " + connection);
+
+            try {
+                String host = "10.1.1.148";
+                int port = 33660;
+                String username = "teste";
+                String password = "teste";
+                String defaultDB = "mysql";
+                long timeoutNanos = 30000 * 1000000L;
+
+                manager.initializeDataSource(host, port, username, password, "test-instance");
+                this.polardbConnection = manager.getConnection(host, port, username, password, defaultDB, timeoutNanos);
+                this.polardbConnection.setStreamMode(true);
+                this.polardbConnection.execUpdate("USE " + defaultDB);
+
+                System.out.println("Connected to PolarDB-X engine");
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to connect to PolarDB-X: " + e.getMessage(), e);
+            }
         }
 
         @Override
         public void query(String sql) {
             System.out.println("Received query: " + sql);
-            String sqlLower = sql.toLowerCase();
-            if (sqlLower.contains("select version()")) {
-                System.out.println("Processing VERSION query");
-                sendVersionResponse();
-            } else if (sqlLower.contains("connection_id()")) {
-                System.out.println("Processing CONNECTION_ID query");
-                sendConnectionIdResponse();
-            } else {
-                System.out.println("Processing unknown query");
-                sendEmptyResponse();
+            try {
+                XResult result = polardbConnection.execQuery(sql);
+                sendResultSetResponse(result);
+            } catch (Exception e) {
+                System.err.println("Error executing query on PolarDB-X: " + e.getMessage());
+                e.printStackTrace();
+                sendErrorResponse(e.getMessage());
             }
         }
 
-        private void sendVersionResponse() {
+        private void sendResultSetResponse(XResult result) {
             ByteBufferHolder buffer = null;
             try {
-                // Initialize buffer
                 byte packetId = 0;
                 buffer = connection.allocate();
-                buffer.clear();  // Reset buffer positions
-                System.out.println("Allocated buffer for version response");
+                buffer.clear();
 
-                // Create proxy
                 IPacketOutputProxy proxy = PacketOutputProxyFactory.getInstance().createProxy(connection, buffer);
                 proxy.packetBegin();
 
                 // Write header
-                System.out.println("Writing header packet");
                 ResultSetHeaderPacket header = new ResultSetHeaderPacket();
                 header.packetId = ++packetId;
-                header.fieldCount = 1;
+                header.fieldCount = result.getMetaData().size();
                 header.write(proxy);
 
-                // Write field
-                System.out.println("Writing field packet");
-                FieldPacket field = new FieldPacket();
-                field.packetId = ++packetId;
-                field.charsetIndex = CharsetUtil.getIndex("utf8");
-                field.name = "VERSION()".getBytes();
-                field.type = Fields.FIELD_TYPE_VAR_STRING;
-                field.catalog = "def".getBytes();
-                field.db = new byte[0];
-                field.table = new byte[0];
-                field.orgTable = new byte[0];
-                field.orgName = field.name;
-                field.decimals = 0;
-                field.flags = 0;
-                field.length = 50;
-                field.write(proxy);
+                // Write fields
+                for (int i = 0; i < result.getMetaData().size(); i++) {
+                    FieldPacket field = new FieldPacket();
+                    field.packetId = ++packetId;
+                    field.charsetIndex = CharsetUtil.getIndex("utf8");
+                    field.name = result.getMetaData().get(i).getName().toByteArray();
+                    field.type = convertPolarDBTypeToMySQLType(result.getMetaData().get(i));
+                    field.catalog = "def".getBytes();
+                    field.db = new byte[0];
+                    field.table = new byte[0];
+                    field.orgTable = new byte[0];
+                    field.orgName = field.name;
+                    field.decimals = 0;
+                    field.flags = 0;
+                    field.length = 255;
+                    field.write(proxy);
+                }
 
-                // Write EOF if needed
+                // Write EOF
                 if (!connection.isEofDeprecated()) {
-                    System.out.println("Writing first EOF packet");
                     EOFPacket eof = new EOFPacket();
                     eof.packetId = ++packetId;
                     eof.write(proxy);
                 }
 
-                // Write row
-                System.out.println("Writing row packet");
-                RowDataPacket row = new RowDataPacket(1);
-                row.add("PolarDB-X 5.4.19-SNAPSHOT".getBytes());
-                row.packetId = ++packetId;
-                row.write(proxy);
+                // Write rows
+                while (result.next() != null) {
+                    RowDataPacket row = new RowDataPacket(result.getMetaData().size());
+                    for (int i = 0; i < result.getMetaData().size(); i++) {
+                        Object value = XResultUtil.resultToObject(
+                                result.getMetaData().get(i),
+                                result.current().getRow().get(i),
+                                true,
+                                TimeZone.getDefault()
+                        ).getKey();
+
+                        row.add(value != null ? value.toString().getBytes() : null);
+                    }
+                    row.packetId = ++packetId;
+                    row.write(proxy);
+                }
 
                 // Write final EOF
-                System.out.println("Writing final EOF packet");
                 EOFPacket lastEof = new EOFPacket();
                 lastEof.packetId = ++packetId;
                 lastEof.write(proxy);
 
-                // Finish packet
                 proxy.packetEnd();
-
             } catch (Exception e) {
-                System.err.println("Error in sendVersionResponse: " + e);
+                System.err.println("Error sending result set: " + e);
                 e.printStackTrace();
                 if (buffer != null) {
                     connection.recycleBuffer(buffer);
@@ -361,104 +404,47 @@ public class SimpleServer {
             }
         }
 
-        private void sendConnectionIdResponse() {
+        private void sendErrorResponse(String message) {
             ByteBufferHolder buffer = null;
             try {
-                // Initialize buffer
-                byte packetId = 0;
                 buffer = connection.allocate();
-                buffer.clear();  // Reset buffer positions
-                System.out.println("Allocated buffer for connection_id response");
-
-                // Create proxy
-                IPacketOutputProxy proxy = PacketOutputProxyFactory.getInstance().createProxy(connection, buffer);
-                proxy.packetBegin();
-
-                // Write header
-                System.out.println("Writing header packet");
-                ResultSetHeaderPacket header = new ResultSetHeaderPacket();
-                header.packetId = ++packetId;
-                header.fieldCount = 1;
-                header.write(proxy);
-
-                // Write field
-                System.out.println("Writing field packet");
-                FieldPacket field = new FieldPacket();
-                field.packetId = ++packetId;
-                field.charsetIndex = CharsetUtil.getIndex("utf8");
-                field.name = "CONNECTION_ID()".getBytes();
-                field.type = Fields.FIELD_TYPE_LONGLONG;  // 64-bit integer
-                field.catalog = "def".getBytes();
-                field.db = new byte[0];
-                field.table = new byte[0];
-                field.orgTable = new byte[0];
-                field.orgName = field.name;
-                field.decimals = 0;
-                field.flags = 0;
-                field.length = 20;  // Long enough for connection ID
-                field.write(proxy);
-
-                // Write EOF if needed
-                if (!connection.isEofDeprecated()) {
-                    System.out.println("Writing first EOF packet");
-                    EOFPacket eof = new EOFPacket();
-                    eof.packetId = ++packetId;
-                    eof.write(proxy);
-                }
-
-                // Write row with the connection ID
-                System.out.println("Writing row packet");
-                RowDataPacket row = new RowDataPacket(1);
-                row.add(String.valueOf(connection.getId()).getBytes());
-                row.packetId = ++packetId;
-                row.write(proxy);
-
-                // Write final EOF
-                System.out.println("Writing final EOF packet");
-                EOFPacket lastEof = new EOFPacket();
-                lastEof.packetId = ++packetId;
-                lastEof.write(proxy);
-
-                // Finish packet
-                proxy.packetEnd();
-
-            } catch (Exception e) {
-                System.err.println("Error in sendConnectionIdResponse: " + e);
-                e.printStackTrace();
-                if (buffer != null) {
-                    connection.recycleBuffer(buffer);
-                }
-            }
-        }
-
-        private void sendEmptyResponse() {
-            ByteBufferHolder buffer = null;
-            try {
-                byte packetId = 0;
-                buffer = connection.allocate();
-                buffer.clear();  // Reset buffer positions
+                buffer.clear();
 
                 IPacketOutputProxy proxy = PacketOutputProxyFactory.getInstance().createProxy(connection, buffer);
                 proxy.packetBegin();
 
-                ResultSetHeaderPacket header = new ResultSetHeaderPacket();
-                header.packetId = ++packetId;
-                header.fieldCount = 0;
-                header.write(proxy);
-
-                EOFPacket lastEof = new EOFPacket();
-                lastEof.packetId = ++packetId;
-                lastEof.write(proxy);
+                ErrorPacket err = new ErrorPacket();
+                err.packetId = (byte)1;
+                err.errno = (short)1064;
+                err.message = message.getBytes();
+                err.write(proxy);
 
                 proxy.packetEnd();
             } catch (Exception e) {
-                System.err.println("Error sending empty response: " + e);
+                System.err.println("Error sending error response: " + e);
                 e.printStackTrace();
                 if (buffer != null) {
                     connection.recycleBuffer(buffer);
                 }
             }
         }
+
+        public void close() {
+            try {
+                if (polardbConnection != null) {
+                    polardbConnection.close();
+                }
+                manager.deinitializeDataSource("10.1.1.148", 33660, "teste", "teste");
+            } catch (Exception e) {
+                System.err.println("Error closing PolarDB-X connection: " + e);
+            }
+        }
+
+        private byte convertPolarDBTypeToMySQLType(ColumnMetaData metaData) {
+            // Cast to byte will preserve the correct bits for MySQL protocol
+            // 253 as int -> 11111101 in binary -> -3 as signed byte
+            // When transmitted, it will be read correctly as 253 by MySQL clients
+            return (byte)Fields.FIELD_TYPE_VAR_STRING;          }
     }
 
     public static void main(String[] args) {
