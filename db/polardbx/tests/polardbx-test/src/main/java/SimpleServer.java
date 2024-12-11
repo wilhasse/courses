@@ -21,6 +21,7 @@ import com.alibaba.polardbx.common.utils.logger.Logger;
 import com.alibaba.polardbx.common.utils.logger.LoggerFactory;
 import com.taobao.tddl.common.privilege.EncrptPassword;
 
+import java.util.concurrent.atomic.AtomicLong;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -106,6 +107,8 @@ public class SimpleServer {
     class DebugConnection extends FrontendConnection {
         private final Logger logger = LoggerFactory.getLogger(DebugConnection.class);
         private final BufferPool bufferPool;
+        private final AtomicLong CONNECTION_ID = new AtomicLong(1);
+        private final long connectionId;
 
         public DebugConnection(SocketChannel channel) {
             super(channel);
@@ -113,7 +116,8 @@ public class SimpleServer {
             this.packetHeaderSize = 4;  // MySQL packet header size
             this.maxPacketSize = 16 * 1024 * 1024;  // 16MB max packet
             this.readBuffer = allocate();  // Initialize read buffer
-            System.out.println("Created new connection with buffer pool");
+            this.connectionId = CONNECTION_ID.getAndIncrement();
+            System.out.println("Created new connection " + connectionId + " with buffer pool");
         }
 
         @Override
@@ -167,7 +171,12 @@ public class SimpleServer {
 
         @Override
         protected long genConnId() {
-            return 1;
+            return connectionId;
+        }
+
+        @Override
+        public long getId() {
+            return connectionId;
         }
 
         @Override
@@ -269,9 +278,13 @@ public class SimpleServer {
         @Override
         public void query(String sql) {
             System.out.println("Received query: " + sql);
-            if (sql.toLowerCase().contains("select version()")) {
+            String sqlLower = sql.toLowerCase();
+            if (sqlLower.contains("select version()")) {
                 System.out.println("Processing VERSION query");
                 sendVersionResponse();
+            } else if (sqlLower.contains("connection_id()")) {
+                System.out.println("Processing CONNECTION_ID query");
+                sendConnectionIdResponse();
             } else {
                 System.out.println("Processing unknown query");
                 sendEmptyResponse();
@@ -341,6 +354,76 @@ public class SimpleServer {
 
             } catch (Exception e) {
                 System.err.println("Error in sendVersionResponse: " + e);
+                e.printStackTrace();
+                if (buffer != null) {
+                    connection.recycleBuffer(buffer);
+                }
+            }
+        }
+
+        private void sendConnectionIdResponse() {
+            ByteBufferHolder buffer = null;
+            try {
+                // Initialize buffer
+                byte packetId = 0;
+                buffer = connection.allocate();
+                buffer.clear();  // Reset buffer positions
+                System.out.println("Allocated buffer for connection_id response");
+
+                // Create proxy
+                IPacketOutputProxy proxy = PacketOutputProxyFactory.getInstance().createProxy(connection, buffer);
+                proxy.packetBegin();
+
+                // Write header
+                System.out.println("Writing header packet");
+                ResultSetHeaderPacket header = new ResultSetHeaderPacket();
+                header.packetId = ++packetId;
+                header.fieldCount = 1;
+                header.write(proxy);
+
+                // Write field
+                System.out.println("Writing field packet");
+                FieldPacket field = new FieldPacket();
+                field.packetId = ++packetId;
+                field.charsetIndex = CharsetUtil.getIndex("utf8");
+                field.name = "CONNECTION_ID()".getBytes();
+                field.type = Fields.FIELD_TYPE_LONGLONG;  // 64-bit integer
+                field.catalog = "def".getBytes();
+                field.db = new byte[0];
+                field.table = new byte[0];
+                field.orgTable = new byte[0];
+                field.orgName = field.name;
+                field.decimals = 0;
+                field.flags = 0;
+                field.length = 20;  // Long enough for connection ID
+                field.write(proxy);
+
+                // Write EOF if needed
+                if (!connection.isEofDeprecated()) {
+                    System.out.println("Writing first EOF packet");
+                    EOFPacket eof = new EOFPacket();
+                    eof.packetId = ++packetId;
+                    eof.write(proxy);
+                }
+
+                // Write row with the connection ID
+                System.out.println("Writing row packet");
+                RowDataPacket row = new RowDataPacket(1);
+                row.add(String.valueOf(connection.getId()).getBytes());
+                row.packetId = ++packetId;
+                row.write(proxy);
+
+                // Write final EOF
+                System.out.println("Writing final EOF packet");
+                EOFPacket lastEof = new EOFPacket();
+                lastEof.packetId = ++packetId;
+                lastEof.write(proxy);
+
+                // Finish packet
+                proxy.packetEnd();
+
+            } catch (Exception e) {
+                System.err.println("Error in sendConnectionIdResponse: " + e);
                 e.printStackTrace();
                 if (buffer != null) {
                     connection.recycleBuffer(buffer);
