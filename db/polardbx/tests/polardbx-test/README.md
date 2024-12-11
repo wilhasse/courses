@@ -18,11 +18,24 @@ mvn dependency:tree
 
 Run
 
+Choosing the class
+
 ```bash
 D:\courses\db\polardbx\tests\polardbx-test>java -jar target/polardbx-test-1.0-SNAPSHOT.jar
 Please provide a command number or name:
   1) parsesql     - Run SQL parsing tests
   2) simplequery  - Run simple database query tests
+  3) server       - Run simple server
+```
+
+Run the class directly using maven
+
+```bash
+# compile and run
+mvn clean compile exec:java -Dexec.mainClass="SimpleServer" -X
+
+# only run -X full stack trace
+mvn exec:java -Dexec.mainClass="SimpleServer" -X
 ```
 
 # Parse SQL

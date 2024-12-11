@@ -7,6 +7,7 @@ import com.alibaba.polardbx.net.compress.IPacketOutputProxy;
 import com.alibaba.polardbx.net.compress.PacketOutputProxyFactory;
 import com.alibaba.polardbx.net.factory.FrontendConnectionFactory;
 import com.alibaba.polardbx.net.handler.QueryHandler;
+import com.alibaba.polardbx.net.handler.Privileges;
 import com.alibaba.polardbx.net.packet.EOFPacket;
 import com.alibaba.polardbx.net.packet.FieldPacket;
 import com.alibaba.polardbx.net.packet.ResultSetHeaderPacket;
@@ -14,20 +15,45 @@ import com.alibaba.polardbx.net.packet.RowDataPacket;
 import com.alibaba.polardbx.net.util.CharsetUtil;
 import com.alibaba.polardbx.net.util.TimeUtil;
 import com.alibaba.polardbx.common.utils.thread.ThreadCpuStatUtil;
+import com.taobao.tddl.common.privilege.EncrptPassword;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
 
 public class SimpleServer {
     private static final int SERVER_PORT = 8507;
+    private static final SimpleServer INSTANCE = new SimpleServer();
+    private SimpleConfig config;
     private NIOProcessor[] processors;
     private NIOAcceptor server;
 
+    public static SimpleServer getInstance() {
+        return INSTANCE;
+    }
+
+    public SimpleServer() {
+        this.config = new SimpleConfig();
+    }
+
+    public SimpleConfig getConfig() {
+        return config;
+    }
+
     public static void main(String[] args) throws IOException {
-        SimpleServer server = new SimpleServer();
-        server.startup();
+
+        try {
+            SimpleServer server = new SimpleServer();
+            server.startup();
+        } catch (Exception e) {
+            System.err.println("Failed to start server: " + e);
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
 
     public void startup() throws IOException {
@@ -40,20 +66,121 @@ public class SimpleServer {
             }
         }, 0L, 100L);
 
-        // Create processors based on CPU cores
-        processors = new NIOProcessor[ThreadCpuStatUtil.NUM_CORES];
+        // Create processors based on CPU cores, but ensure at least 1
+        int processorCount = Math.max(1, ThreadCpuStatUtil.NUM_CORES);
+        System.out.println("Creating " + processorCount + " processors");
+
+        processors = new NIOProcessor[processorCount];
         for (int i = 0; i < processors.length; i++) {
-            processors[i] = new NIOProcessor(i, "Processor" + i, 4);
-            processors[i].startup();
+            try {
+                System.out.println("Creating processor " + i);
+                processors[i] = new NIOProcessor(i, "Processor" + i, 4);
+                processors[i].startup();
+                System.out.println("Processor " + i + " started successfully");
+            } catch (Exception e) {
+                System.err.println("Error creating processor " + i + ": " + e);
+                e.printStackTrace();
+                throw e;
+            }
         }
 
-        // Create and start server
-        CustomConnectionFactory factory = new CustomConnectionFactory();
-        server = new NIOAcceptor("MySQLServer", SERVER_PORT, factory, true);
-        server.setProcessors(processors);
-        server.start();
+        try {
+            System.out.println("Creating connection factory");
+            CustomConnectionFactory factory = new CustomConnectionFactory();
+
+            System.out.println("Creating NIO acceptor");
+            server = new NIOAcceptor("MySQLServer", SERVER_PORT, factory, true);
+
+            System.out.println("Setting processors");
+            server.setProcessors(processors);
+
+            System.out.println("Starting server");
+            server.start();
+
+            System.out.println("MySQL server started on port " + SERVER_PORT);
+        } catch (Exception e) {
+            System.err.println("Error starting server: " + e);
+            e.printStackTrace();
+            throw e;
+        }
 
         System.out.println("MySQL server started on port " + SERVER_PORT);
+    }
+}
+
+class SimpleConfig {
+    private final Map<String, String> users;
+
+    public SimpleConfig() {
+        this.users = new HashMap<>();
+        this.users.put("root", "12345");
+    }
+
+    public Map<String, String> getUsers() {
+        return users;
+    }
+}
+
+class SimplePrivileges implements Privileges {
+    @Override
+    public boolean schemaExists(String schema) {
+        return true;
+    }
+
+    @Override
+    public boolean userExists(String user) {
+        return SimpleServer.getInstance().getConfig().getUsers().containsKey(user);
+    }
+
+    @Override
+    public boolean userExists(String user, String host) {
+        return userExists(user);
+    }
+
+    @Override
+    public boolean userMatches(String user, String host) {
+        return true;
+    }
+
+    @Override
+    public EncrptPassword getPassword(String user) {
+        String pass = SimpleServer.getInstance().getConfig().getUsers().get(user);
+        return new EncrptPassword(pass, false);
+    }
+
+    @Override
+    public EncrptPassword getPassword(String user, String host) {
+        return getPassword(user);
+    }
+
+    @Override
+    public Set<String> getUserSchemas(String user) {
+        return null;
+    }
+
+    @Override
+    public Set<String> getUserSchemas(String user, String host) {
+        return null;
+    }
+
+    @Override
+    public boolean isTrustedIp(String host, String user) {
+        return true;
+    }
+
+    @Override
+    public Map<String, com.alibaba.polardbx.common.model.DbPriv> getSchemaPrivs(String user, String host) {
+        return null;
+    }
+
+    @Override
+    public Map<String, com.alibaba.polardbx.common.model.TbPriv> getTablePrivs(String user, String host, String database) {
+        return null;
+    }
+
+    @Override
+    public boolean checkQuarantine(String user, String host) {
+        return true;
     }
 }
 
@@ -61,6 +188,7 @@ class CustomConnectionFactory extends FrontendConnectionFactory {
     @Override
     protected FrontendConnection getConnection(SocketChannel channel) {
         CustomConnection conn = new CustomConnection(channel);
+        conn.setPrivileges(new SimplePrivileges());
         conn.setQueryHandler(new VersionQueryHandler(conn));
         return conn;
     }
@@ -89,7 +217,7 @@ class CustomConnection extends FrontendConnection {
 
     @Override
     public boolean isPrivilegeMode() {
-        return false;  // Added missing method
+        return true;  // Changed to true to enable authentication
     }
 
     @Override
