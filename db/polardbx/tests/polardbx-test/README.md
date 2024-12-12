@@ -28,7 +28,7 @@ Please provide a command number or name:
   3) server       - Run simple server
 ```
 
-Run the class directly using maven
+Run the class directly using maven SimpleServer
 
 ```bash
 # compile and run
@@ -36,20 +36,40 @@ mvn clean compile exec:java -Dexec.mainClass="SimpleServer" -X
 
 # only run -X full stack trace
 mvn exec:java -Dexec.mainClass="SimpleServer" -X
+```
 
+Run front SQL
+
+``` bash
 # client
 mysql -u root -p123456 -h localhost -P 8507
 ```
 
-# Parse SQL
+Executing a query:
 
-- SQL Parsing - FastsqlParser to convert SQL Text into a SqlNode (Abstract Syntax Tree)
-- Logical Plan Generation: Converts the SqlNode to a RelNode (logical plan)
-- Physical Plan Generation: Optimizes the logical plan into a physical execution plan
+Client
 
-To integrate with simplequery (PolarDBX RPC):
+```bash
+mysql> select count(*) from lineorder;
++----------+
+| count(*) |
++----------+
+| 6001171  |
++----------+
+1 row in set (16.56 sec)
 
-- Generate the physical plan using this parser
-- Convert the physical plan to an ExecPlan protobuf message
-- Send it through your existing RPC channel
+```
+
+Server execute as a plugin
+
+```bash
+mysql> show processlist;
++------+-----------------+------------------+-------+---------+-------+------------------------+----------------------------------------+----------+-----------+---------------+
+| Id   | User            | Host             | db    | Command | Time  | State                  | Info                                   | Time_ms  | Rows_sent | Rows_examined |
++------+-----------------+------------------+-------+---------+-------+------------------------+----------------------------------------+----------+-----------+---------------+
+| 3762 | teste           | shared_session   | NULL  | Sleep   |    10 | NULL                   | PLUGIN                                 |     9241 |         0 |             0 |
+| 3763 | teste           | 10.1.1.139:60876 | ssb   | Query   |     9 | executing              | PLUGIN: select count(*) from lineorder |     8725 |         0 |             0 |
+```
+
+
 
