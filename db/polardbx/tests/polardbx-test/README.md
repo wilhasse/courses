@@ -36,6 +36,9 @@ mvn clean compile exec:java -Dexec.mainClass="SimpleServer" -X
 
 # only run -X full stack trace
 mvn exec:java -Dexec.mainClass="SimpleServer" -X
+
+# client
+mysql -u root -p123456 -h localhost -P 8507
 ```
 
 # Parse SQL

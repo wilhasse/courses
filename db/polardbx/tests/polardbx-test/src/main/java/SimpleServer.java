@@ -304,7 +304,7 @@ public class SimpleServer {
                 int port = 33660;
                 String username = "teste";
                 String password = "teste";
-                String defaultDB = "mysql";
+                String defaultDB = "ssb";
                 long timeoutNanos = 30000 * 1000000L;
 
                 manager.initializeDataSource(host, port, username, password, "test-instance");
