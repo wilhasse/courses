@@ -11,7 +11,13 @@ graph TB
         direction TB
         Parser[SQL Parser<br>polardbx-parser]
         Optimizer[Query Optimizer<br>polardbx-optimizer]
-        Executor[Query Executor<br>polardbx-executor]
+        
+        subgraph Execution["Execution Layer"]
+            ParallelExec[Parallel Query<br>Execution Engine]
+            Executor[Query Executor<br>polardbx-executor]
+            ColumnStore[Columnar Cache<br>Storage]
+            ResultCache[Query Result<br>Cache]
+        end
     end
 
     subgraph Backend["Database Backend"]
@@ -26,10 +32,15 @@ graph TB
 
     %% Query Flow
     Parser --> Optimizer
-    Optimizer --> Executor
-    Executor --> XProtocol
-
+    Optimizer --> ParallelExec
+    ParallelExec --> Executor
+    
+    %% Cache and Storage Interactions
+    Executor <--> ColumnStore
+    Executor <--> ResultCache
+    
     %% Backend Flow
+    Executor --> XProtocol
     XProtocol --> PerconaSQL
     PerconaSQL --> InnoDB
 ```
@@ -38,17 +49,33 @@ graph TB
 
 Client Layer:
 
-- Standard client applications
-- JDBC/MySQL protocol support
+- Applications: Any MySQL-compatible client applications
+- JDBC/MySQL Client: Standard MySQL protocol connections and connection pooling
 
-Polar SQL Layer (Core Modules):
+Polar SQL Layer:
 
-- SQL Parser: Handles SQL parsing
-- Query Optimizer: Optimizes queries
-- Query Executor: Executes queries directly
+1. Parser (polardbx-parser)
+   - SQL parsing to AST
+   - MySQL dialect support
+   - Syntax validation
+2. Optimizer (polardbx-optimizer)
+   - Cost-based query optimization
+   - Join ordering and transformations
+   - Execution plan generation
+3. Execution Components:
+   - Parallel Execution: Multi-threaded query processing and result aggregation
+   - Query Executor: Plan execution and data flow management
+   - Columnar Cache: Column-oriented caching for analytical queries
+   - Result Cache: Frequently accessed query results caching
 
 Backend:
 
-- X Protocol Plugin: MySQL's protocol for efficient client-server communication
-- Percona MySQL Server: Enhanced MySQL server
-- Storage Engine: Direct storage layer
+- X Protocol: Efficient MySQL client-server protocol
+- Percona MySQL: Enhanced MySQL server with performance improvements
+- InnoDB: ACID-compliant storage engine with row-level locking
+
+Data Flow:
+
+1. Client → Parser → Optimizer → Parallel Execution → Executor
+2. Executor interacts with caches and storage as needed
+3. Storage operations handled by InnoDB through X Protocol
