@@ -1,11 +1,10 @@
 # Architecture
 
 ```mermaid
-
 graph TB
     subgraph Client Layer
         Client(Client Applications)
-        MySQL(JDBC Driver)
+        MySQL(MySQL Client Protocol)
     end
     
     subgraph Frontend Layer

@@ -4,7 +4,7 @@
 graph TB
     subgraph Client["Client Applications"]
         App[Applications]
-        JDBC[JDBC/MySQL Client]
+        MySQL[MySQL Client Protocol]
     end
 
     subgraph CN["Compute Nodes (CN)"]
@@ -40,8 +40,8 @@ graph TB
     end
 
     %% Client connections
-    App --> JDBC
-    JDBC --> Router
+    App --> MySQL
+    MySQL --> Router
     Router --> CNServer
 
     %% CN internal

@@ -4,7 +4,7 @@
 graph TB
     subgraph Client["Client Layer"]
         App[Applications]
-        JDBC[JDBC/MySQL Client]
+        MySQL[MySQL Client Protocol]
     end
 
     subgraph PolarSQL["Polar SQL Layer"]
@@ -27,8 +27,8 @@ graph TB
     end
 
     %% Client connections
-    App --> JDBC
-    JDBC --> Parser
+    App --> MySQL
+    MySQL --> Parser
 
     %% Query Flow
     Parser --> Optimizer

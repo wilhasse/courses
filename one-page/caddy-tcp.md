@@ -1,8 +1,8 @@
 # Caddy
 
-Caddy doesn't work to reverse proxy TCP only HTTP
+Caddy doesn't work proxy TCP only HTTP
 
-For TPC, use this plugin Layer 4:  
+For TCP proxy/load balancer, use this plugin Layer 4:  
 https://github.com/mholt/caddy-l4
 
 # Build
