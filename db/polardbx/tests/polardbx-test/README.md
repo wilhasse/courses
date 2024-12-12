@@ -2,9 +2,7 @@
 
 PolarDB-X Plugin Java Test
 
-# Run
-
-Build
+# Build and Run
 
 ```bash
 mvn clean package
@@ -16,9 +14,7 @@ Dependency Tree
 mvn dependency:tree
 ```
 
-Run
-
-Choosing the class
+Choosing the class to run:
 
 ```bash
 D:\courses\db\polardbx\tests\polardbx-test>java -jar target/polardbx-test-1.0-SNAPSHOT.jar
@@ -28,7 +24,9 @@ Please provide a command number or name:
   3) server       - Run simple server
 ```
 
-Run the class directly using maven SimpleServer
+# Simple Server
+
+Run the class using option above or directly using maven SimpleServer:
 
 ```bash
 # compile and run
@@ -64,12 +62,9 @@ Server execute as a plugin
 
 ```bash
 mysql> show processlist;
-+------+-----------------+------------------+-------+---------+-------+------------------------+----------------------------------------+----------+-----------+---------------+
-| Id   | User            | Host             | db    | Command | Time  | State                  | Info                                   | Time_ms  | Rows_sent | Rows_examined |
-+------+-----------------+------------------+-------+---------+-------+------------------------+----------------------------------------+----------+-----------+---------------+
-| 3762 | teste           | shared_session   | NULL  | Sleep   |    10 | NULL                   | PLUGIN                                 |     9241 |         0 |             0 |
-| 3763 | teste           | 10.1.1.139:60876 | ssb   | Query   |     9 | executing              | PLUGIN: select count(*) from lineorder |     8725 |         0 |             0 |
++------+--------+------------------+-------+---------+-------+----------+-----------------------+----------+-----------+---------------+
+| Id   | User   | Host             | db    | Command | Time  | State    | Info                  | Time_ms  | Rows_sent | Rows_examined |
++------+--------+------------------+-------+---------+-------+----------+-----------------------------------+----------+-----+---------+
+| 3762 | teste  | shared_session   | NULL  | Sleep   |    10 | NULL     | PLUGIN                                 |     9241 |   0 |  0 |
+| 3763 | teste  | 10.1.1.139:60876 | ssb   | Query   |     9 | executing| PLUGIN: select count(*) from lineorder |     8725 |   0 |  0 |
 ```
-
-
-
