@@ -4,7 +4,7 @@
 graph TB
     subgraph Client Layer
         Client(Client Applications)
-        JDBC(JDBC Driver)
+        MySQL Client(JDBC Driver)
     end
     
     subgraph Frontend Layer
