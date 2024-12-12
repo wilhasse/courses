@@ -17,7 +17,7 @@ graph TB
     subgraph Backend["Database Backend"]
         XProtocol[X Protocol Plugin]
         PerconaSQL[Percona MySQL Server]
-        Storage[(Storage Engine)]
+        InnoDB[(InnoDB Engine)]
     end
 
     %% Client connections
@@ -31,7 +31,7 @@ graph TB
 
     %% Backend Flow
     XProtocol --> PerconaSQL
-    PerconaSQL --> InnoDB Storage
+    PerconaSQL --> InnoDB
 ```
 
 # Description

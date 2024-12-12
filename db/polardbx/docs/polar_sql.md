@@ -1,10 +1,11 @@
 # Architecture
 
 ```mermaid
+
 graph TB
     subgraph Client Layer
         Client(Client Applications)
-        MySQL Client(JDBC Driver)
+        MySQL(JDBC Driver)
     end
     
     subgraph Frontend Layer
@@ -32,7 +33,7 @@ graph TB
     end
     
     %% Main flow
-    Client --> JDBC --> NET --> Server
+    Client --> MySQL --> NET --> Server
     Server --> Parser --> Optimizer --> Calcite --> Executor
     Executor --> Transaction
     Executor --> Rule
