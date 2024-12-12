@@ -60,7 +60,7 @@ classDiagram
     note for StorageEngine "Can handle both raw SQL\nand optimized execution plans"
 ```
 
-# Explanation
+# Description
 
 PolarDB-X SQL Layer:
 
