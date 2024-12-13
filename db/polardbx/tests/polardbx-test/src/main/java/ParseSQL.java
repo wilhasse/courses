@@ -39,7 +39,7 @@ public class ParseSQL {
         ConfigDataMode.setInstanceRole(InstanceRole.FAST_MOCK);
 
         // Use a custom schema name instead of 'mysql'
-        String schemaName = "custom_schema";
+        String schemaName = "mysql";
 
         // Set up execution context
         ExecutionContext context = new ExecutionContext();
@@ -50,7 +50,7 @@ public class ParseSQL {
         schemaManager.init();
 
         // Add table definitions
-        addTableMetadata(schemaManager);
+        //addTableMetadata(schemaManager);
 
         // Set up OptimizerContext
         OptimizerContext optimizerContext = new OptimizerContext(schemaName);
