@@ -8,6 +8,10 @@ This is part of Percona MySQL source code
 Could you explain this code in great detail for me to understand all the concepts. 
 ```
 
+# Introduction
+
+- [Core source code files](./main_files.md)
+
 # InnoDB
 
 ## percona-server/storage/innobase/handler
