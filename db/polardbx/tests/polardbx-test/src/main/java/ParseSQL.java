@@ -1,11 +1,7 @@
-import com.alibaba.polardbx.common.properties.ConnectionParams;
-import com.alibaba.polardbx.common.properties.ParamManager;
 import com.alibaba.polardbx.optimizer.OptimizerContext;
-import com.alibaba.polardbx.optimizer.PlannerContext;
 import com.alibaba.polardbx.optimizer.context.ExecutionContext;
 import com.alibaba.polardbx.optimizer.core.planner.SqlConverter;
 import com.alibaba.polardbx.optimizer.parse.FastsqlParser;
-import com.alibaba.polardbx.optimizer.config.table.SchemaManager;
 import com.alibaba.polardbx.optimizer.config.table.TableMeta;
 import com.alibaba.polardbx.optimizer.config.table.ColumnMeta;
 import com.alibaba.polardbx.optimizer.config.table.Field;
@@ -13,6 +9,7 @@ import com.alibaba.polardbx.optimizer.config.table.statistic.StatisticManager;
 import com.alibaba.polardbx.gms.metadb.table.TableStatus;
 import com.alibaba.polardbx.config.ConfigDataMode;
 import com.alibaba.polardbx.common.utils.InstanceRole;
+import com.alibaba.polardbx.optimizer.PlannerContext;
 
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
@@ -20,26 +17,27 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.sql.type.BasicSqlType;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.externalize.RelWriterImpl;
+import java.io.PrintWriter;
 
 import java.util.*;
 
 public class ParseSQL {
     public static void main(String[] args) {
-
+        // SQL
         if (args.length < 1) {
             System.err.println("Usage: java polardbx-test 3 <sql_query>");
             return;
         }
-
         String sql = args[0];
-
 
         // Configure system
         ConfigDataMode.setMode(ConfigDataMode.Mode.MOCK);
         ConfigDataMode.setInstanceRole(InstanceRole.FAST_MOCK);
 
         // Use a custom schema name instead of 'mysql'
-        String schemaName = "mysql";
+        String schemaName = "teste";
 
         // Set up execution context
         ExecutionContext context = new ExecutionContext();
@@ -50,7 +48,7 @@ public class ParseSQL {
         schemaManager.init();
 
         // Add table definitions
-        //addTableMetadata(schemaManager);
+        addTableMetadata(schemaManager);
 
         // Set up OptimizerContext
         OptimizerContext optimizerContext = new OptimizerContext(schemaName);
@@ -68,10 +66,25 @@ public class ParseSQL {
             SqlNode ast = astList.get(0);
             System.out.println("Parsed AST: " + ast);
 
-            // Validate SQL
+            // Create SQL converter
             SqlConverter converter = SqlConverter.getInstance(context.getSchemaName(), context);
+
+            // Validate SQL
             SqlNode validatedNode = converter.validate(ast);
             System.out.println("Validated SQL: " + validatedNode);
+
+            // Create planner context
+            PlannerContext plannerContext = new PlannerContext(context);
+
+            // Convert to RelNode and get plan
+            RelNode relNode = converter.toRel(validatedNode, plannerContext);
+
+            // Create a RelWriter to explain the plan
+            System.out.println("\nExecution Plan:");
+            PrintWriter pw = new PrintWriter(System.out);
+            RelWriterImpl relWriter = new RelWriterImpl(pw);
+            relNode.explain(relWriter);
+            pw.flush();
 
         } catch (Exception e) {
             e.printStackTrace();
