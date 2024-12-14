@@ -8,11 +8,12 @@ This is part of Percona MySQL source code
 Could you explain this code in great detail for me to understand all the concepts. 
 ```
 
-# Introduction
+# Main
 
 - [Core source code files](./main_files.md)
 - [main() function class](./sql/mysqld.md)
-  
+- [handler class](./sql/handler.md)
+-   
 # InnoDB
 
 ## percona-server/storage/innobase/handler
