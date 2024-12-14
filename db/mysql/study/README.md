@@ -4,7 +4,7 @@ MySQL study area
 
 # Source code
 
-- [Source code stury](./source)
+- [Source code study](./source)
 
 # InnoDB
 
