@@ -5,11 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? config('app.name') }}</title>
     
-    <!-- Scripts and Styles -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    
-    <!-- Livewire Styles -->
     @livewireStyles
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-gray-100">
     <!-- Page Content -->
@@ -17,7 +14,6 @@
         {{ $slot }}
     </main>
     
-    <!-- Livewire Scripts -->
     @livewireScripts
 </body>
 </html> 

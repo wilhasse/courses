@@ -17,16 +17,36 @@ class Login extends Component
         'password' => 'required',
     ];
 
-    public function login()
+    public function mount()
     {
-        $this->validate();
+        logger('Component mounted');
+    }
 
-        if (Auth::attempt(['login' => $this->login, 'password' => $this->password], $this->remember)) {
-            session()->regenerate();
-            return redirect()->intended(RouteServiceProvider::HOME);
+    public function updated($property)
+    {
+        logger('Property updated: ' . $property);
+    }
+
+    public function authenticate()
+    {
+        logger('Login method called');
+        logger('Login data', ['login' => $this->login, 'password' => strlen($this->password)]);
+        
+        try {
+            $this->validate();
+
+            if (Auth::attempt(['username' => $this->login, 'password' => $this->password], $this->remember)) {
+                session()->regenerate();
+                return redirect()->intended(RouteServiceProvider::HOME);
+            }
+
+            $this->addError('login', 'Invalid credentials');
+            logger('Authentication failed');
+            
+        } catch (\Exception $e) {
+            logger('Login error', ['error' => $e->getMessage()]);
+            $this->addError('login', 'An error occurred during login');
         }
-
-        $this->addError('login', trans('auth.failed'));
     }
 
     public function render()
