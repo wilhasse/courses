@@ -21,6 +21,26 @@
             <version>${polardbx.version}</version>
         </dependency>
 
+        <!-- PolarDB-X Optimizer -->
+        <dependency>
+            <groupId>com.alibaba.polardbx</groupId>
+            <artifactId>polardbx-optimizer</artifactId>
+            <version>${polardbx.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.alibaba.polardbx</groupId>
+            <artifactId>polardbx-gms</artifactId>
+            <version>${polardbx.version}</version>
+        </dependency>
+
+        <!-- PolarDB-X Parser -->
+        <dependency>
+            <groupId>com.alibaba.polardbx</groupId>
+            <artifactId>polardbx-parser</artifactId>
+            <version>${polardbx.version}</version>
+        </dependency>
+
         <!-- PolarDB-X Common -->
         <dependency>
             <groupId>com.alibaba.polardbx</groupId>
@@ -61,7 +81,7 @@
                             </filters>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>SimpleDbQueryApp</mainClass>
+                                    <mainClass>MainLauncher</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
