@@ -1,9 +1,4 @@
 import './bootstrap';
 
-// Import Livewire
-import { Livewire } from '../../vendor/livewire/livewire/dist/livewire.esm';
-
-// Start Livewire
-document.addEventListener('DOMContentLoaded', () => {
-    Livewire.start();
-});
+// Remove all Livewire initialization from here
+// Livewire will be initialized by @livewireScripts

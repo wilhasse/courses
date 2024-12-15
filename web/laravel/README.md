@@ -132,3 +132,50 @@ D:\courses\web\laravel\newapp>php artisan db:show
   Open Connections ................................................................................................. 1
   Tables ........................................................................................................... 9
 ```
+
+# Debug
+
+XDebug  
+https://xdebug.org/download
+
+save to c:\php-8.4.1\ext
+
+php.ini add:
+
+```ini
+[xdebug]
+zend_extension=xdebug
+xdebug.mode=debug
+xdebug.start_with_request=yes
+xdebug.client_port=9003
+xdebug.client_host=127.0.0.1
+```
+
+test
+
+```bash
+D:\courses\web\laravel\newapp>php -v
+PHP 8.4.1 (cli) (built: Nov 20 2024 11:13:22) (NTS Visual C++ 2022 x64)
+Copyright (c) The PHP Group
+Zend Engine v4.4.1, Copyright (c) Zend Technologies
+    with Xdebug v3.4.0, Copyright (c) 2002-2024, by Derick Rethans
+```
+
+json in vscode
+
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Listen for Xdebug",
+            "type": "php",
+            "request": "launch",
+            "port": 9003,
+            "pathMappings": {
+                "/path/to/your/project": "${workspaceFolder}"
+            }
+        }
+    ]
+}
+```
