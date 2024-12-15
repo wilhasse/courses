@@ -2,14 +2,11 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 
 class RouteServiceProvider extends ServiceProvider
 {
-    public const HOME = '/dashboard'; // or whatever your home route is
-
-    public function boot()
-    {
-        //
-    }
+    public const HOME = '/dashboard';  // This should match your dashboard route
+    
+    // ... rest of the provider code
 } 
