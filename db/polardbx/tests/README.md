@@ -4,10 +4,6 @@
 
 Simple mysql server that respond to SELECT 1
 
-## [calcite-test](./calcite-test)
-
-Simple query test using Apache Calcite
-
 ## [xplugin-test](./xplugin-test)
 
 Testing get a  list of databases using native MySQL X Plugin
@@ -16,6 +12,10 @@ Testing get a  list of databases using native MySQL X Plugin
 
 Uses XDataSource to create a connection using method getConnection().
 XDataSource uses XConnectionManager
+
+## [calcite-test](./calcite-test)
+
+Simple query test using Apache Calcite
 
 ## [polardbx-test](./polardbx-test)
 

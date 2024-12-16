@@ -6,6 +6,9 @@ https://windows.php.net/download
 Composer
 https://getcomposer.org/download/  
 
+Node.js
+https://nodejs.org/en/download/package-manager
+
 # Install Laravel
 
 php.ini, enable:
@@ -133,12 +136,29 @@ D:\courses\web\laravel\newapp>php artisan db:show
   Tables ........................................................................................................... 9
 ```
 
+Generate php create tables for migration from already existed tables
+
+```bash
+# install tool
+composer require --dev kitloong/laravel-migrations-generator
+
+# only specific tables
+php artisan migrate:generate --tables=customer,date,lineorder,part,supplier
+
+Setting up Tables and Index migrations.
+Created: D:\courses\web\laravel\newapp\database/migrations/2024_12_16_013644_create_customer_table.php
+Created: D:\courses\web\laravel\newapp\database/migrations/2024_12_16_013644_create_date_table.php
+Created: D:\courses\web\laravel\newapp\database/migrations/2024_12_16_013644_create_lineorder_table.php
+Created: D:\courses\web\laravel\newapp\database/migrations/2024_12_16_013644_create_part_table.php
+Created: D:\courses\web\laravel\newapp\database/migrations/2024_12_16_013644_create_supplier_table.php
+```
+
 # Debug
 
 XDebug  
 https://xdebug.org/download
 
-save to c:\php-8.4.1\ext
+save to c:\php-8.4.1\ext\php_xdebug.dll
 
 php.ini add:
 
