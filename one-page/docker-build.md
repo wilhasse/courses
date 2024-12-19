@@ -45,14 +45,39 @@ Create Dockerfile
 Build image on Windows
 Install and run Docker desktop
 
-Generate image
+### Generate image
 
 ```bash
 # build
 docker build --no-cache -t tisvn:0.2.0 .
 ```
 
-Save image
+### Generate image logging output, usefull for debuging errors
+
+```bash
+# build with debug
+docker build --no-cache --progress=plain -t tisvn:0.2.0 .
+```
+
+### Stop the build before a failure step and continuing in the terminal
+
+```Dockerfile
+# base
+FROM debian:bookworm-slim AS base
+...
+...
+# before the error:
+FROM base AS builder
+```
+
+```bash
+# build stopping before the alias builder, use target base to build all
+# the steps in base but it won't run after builder target ...
+# if is only few steps that are failing comment out the parts and do a normal build
+docker build --no-cache --target=base --progress=plain -t tisvn:0.2.0 .
+```
+
+### Save image
 
 ```bash
 # windows
@@ -63,7 +88,7 @@ Save image
 docker save image:0.2.0 -o image.tar
 ```
 
-Export
+### Export
 
 ```bash
 docker create --name temp_douradina douradina:0.2.0
