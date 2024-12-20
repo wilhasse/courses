@@ -13,8 +13,10 @@ Could you explain this code in great detail for me to understand all the concept
 - [Core source code files](./main_files.md)
 - [main() function class](./sql/mysqld.md)
 - [handler class](./sql/handler.md)
--   
+   
 # InnoDB
+
+- [Embedded InnoDB 1.0.6](./embedded/README.md)
 
 ## percona-server/storage/innobase/handler
 
