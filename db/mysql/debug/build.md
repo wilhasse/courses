@@ -1,11 +1,3 @@
-# Introduction
-
-Help files to set up and debug mysql in Debian 12
-
-- initialize a new data directory
-- basic config (my.cnf) and grant all
-- run mysqld in compiled version in percona-server
-
 # Preparation
 
 Install Debian 12 build packages
@@ -46,42 +38,3 @@ cmake . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_CONFIG=mysql_release -DFEATURE
 cd build
 make
 ```
-
-# Commands
-
-Reset data dir
-
-```bash
-./initialize_mysql.sh
-```
-Run Inside screen (it will block terminal)
-
-```bash
-./run_mysql.sh
-```
-Add root grants 
-
-```bash
-grant_mysql.sh
-```
-
-# Remote Visual Code
-
-Debuging from Windows on Linux
-
-Genereate SSH Keys
-In your homedir
-
-```prompt
-ssh-keygen -t rsa -b 4096 -C 10.1.1.148
-type .ssh\id_rsa.pub | ssh 10.1.1.148 "cat >> .ssh/authorized_keys"
-```
-
-Extensions
-
-- C/C++
-- C/C++ Extension Pack
-- C/C++ Themes
-- CMake
-- GitLens
-- Hex Editor

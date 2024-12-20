@@ -16,8 +16,14 @@ APPEND="${4:-0}"
 LOAD_METHOD=${5:-1}  # Default to 1 LOAD DATA
 
 # MySQL connection details for remote server (where we load data)
-REMOTE_USER="root"
 REMOTE_DATABASE="ssb"
+
+#REMOTE_USER="root"
+#REMOTE_PORT=3306
+
+REMOTE_USER="polardbx_root"
+REMOTE_PWD="123456"
+REMOTE_PORT=8527
 
 # MySQL connection details for local server (to store execution time)
 LOCAL_USER="root"
@@ -26,10 +32,10 @@ LOCAL_DATABASE="ssb_results"
 # Function to create MySQL connection string for remote server
 mysql_connect_remote() {
     local connect_string="mysql -h $IP -u $REMOTE_USER"
-    if [ -n "$MYSQL_PWD" ]; then
-        connect_string+=" -p$MYSQL_PWD"
+    if [ -n "$REMOTE_PWD" ]; then
+        connect_string+=" -p$REMOTE_PWD"
     fi
-    connect_string+=" $REMOTE_DATABASE --local-infile=1"
+    connect_string+=" -P$REMOTE_PORT $REMOTE_DATABASE --local-infile=1"
     echo "$connect_string"
 }
 

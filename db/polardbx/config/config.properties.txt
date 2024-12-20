@@ -1,0 +1,14 @@
+# PolarDB-X Port
+serverPort=8527
+# PolarDB-X RPC Port
+rpcPort=9090
+ # MetaDB Address
+metaDbAddr=10.1.1.148:4886
+# MetaDB X-Protocol Port
+metaDbXprotoPort=32886
+# MetaDB account
+metaDbUser=my_polarx
+metaDbName=polardbx_meta_db_polardbx
+# PolarDB-X Instance Name
+instanceId=polardbx-polardbx
+galaxyXProtocol=2
