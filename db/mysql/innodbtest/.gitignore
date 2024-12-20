@@ -2,4 +2,6 @@ example
 ibdata1
 ib_logfile0
 ib_logfile1
-test
+test/*
+create_db
+test_data
