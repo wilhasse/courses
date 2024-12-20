@@ -21,8 +21,7 @@ int main() {
         return 1;
     }
 
-    // The database and table should already exist from the previous run
-    // Try to get the table id
+    // Get the table id for test/test_table
     err = ib_table_get_id("test/test_table", &table_id);
     if (err != DB_SUCCESS) {
         fprintf(stderr, "ib_table_get_id failed: %s\n", ib_strerror(err));
@@ -44,7 +43,7 @@ int main() {
         return 1;
     }
 
-    // Create a search tuple: we expect a single INT column as PK from previous example
+    // Create a search tuple
     ib_tpl_t search_tpl = ib_clust_search_tuple_create(crsr);
     if (!search_tpl) {
         fprintf(stderr, "ib_clust_search_tuple_create failed\n");
@@ -53,7 +52,7 @@ int main() {
         return 1;
     }
 
-    // Suppose we previously inserted id=1234
+    // We inserted id=1234 previously
     err = ib_tuple_write_u32(search_tpl, 0, 1234UL);
     if (err != DB_SUCCESS) {
         fprintf(stderr, "ib_tuple_write_u32 failed: %s\n", ib_strerror(err));
@@ -73,7 +72,6 @@ int main() {
         } else {
             err = ib_cursor_read_row(crsr, read_tpl);
             if (err == DB_SUCCESS) {
-                // Single INT column
                 ib_u32_t val;
                 err = ib_tuple_read_u32(read_tpl, 0, &val);
                 if (err == DB_SUCCESS) {
@@ -92,17 +90,21 @@ int main() {
 
     ib_tuple_delete(search_tpl);
 
-    // Commit the transaction and close
-    err = ib_trx_commit(trx);
-    if (err != DB_SUCCESS) {
-        fprintf(stderr, "ib_trx_commit failed: %s\n", ib_strerror(err));
-    }
-
+    // Now close the cursor BEFORE committing the transaction
     err = ib_cursor_close(crsr);
     if (err != DB_SUCCESS) {
         fprintf(stderr, "ib_cursor_close failed: %s\n", ib_strerror(err));
+        ib_trx_rollback(trx);
+        // Still proceed to shutdown
+    } else {
+        // Commit the transaction after closing the cursor
+        err = ib_trx_commit(trx);
+        if (err != DB_SUCCESS) {
+            fprintf(stderr, "ib_trx_commit failed: %s\n", ib_strerror(err));
+        }
     }
 
+    // Finally, shut down InnoDB gracefully
     err = ib_shutdown(IB_SHUTDOWN_NORMAL);
     if (err != DB_SUCCESS) {
         fprintf(stderr, "ib_shutdown() failed: %s\n", ib_strerror(err));
