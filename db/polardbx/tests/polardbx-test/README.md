@@ -2,6 +2,8 @@
 
 PolarDB-X Plugin Java Test
 
+[Explaining code by o1-pro](./code_overview.md)
+
 # Build
 
 ```bash
