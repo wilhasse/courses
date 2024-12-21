@@ -27,7 +27,7 @@ Once started:
 ### 1. Main Entry Point
 
 ```
-javaCopiar códigopublic static void main(String[] args) {
+public static void main(String[] args) {
     ...
     getInstance().startup();
     ...
@@ -40,7 +40,7 @@ javaCopiar códigopublic static void main(String[] args) {
 ### 2. The `SimpleServer` Singleton
 
 ```
-javaCopiar códigoprivate static final SimpleServer INSTANCE = new SimpleServer();
+private static final SimpleServer INSTANCE = new SimpleServer();
 
 public static SimpleServer getInstance() {
     return INSTANCE;
@@ -52,7 +52,7 @@ public static SimpleServer getInstance() {
 ### 3. Startup Process
 
 ```
-javaCopiar códigopublic void startup() throws IOException {
+public void startup() throws IOException {
     System.out.println("Starting server initialization...");
     ...
     // 1) Timer scheduling
@@ -64,7 +64,7 @@ javaCopiar códigopublic void startup() throws IOException {
 1. **Timer Initialization**
 
    ```
-   javaCopiar códigoTimer timer = new Timer("ServerTimer", true);
+   Timer timer = new Timer("ServerTimer", true);
    timer.schedule(new TimerTask() {
        @Override
        public void run() {
@@ -79,7 +79,7 @@ javaCopiar códigopublic void startup() throws IOException {
 2. **NIOProcessor Creation**
 
    ```
-   javaCopiar códigoint processorCount = Math.max(1, ThreadCpuStatUtil.NUM_CORES);
+   int processorCount = Math.max(1, ThreadCpuStatUtil.NUM_CORES);
    processors = new NIOProcessor[processorCount];
    for (int i = 0; i < processors.length; i++) {
        ServerThreadPool handler = new ServerThreadPool(
@@ -101,7 +101,7 @@ javaCopiar códigopublic void startup() throws IOException {
 3. **NIOAcceptor** Creation (the actual server)
 
    ```
-   javaCopiar códigoDebugConnectionFactory factory = new DebugConnectionFactory();
+   DebugConnectionFactory factory = new DebugConnectionFactory();
    server = new NIOAcceptor("MySQLServer", SERVER_PORT, factory, true);
    server.setProcessors(processors);
    server.start();
@@ -114,7 +114,7 @@ javaCopiar códigopublic void startup() throws IOException {
 ### 4. `SimpleConfig` (Holds Users)
 
 ```
-javaCopiar códigostatic class SimpleConfig {
+static class SimpleConfig {
     private final Map<String, String> users;
 
     public SimpleConfig() {
@@ -134,7 +134,7 @@ javaCopiar códigostatic class SimpleConfig {
 ### 5. `DebugConnectionFactory`
 
 ```
-javaCopiar códigoclass DebugConnectionFactory extends FrontendConnectionFactory {
+class DebugConnectionFactory extends FrontendConnectionFactory {
     @Override
     protected FrontendConnection getConnection(SocketChannel channel) {
         ...
@@ -153,7 +153,7 @@ javaCopiar códigoclass DebugConnectionFactory extends FrontendConnectionFactory
 ### 6. `DebugConnection`
 
 ```
-javaCopiar códigoclass DebugConnection extends FrontendConnection {
+class DebugConnection extends FrontendConnection {
     private final BufferPool bufferPool;
     private final AtomicLong CONNECTION_ID = new AtomicLong(1);
     private final long connectionId;
@@ -170,7 +170,7 @@ javaCopiar códigoclass DebugConnection extends FrontendConnection {
 #### `DebugConnection` constructor
 
 ```
-javaCopiar códigopublic DebugConnection(SocketChannel channel) {
+public DebugConnection(SocketChannel channel) {
     super(channel);
     this.bufferPool = new BufferPool(1024 * 1024 * 16, 4096);
     ...
@@ -196,7 +196,7 @@ javaCopiar códigopublic DebugConnection(SocketChannel channel) {
 ### 7. `SimplePrivileges`
 
 ```
-javaCopiar códigoclass SimplePrivileges implements Privileges {
+class SimplePrivileges implements Privileges {
     @Override
     public boolean userExists(String user) {
         return getConfig().getUsers().containsKey(user);
@@ -219,7 +219,7 @@ javaCopiar códigoclass SimplePrivileges implements Privileges {
 ### 8. `SimpleQueryHandler`
 
 ```
-javaCopiar códigoclass SimpleQueryHandler implements QueryHandler {
+class SimpleQueryHandler implements QueryHandler {
     private final DebugConnection connection;
     private final XConnection polardbConnection;
     private final XConnectionManager manager;
@@ -238,7 +238,7 @@ javaCopiar códigoclass SimpleQueryHandler implements QueryHandler {
 #### `query(String sql)`
 
 ```
-javaCopiar código@Override
+@Override
 public void query(String sql) {
     System.out.println("Received query: " + sql);
     try {
@@ -258,7 +258,7 @@ public void query(String sql) {
 #### `sendResultSetResponse(XResult result)`
 
 ```
-javaCopiar códigoprivate void sendResultSetResponse(XResult result) {
+private void sendResultSetResponse(XResult result) {
     // 1) Allocate a buffer
     // 2) Write a ResultSetHeaderPacket
     // 3) Write FieldPackets (one per column)
@@ -287,7 +287,7 @@ Note: `convertPolarDBTypeToMySQLType(...)` is a helper that maps PolarDB-X’s c
 #### `close()`
 
 ```
-javaCopiar códigopublic void close() {
+public void close() {
     ...
     polardbConnection.close();
     manager.deinitializeDataSource("10.1.1.148", 33660, "teste", "teste");
