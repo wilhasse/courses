@@ -1,0 +1,947 @@
+	syntax = "proto2";
+
+package Mysqlx;
+option java_package = "com.mysql.cj.x.protobuf";
+
+import "google/protobuf/descriptor.proto"; 
+
+message ClientMessages {
+  enum Type {
+    CON_CAPABILITIES_GET = 1;
+    CON_CAPABILITIES_SET = 2;
+    CON_CLOSE = 3;
+
+    SESS_AUTHENTICATE_START = 4;
+    SESS_AUTHENTICATE_CONTINUE  = 5;
+    SESS_RESET = 6;
+    SESS_CLOSE = 7;
+
+    SQL_STMT_EXECUTE = 12;
+
+    CRUD_FIND = 17;
+    CRUD_INSERT = 18;
+    CRUD_UPDATE = 19;
+    CRUD_DELETE = 20;
+
+    EXPECT_OPEN = 24;
+    EXPECT_CLOSE = 25;
+
+    CRUD_CREATE_VIEW = 30;
+    CRUD_MODIFY_VIEW = 31;
+    CRUD_DROP_VIEW = 32;
+
+    PREPARE_PREPARE = 40;
+    PREPARE_EXECUTE = 41;
+    PREPARE_DEALLOCATE = 42;
+
+    CURSOR_OPEN = 43;
+    CURSOR_CLOSE = 44;
+    CURSOR_FETCH = 45;
+
+    COMPRESSION = 46;
+  }
+}
+
+message ServerMessages {
+  enum Type {
+    OK = 0;
+    ERROR = 1;
+
+    CONN_CAPABILITIES = 2;
+
+    SESS_AUTHENTICATE_CONTINUE = 3;
+    SESS_AUTHENTICATE_OK = 4;
+
+    NOTICE = 11;
+
+    RESULTSET_COLUMN_META_DATA = 12;
+    RESULTSET_ROW = 13;
+    RESULTSET_FETCH_DONE = 14;
+    RESULTSET_FETCH_SUSPENDED = 15;
+    RESULTSET_FETCH_DONE_MORE_RESULTSETS = 16;
+
+    SQL_STMT_EXECUTE_OK = 17;
+    RESULTSET_FETCH_DONE_MORE_OUT_PARAMS = 18;
+
+    COMPRESSION = 19;
+  }
+}
+
+extend google.protobuf.MessageOptions {
+  optional ClientMessages.Type client_message_id = 100001;
+  optional ServerMessages.Type server_message_id = 100002;
+}
+
+message Ok {
+  optional string msg = 1;
+
+  option (server_message_id) = OK; 
+}
+
+message Error {
+
+  optional Severity severity = 1 [ default = ERROR ];
+
+  required uint32 code = 2;
+
+  required string sql_state = 4;
+
+  required string msg = 3;
+
+  enum Severity {
+    ERROR = 0;
+    FATAL = 1;
+  }
+
+  option (server_message_id) = ERROR; 
+}
+
+syntax = "proto2";
+
+import "mysqlx_datatypes.proto";
+import "mysqlx.proto";
+
+package Mysqlx.Connection;
+option java_package = "com.mysql.cj.x.protobuf";
+
+message Capability {
+  required string name = 1;
+  required Mysqlx.Datatypes.Any value = 2;
+}
+
+message Capabilities {
+  repeated Capability capabilities = 1;
+
+  option (server_message_id) = CONN_CAPABILITIES; 
+}
+
+message CapabilitiesGet {
+  option (client_message_id) = CON_CAPABILITIES_GET; 
+}
+
+message CapabilitiesSet {
+  required Capabilities capabilities = 1;
+
+  option (client_message_id) = CON_CAPABILITIES_SET; 
+}
+
+message Close {
+  option (client_message_id) = CON_CLOSE; 
+}
+
+message Compression {
+  optional uint64 uncompressed_size = 1;
+  optional Mysqlx.ServerMessages.Type server_messages = 2;
+  optional Mysqlx.ClientMessages.Type client_messages = 3;
+  required bytes payload = 4;
+
+  option (server_message_id) = COMPRESSION; 
+  option (client_message_id) = COMPRESSION; 
+}
+
+syntax = "proto2";
+
+package Mysqlx.Crud;
+option java_package = "com.mysql.cj.x.protobuf";
+
+import "mysqlx.proto"; 
+import "mysqlx_expr.proto";
+import "mysqlx_datatypes.proto";
+
+message Column {
+  optional string name = 1;
+  optional string alias = 2;
+  repeated Mysqlx.Expr.DocumentPathItem document_path = 3;
+}
+
+message Projection {
+
+    required Mysqlx.Expr.Expr source = 1;
+
+    optional string alias = 2;
+}
+
+enum DataModel {
+  DOCUMENT = 1;
+  TABLE = 2;
+}
+
+message Collection {
+  required string name = 1;
+  optional string schema = 2;
+}
+
+message Limit {
+
+  required uint64 row_count = 1 ;
+
+  optional uint64 offset = 2 ;
+}
+
+message LimitExpr {
+
+  required Mysqlx.Expr.Expr row_count = 1;
+
+  optional Mysqlx.Expr.Expr offset = 2;
+}
+
+message Order {
+  enum Direction {
+    ASC = 1;
+    DESC = 2;
+  }
+
+  required Mysqlx.Expr.Expr expr = 1;
+  optional Direction direction = 2 [ default=ASC ];
+}
+
+message UpdateOperation {
+  enum UpdateType {
+
+    SET = 1;
+
+    ITEM_REMOVE = 2;
+
+    ITEM_SET = 3;
+
+    ITEM_REPLACE = 4;
+
+    ITEM_MERGE = 5;
+
+    ARRAY_INSERT = 6;
+
+    ARRAY_APPEND = 7;
+
+    MERGE_PATCH = 8;
+  }
+
+  required Mysqlx.Expr.ColumnIdentifier source = 1;
+
+  required UpdateType operation = 2;
+
+  optional Mysqlx.Expr.Expr value = 3;
+}
+
+message Find {
+  enum RowLock {
+
+    SHARED_LOCK = 1;
+
+    EXCLUSIVE_LOCK = 2;
+  }
+
+  enum RowLockOptions {
+
+    NOWAIT = 1;
+
+    SKIP_LOCKED = 2;
+  }
+
+  required Collection collection = 2;
+
+  optional DataModel data_model = 3;
+
+  repeated Projection projection = 4;
+
+  repeated Mysqlx.Datatypes.Scalar args = 11;
+
+  optional Mysqlx.Expr.Expr criteria = 5;
+
+  optional Limit limit = 6;
+
+  repeated Order order = 7;
+
+  repeated Mysqlx.Expr.Expr grouping = 8;
+
+  optional Mysqlx.Expr.Expr grouping_criteria = 9;
+
+  optional RowLock locking = 12;
+
+  optional RowLockOptions locking_options = 13;
+
+  optional LimitExpr limit_expr = 14;
+
+  option (client_message_id) = CRUD_FIND; 
+}
+
+message Insert {
+
+  required Collection collection = 1;
+
+  optional DataModel data_model = 2;
+
+  repeated Column projection = 3;
+
+  message TypedRow {
+    repeated Mysqlx.Expr.Expr field = 1;
+  }
+
+  repeated TypedRow row = 4;
+
+  repeated Mysqlx.Datatypes.Scalar args = 5;
+
+  optional bool upsert = 6 [default = false];
+
+  option (client_message_id) = CRUD_INSERT; 
+}
+
+message Update {
+
+  required Collection collection = 2;
+
+  optional DataModel data_model = 3;
+
+  optional Mysqlx.Expr.Expr criteria = 4;
+
+  optional Limit limit = 5;
+
+  repeated Order order = 6;
+
+  repeated UpdateOperation operation = 7;
+
+  repeated Mysqlx.Datatypes.Scalar args = 8;
+
+  optional LimitExpr limit_expr = 9;
+
+  option (client_message_id) = CRUD_UPDATE; 
+}
+
+message Delete {
+
+  required Collection collection = 1;
+
+  optional DataModel data_model = 2;
+
+  optional Mysqlx.Expr.Expr criteria = 3;
+
+  optional Limit limit = 4;
+
+  repeated Order order = 5;
+
+  repeated Mysqlx.Datatypes.Scalar args = 6;
+
+  optional LimitExpr limit_expr = 7;
+
+  option (client_message_id) = CRUD_DELETE; 
+}
+
+enum ViewAlgorithm {
+
+  UNDEFINED =1;
+
+  MERGE = 2;
+
+  TEMPTABLE = 3;
+}
+
+enum ViewSqlSecurity {
+
+  INVOKER = 1;
+
+  DEFINER = 2;
+}
+
+enum ViewCheckOption {
+
+  LOCAL = 1;
+
+  CASCADED = 2;
+}
+
+message CreateView {
+
+  required Collection collection = 1;
+
+  optional string definer = 2;
+
+  optional ViewAlgorithm algorithm = 3 [default = UNDEFINED];
+
+  optional ViewSqlSecurity security = 4 [default = DEFINER];
+
+  optional ViewCheckOption check = 5;
+
+  repeated string column = 6;
+
+  required Find stmt = 7;
+
+  optional bool replace_existing = 8 [default = false];
+
+  option (client_message_id) = CRUD_CREATE_VIEW; 
+}
+
+message ModifyView {
+
+  required Collection collection = 1;
+
+  optional string definer = 2;
+
+  optional ViewAlgorithm algorithm = 3;
+
+  optional ViewSqlSecurity security = 4;
+
+  optional ViewCheckOption check = 5;
+
+  repeated string column = 6;
+
+  optional Find stmt = 7;
+
+  option (client_message_id) = CRUD_MODIFY_VIEW; 
+}
+
+message DropView {
+
+  required Collection collection = 1;
+
+  optional bool if_exists = 2 [ default = false ];
+
+  option (client_message_id) = CRUD_DROP_VIEW; 
+}
+
+syntax = "proto2";
+
+package Mysqlx.Cursor;
+option java_package = "com.mysql.cj.x.protobuf";
+
+import "mysqlx.proto"; 
+import "mysqlx_prepare.proto";
+
+message Open {
+
+  required uint32 cursor_id = 1;
+
+  message OneOfMessage {
+    enum Type {
+      PREPARE_EXECUTE = 0;
+    }
+    required Type type = 1;
+
+    optional Mysqlx.Prepare.Execute prepare_execute = 2;
+  }
+
+  required OneOfMessage stmt = 4;
+
+  optional uint64 fetch_rows = 5;
+
+  option (client_message_id) = CURSOR_OPEN; 
+}
+
+message Fetch {
+
+  required uint32 cursor_id = 1;
+
+  optional uint64 fetch_rows = 5;
+
+  option (client_message_id) = CURSOR_FETCH; 
+}
+
+message Close {
+
+  required uint32 cursor_id = 1;
+
+  option (client_message_id) = CURSOR_CLOSE; 
+}
+syntax = "proto2";
+
+package Mysqlx.Datatypes;
+option java_package = "com.mysql.cj.x.protobuf";
+
+message Scalar {
+
+  message String {
+    required bytes value = 1;
+    optional uint64 collation = 2 ;
+  }
+
+  message Octets {
+    required bytes value = 1;
+    optional uint32 content_type = 2;
+  }
+
+  enum Type {
+    V_SINT = 1;
+    V_UINT = 2;
+    V_NULL = 3;
+    V_OCTETS = 4;
+    V_DOUBLE = 5;
+    V_FLOAT = 6;
+    V_BOOL  = 7;
+    V_STRING  = 8;
+  }
+
+  required Type type = 1;
+
+  optional sint64 v_signed_int = 2 ;
+  optional uint64 v_unsigned_int = 3 ;
+
+  optional Octets v_octets = 5;
+  optional double v_double = 6;
+  optional float  v_float = 7;
+  optional bool   v_bool = 8;
+  optional String v_string = 9;
+}
+
+message Object {
+  message ObjectField {
+    required string key = 1;
+    required Any value = 2;
+  }
+
+  repeated ObjectField fld = 1;
+}
+
+message Array {
+  repeated Any value = 1;
+}
+
+message Any {
+  enum Type {
+    SCALAR = 1;
+    OBJECT = 2;
+    ARRAY  = 3;
+  }
+
+  required Type type = 1;
+
+  optional Scalar scalar = 2;
+  optional Object obj    = 3;
+  optional Array  array  = 4;
+}
+
+syntax = "proto2";
+
+import "mysqlx.proto"; 
+
+package Mysqlx.Expect;
+option java_package = "com.mysql.cj.x.protobuf";
+
+message Open {
+  message Condition {
+    enum Key {
+
+      EXPECT_NO_ERROR = 1;
+
+      EXPECT_FIELD_EXIST = 2;
+
+      EXPECT_DOCID_GENERATED = 3;
+    }
+    enum ConditionOperation {
+
+      EXPECT_OP_SET = 0;
+
+      EXPECT_OP_UNSET = 1;
+    }
+    required uint32 condition_key = 1;
+    optional bytes condition_value = 2;
+    optional ConditionOperation op = 3 [ default = EXPECT_OP_SET ];
+  }
+  enum CtxOperation {
+
+    EXPECT_CTX_COPY_PREV = 0;
+
+    EXPECT_CTX_EMPTY = 1;
+  }
+  optional CtxOperation op = 1 [ default = EXPECT_CTX_COPY_PREV ];
+  repeated Condition cond = 2;
+
+  option (client_message_id) = EXPECT_OPEN; 
+}
+
+message Close {
+  option (client_message_id) = EXPECT_CLOSE; 
+}
+
+syntax = "proto2";
+
+package Mysqlx.Expr;
+option java_package = "com.mysql.cj.x.protobuf";
+
+import "mysqlx_datatypes.proto";
+
+message Expr {
+  enum Type {
+    IDENT          = 1;
+    LITERAL        = 2;
+    VARIABLE       = 3;
+    FUNC_CALL      = 4;
+    OPERATOR       = 5;
+    PLACEHOLDER    = 6;
+    OBJECT         = 7;
+    ARRAY          = 8;
+  }
+
+  required Type type = 1;
+
+  optional ColumnIdentifier identifier = 2;
+  optional string       variable = 3;
+  optional Mysqlx.Datatypes.Scalar literal = 4;
+  optional FunctionCall function_call = 5;
+  optional Operator     operator = 6;
+  optional uint32       position = 7;
+  optional Object       object = 8;
+  optional Array        array = 9;
+}
+
+message Identifier {
+  required string name = 1;
+  optional string schema_name = 2;
+}
+
+message DocumentPathItem {
+  enum Type {
+
+    MEMBER = 1;
+
+    MEMBER_ASTERISK = 2;
+
+    ARRAY_INDEX = 3;
+
+    ARRAY_INDEX_ASTERISK = 4;
+
+    DOUBLE_ASTERISK = 5;
+  }
+  required Type type = 1;
+  optional string value = 2;
+
+  optional uint32 index = 3;
+}
+
+message ColumnIdentifier {
+
+  repeated Mysqlx.Expr.DocumentPathItem document_path = 1;
+
+  optional string name = 2;
+
+  optional string table_name = 3;
+
+  optional string schema_name = 4;
+}
+
+message FunctionCall {
+
+  required Identifier name = 1;
+
+  repeated Expr param = 2;
+}
+
+message Operator {
+
+  required string name = 1;
+
+  repeated Expr param = 2;
+}
+
+message Object {
+  message ObjectField {
+
+    required string key = 1;
+
+    required Expr value = 2;
+  }
+
+  repeated ObjectField fld = 1;
+}
+
+message Array {
+
+  repeated Expr value = 1;
+}
+
+syntax = "proto2";
+
+import "mysqlx.proto"; 
+
+package Mysqlx.Notice;
+option java_package = "com.mysql.cj.x.protobuf";
+
+import "mysqlx_datatypes.proto";
+
+message Frame {
+
+  enum Scope {
+    GLOBAL = 1;
+    LOCAL = 2;
+  }
+
+  enum Type {
+    WARNING = 1;
+    SESSION_VARIABLE_CHANGED = 2;
+    SESSION_STATE_CHANGED = 3;
+    GROUP_REPLICATION_STATE_CHANGED = 4;
+    SERVER_HELLO = 5;
+  }
+
+  required uint32 type = 1;
+
+  optional Scope  scope = 2 [ default = GLOBAL ];
+
+  optional bytes payload = 3;
+
+  option (server_message_id) = NOTICE; 
+}
+
+message Warning {
+  enum Level {
+    NOTE = 1;
+    WARNING = 2;
+    ERROR = 3;
+  }
+
+  optional Level level = 1 [ default = WARNING ];
+
+  required uint32 code = 2;
+
+  required string msg = 3;
+}
+
+message SessionVariableChanged {
+
+  required string param = 1;
+
+  optional Mysqlx.Datatypes.Scalar value = 2;
+}
+
+message SessionStateChanged {
+  enum Parameter {
+     CURRENT_SCHEMA = 1;
+     ACCOUNT_EXPIRED = 2;
+     GENERATED_INSERT_ID = 3;
+     ROWS_AFFECTED = 4;
+     ROWS_FOUND = 5;
+     ROWS_MATCHED = 6;
+     TRX_COMMITTED = 7;
+     TRX_ROLLEDBACK = 9;
+     PRODUCED_MESSAGE = 10;
+     CLIENT_ID_ASSIGNED = 11;
+     GENERATED_DOCUMENT_IDS = 12;
+
+  }
+
+  required Parameter param = 1;
+
+  repeated Mysqlx.Datatypes.Scalar value = 2;
+}
+
+message GroupReplicationStateChanged {
+  enum Type {
+    MEMBERSHIP_QUORUM_LOSS = 1;
+    MEMBERSHIP_VIEW_CHANGE = 2;
+    MEMBER_ROLE_CHANGE = 3;
+    MEMBER_STATE_CHANGE = 4;
+  }
+
+  required uint32 type = 1;
+
+  optional string view_id = 2;
+}
+
+message ServerHello {
+}
+
+syntax = "proto2";
+
+package Mysqlx.Prepare;
+option java_package = "com.mysql.cj.x.protobuf";
+
+import "mysqlx.proto"; 
+import "mysqlx_sql.proto";
+import "mysqlx_crud.proto";
+import "mysqlx_datatypes.proto";
+
+message Prepare {
+
+  required uint32 stmt_id = 1;
+
+  message OneOfMessage {
+
+    enum Type {
+      FIND = 0;
+      INSERT = 1;
+      UPDATE = 2;
+      DELETE = 4;
+      STMT = 5;
+    }
+    required Type type = 1;
+
+    optional Mysqlx.Crud.Find find = 2;
+    optional Mysqlx.Crud.Insert insert = 3;
+    optional Mysqlx.Crud.Update update = 4;
+    optional Mysqlx.Crud.Delete delete = 5;
+    optional Mysqlx.Sql.StmtExecute stmt_execute = 6;
+  }
+
+  required OneOfMessage stmt = 2;
+
+  option (client_message_id) = PREPARE_PREPARE; 
+}
+
+message Execute {
+
+  required uint32 stmt_id = 1;
+
+  repeated Mysqlx.Datatypes.Any args = 2;
+
+  optional bool compact_metadata = 3 [ default = false ];
+
+  option (client_message_id) = PREPARE_EXECUTE; 
+}
+
+message Deallocate {
+
+  required uint32 stmt_id = 1;
+
+  option (client_message_id) = PREPARE_DEALLOCATE; 
+}
+syntax = "proto2";
+
+import "mysqlx.proto"; 
+
+package Mysqlx.Resultset;
+option java_package = "com.mysql.cj.x.protobuf";
+
+message FetchDoneMoreOutParams {
+  option (server_message_id) = RESULTSET_FETCH_DONE_MORE_OUT_PARAMS; 
+}
+
+message FetchDoneMoreResultsets {
+  option (server_message_id) = RESULTSET_FETCH_DONE_MORE_RESULTSETS; 
+}
+
+message FetchDone {
+  option (server_message_id) = RESULTSET_FETCH_DONE; 
+}
+
+message FetchSuspended {
+  option (server_message_id) = RESULTSET_FETCH_SUSPENDED; 
+}
+
+message ColumnMetaData {
+  enum FieldType {
+    SINT     = 1;
+    UINT     = 2;
+
+    DOUBLE   = 5;
+    FLOAT    = 6;
+
+    BYTES    = 7;
+
+    TIME     = 10;
+    DATETIME = 12;
+    SET      = 15;
+    ENUM     = 16;
+    BIT      = 17;
+
+    DECIMAL  = 18;
+  }
+
+  required FieldType type = 1;
+
+  optional bytes name = 2;
+
+  optional bytes original_name = 3;
+
+  optional bytes table = 4;
+
+  optional bytes original_table = 5;
+
+  optional bytes schema = 6;
+
+  optional bytes catalog = 7;
+
+  optional uint64 collation = 8 ;
+
+  optional uint32 fractional_digits = 9;
+
+  optional uint32 length = 10;
+
+  optional uint32 flags = 11;
+
+  optional uint32 content_type = 12;
+
+  option (server_message_id) = RESULTSET_COLUMN_META_DATA; 
+}
+
+message Row {
+  repeated bytes field = 1;
+
+  option (server_message_id) = RESULTSET_ROW; 
+}
+
+enum ContentType_BYTES {
+  GEOMETRY = 1;
+  JSON = 2;
+  XML = 3;
+}
+
+enum ContentType_DATETIME {
+  DATE = 1;
+  DATETIME = 2;
+}
+syntax = "proto2";
+
+import "mysqlx.proto"; 
+
+package Mysqlx.Session;
+option java_package = "com.mysql.cj.x.protobuf";
+
+message AuthenticateStart {
+
+  required string mech_name = 1;
+
+  optional bytes auth_data = 2;
+
+  optional bytes initial_response = 3;
+
+  option (client_message_id) = SESS_AUTHENTICATE_START; 
+}
+
+message AuthenticateContinue {
+
+  required bytes auth_data = 1;
+
+  option (server_message_id) = SESS_AUTHENTICATE_CONTINUE; 
+  option (client_message_id) = SESS_AUTHENTICATE_CONTINUE; 
+}
+
+message AuthenticateOk {
+
+  optional bytes auth_data = 1;
+
+  option (server_message_id) = SESS_AUTHENTICATE_OK; 
+}
+
+message Reset {
+
+  optional bool keep_open = 1 [ default = false ];
+
+  option (client_message_id) = SESS_RESET; 
+}
+
+message Close {
+  option (client_message_id) = SESS_CLOSE; 
+}
+
+syntax = "proto2";
+
+import "mysqlx.proto"; 
+
+package Mysqlx.Sql;
+option java_package = "com.mysql.cj.x.protobuf";
+
+import "mysqlx_datatypes.proto";
+
+message StmtExecute {
+
+  optional string namespace = 3 [ default = "sql" ];
+
+  required bytes stmt = 1;
+
+  repeated Mysqlx.Datatypes.Any args = 2;
+
+  optional bool compact_metadata = 4 [ default = false ];
+
+  option (client_message_id) = SQL_STMT_EXECUTE; 
+}
+
+message StmtExecuteOk {
+  option (server_message_id) = SQL_STMT_EXECUTE_OK; 
+}
