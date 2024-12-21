@@ -1,201 +1,260 @@
-#include <stdio.h>
-#include <string.h>
 #include "innodb.h"
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <string.h>
+#include <ctype.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
-int main() {
-    ib_err_t    err;
-    ib_trx_t    trx;
-    ib_id_t     table_id;
+#define DATABASE "test"
+#define TABLE "t"
+
+static const char *data_file_path = "ibdata1:128M:autoextend";
+
+static ib_err_t
+create_database(const char* name)
+{
+    ib_bool_t err;
+
+    err = ib_database_create(name);
+    assert(err == IB_TRUE);
+    return DB_SUCCESS;
+}
+
+static void
+create_directory(const char* path)
+{
+    int ret;
+
+    ret = mkdir(path, S_IRWXU);
+    if(ret == -1 && errno != EEXIST) {
+        perror(path);
+        exit(EXIT_FAILURE);
+    }
+}
+
+void
+test_configure(void)
+{
+    ib_err_t err;
+
+    err = ib_cfg_set_text("flush_method", "O_DIRECT");
+    assert(err == DB_SUCCESS);
+
+    err = ib_cfg_set_int("log_files_in_group", 2);
+    assert(err == DB_SUCCESS);
+
+    err = ib_cfg_set_int("log_file_size", 128 * 1024 * 1024);
+    assert(err == DB_SUCCESS);
+
+    err = ib_cfg_set_int("log_buffer_size", 8 * 1024 * 1024);
+    assert(err == DB_SUCCESS);
+
+    err = ib_cfg_set_int("buffer_pool_size", 5 * 1024 * 1024);
+    assert(err == DB_SUCCESS);
+
+    err = ib_cfg_set_int("additional_mem_pool_size", 4 * 1024 * 1024);
+    assert(err == DB_SUCCESS);
+
+    err = ib_cfg_set_int("autoextend_increment", 32);
+    assert(err == DB_SUCCESS);
+
+    err = ib_cfg_set_int("flush_log_at_trx_commit", 1);
+    assert(err == DB_SUCCESS);
+
+    err = ib_cfg_set_int("lock_wait_timeout", 60);
+    assert(err == DB_SUCCESS);
+
+    err = ib_cfg_set_int("open_files", 300);
+    assert(err == DB_SUCCESS);
+
+    err = ib_cfg_set_bool_on("doublewrite");
+    assert(err == DB_SUCCESS);
+
+    err = ib_cfg_set_bool_on("checksums");
+    assert(err == DB_SUCCESS);
+
+    err = ib_cfg_set_bool_on("rollback_on_timeout");
+    assert(err == DB_SUCCESS);
+
+    err = ib_cfg_set_bool_on("print_verbose_log");
+    assert(err == DB_SUCCESS);
+
+    err = ib_cfg_set_bool_on("file_per_table");
+    assert(err == DB_SUCCESS);
+
+    if (err != DB_SUCCESS) {
+        fprintf(stderr,
+            "syntax error in log_group_home_dir, or a "
+            "wrong number of mirrored log groups\n");
+        exit(1);
+    }
+
+    err = ib_cfg_set_text("data_file_path", data_file_path);
+
+    if (err != DB_SUCCESS) {
+        fprintf(stderr,
+            "InnoDB: syntax error in data_file_path\n");
+        exit(1);
+    }
+}
+
+static ib_err_t
+create_table(const char* dbname, const char* name)
+{
+    ib_trx_t ib_trx;
+    ib_id_t table_id = 0;
+    ib_err_t err = DB_SUCCESS;
+    ib_tbl_sch_t ib_tbl_sch = NULL;
+    ib_idx_sch_t ib_idx_sch = NULL;
+
+    char table_name[IB_MAX_TABLE_NAME_LEN];
+
+    snprintf(table_name, sizeof(table_name), "%s/%s", dbname, name);
+
+    err = ib_table_schema_create(table_name, &ib_tbl_sch, IB_TBL_COMPACT, 0);
+
+    assert(err == DB_SUCCESS);
+
+    err = ib_table_schema_add_col(ib_tbl_sch, "id", IB_INT, IB_COL_UNSIGNED, 0, sizeof(ib_u64_t));
+    assert(err == DB_SUCCESS);
+
+    err = ib_table_schema_add_col(ib_tbl_sch, "c1", IB_VARCHAR, IB_COL_NONE, 0, 32);
+    assert(err == DB_SUCCESS);
+
+    err = ib_table_schema_add_col(ib_tbl_sch, "c2", IB_VARCHAR, IB_COL_NONE, 0, 32);
+    assert(err == DB_SUCCESS);
+
+    err = ib_table_schema_add_col(ib_tbl_sch, "c3", IB_INT, IB_COL_UNSIGNED, 0, sizeof(ib_u64_t));
+    assert(err == DB_SUCCESS);
+
+    err = ib_table_schema_add_index(ib_tbl_sch, "id", &ib_idx_sch);
+    assert(err == DB_SUCCESS);
+
+    err = ib_index_schema_add_col(ib_idx_sch, "id", 0);
+    assert(err == DB_SUCCESS);
+
+    err = ib_index_schema_set_clustered(ib_idx_sch);
+    assert(err == DB_SUCCESS);
+
+    ib_trx = ib_trx_begin(IB_TRX_REPEATABLE_READ);
+    err = ib_schema_lock_exclusive(ib_trx);
+    assert(err == DB_SUCCESS);
+
+    err = ib_table_create(ib_trx, ib_tbl_sch, &table_id);
+    assert(err == DB_SUCCESS);
+
+    err = ib_trx_commit(ib_trx);
+    assert(err == DB_SUCCESS);
+
+    if (ib_tbl_sch != NULL) {
+        ib_table_schema_delete(ib_tbl_sch);
+    }
+
+    return(err);
+}
+
+static ib_err_t
+open_table(const char* dbname, const char* name, ib_trx_t ib_trx, ib_crsr_t* crsr)
+{
+    ib_err_t err = DB_SUCCESS;
+    char table_name[IB_MAX_TABLE_NAME_LEN];
+
+    snprintf(table_name, sizeof(table_name), "%s/%s", dbname, name);
+
+    err = ib_cursor_open_table(table_name, ib_trx, crsr);
+    assert(err == DB_SUCCESS);
+
+    return(err);
+}
+
+static ib_err_t
+insert_rows(ib_crsr_t crsr)
+{
+    uint64_t i = 0;
+    ib_tpl_t tpl = NULL;
+    ib_err_t err = DB_ERROR;
+
+    tpl = ib_clust_read_tuple_create(crsr);
+    assert(tpl != NULL);
+
+    for (i = 0; i < 1000000; i++) {
+        err = ib_col_set_value(tpl, 0, &i, sizeof(ib_u64_t));
+        assert(err == DB_SUCCESS);
+
+        err = ib_col_set_value(tpl, 1, "A", 1);
+        assert(err == DB_SUCCESS);
+
+        err = ib_col_set_value(tpl, 2, "B", 2);
+        assert(err == DB_SUCCESS);
+
+        err = ib_col_set_value(tpl, 3, &i, sizeof(ib_u64_t));
+        assert(err == DB_SUCCESS);
+
+        err = ib_cursor_insert_row(crsr, tpl);
+        assert(err == DB_SUCCESS);
+
+        tpl = ib_tuple_clear(tpl);
+        assert(tpl != NULL);
+    }
+
+    if (tpl != NULL) {
+        ib_tuple_delete(tpl);
+    }
+
+    return(err);
+}
+
+int
+main(void)
+{
+    ib_err_t err;
+    ib_crsr_t crsr;
+    ib_trx_t ib_trx;
 
     err = ib_init();
-    if (err != DB_SUCCESS) {
-        fprintf(stderr, "ib_init() failed: %s\n", ib_strerror(err));
-        return 1;
-    }
+    assert(err == DB_SUCCESS);
 
-    err = ib_startup(NULL);
-    if (err != DB_SUCCESS) {
-        fprintf(stderr, "ib_startup() failed: %s\n", ib_strerror(err));
-        return 1;
-    }
+    test_configure();
 
-    // Create a database "test"
-    if (ib_database_create("test") != IB_TRUE) {
-        fprintf(stderr, "ib_database_create(test) failed\n");
-        return 1;
-    }
+    err = ib_startup("barracuda");
+    assert(err == DB_SUCCESS);
 
-    ib_tbl_sch_t tbl_sch;
-    // Use "test/test_table" as name
-    err = ib_table_schema_create("test/test_table", &tbl_sch, IB_TBL_REDUNDANT, 0);
-    if (err != DB_SUCCESS) {
-        fprintf(stderr, "ib_table_schema_create() failed: %s\n", ib_strerror(err));
-        return 1;
-    }
+    err = create_database(DATABASE);
+    assert(err == DB_SUCCESS);
 
-    // Add one INT column as primary key
-    // We'll keep it simple: one column 'id' INT NOT NULL
-    err = ib_table_schema_add_col(tbl_sch, "id", IB_INT, IB_COL_NOT_NULL | IB_COL_UNSIGNED, 0, 4);
-    if (err != DB_SUCCESS) {
-        fprintf(stderr, "adding 'id' col failed: %s\n", ib_strerror(err));
-        ib_table_schema_delete(tbl_sch);
-        return 1;
-    }
+    err = create_table(DATABASE, TABLE);
+    assert(err == DB_SUCCESS);
 
-    // Create a primary index
-    ib_idx_sch_t idx_sch;
-    err = ib_table_schema_add_index(tbl_sch, "PRIMARY", &idx_sch);
-    if (err != DB_SUCCESS) {
-        fprintf(stderr, "ib_table_schema_add_index(PRIMARY) failed: %s\n", ib_strerror(err));
-        ib_table_schema_delete(tbl_sch);
-        return 1;
-    }
+    printf("Begin transaction\n");
+    ib_trx = ib_trx_begin(IB_TRX_REPEATABLE_READ);
+    assert(ib_trx != NULL);
 
-    // Add 'id' to the primary index
-    err = ib_index_schema_add_col(idx_sch, "id", 0);
-    if (err != DB_SUCCESS) {
-        fprintf(stderr, "ib_index_schema_add_col(id) failed: %s\n", ib_strerror(err));
-        ib_table_schema_delete(tbl_sch);
-        return 1;
-    }
+    printf("Open cursor\n");
+    err = open_table(DATABASE, TABLE, ib_trx, &crsr);
+    assert(err == DB_SUCCESS);
 
-    // Make it clustered
-    err = ib_index_schema_set_clustered(idx_sch);
-    if (err != DB_SUCCESS) {
-        fprintf(stderr, "ib_index_schema_set_clustered() failed: %s\n", ib_strerror(err));
-        ib_table_schema_delete(tbl_sch);
-        return 1;
-    }
+    printf("Lock table in IX\n");
+    err = ib_cursor_lock(crsr, IB_LOCK_IX);
+    assert(err == DB_SUCCESS);
 
-    // Now create the table
-    trx = ib_trx_begin(IB_TRX_REPEATABLE_READ);
-    if (!trx) {
-        fprintf(stderr, "ib_trx_begin() failed\n");
-        ib_table_schema_delete(tbl_sch);
-        return 1;
-    }
+    printf("Insert rows\n");
+    err = insert_rows(crsr);
+    assert(err == DB_SUCCESS);
 
-    err = ib_schema_lock_exclusive(trx);
-    if (err != DB_SUCCESS) {
-        fprintf(stderr, "ib_schema_lock_exclusive() failed: %s\n", ib_strerror(err));
-        ib_trx_rollback(trx);
-        ib_table_schema_delete(tbl_sch);
-        return 1;
-    }
+    printf("Close cursor\n");
+    err = ib_cursor_close(crsr);
+    assert(err == DB_SUCCESS);
+    crsr = NULL;
 
-    err = ib_table_create(trx, tbl_sch, &table_id);
-    if (err != DB_SUCCESS && err != DB_TABLE_IS_BEING_USED) {
-        fprintf(stderr, "ib_table_create() failed: %s\n", ib_strerror(err));
-        ib_schema_unlock(trx);
-        ib_trx_rollback(trx);
-        ib_table_schema_delete(tbl_sch);
-        return 1;
-    }
+    printf("Commit transaction\n");
+    err = ib_trx_commit(ib_trx);
+    assert(err == DB_SUCCESS);
 
-    err = ib_schema_unlock(trx);
-    if (err != DB_SUCCESS) {
-        fprintf(stderr, "ib_schema_unlock failed: %s\n", ib_strerror(err));
-        ib_trx_rollback(trx);
-        ib_table_schema_delete(tbl_sch);
-        return 1;
-    }
-
-    err = ib_trx_commit(trx);
-    if (err != DB_SUCCESS) {
-        fprintf(stderr, "commit ddl trx failed: %s\n", ib_strerror(err));
-        ib_table_schema_delete(tbl_sch);
-        return 1;
-    }
-
-    ib_table_schema_delete(tbl_sch);
-
-    // Insert a single row (id=1234) to test if we can proceed
-    trx = ib_trx_begin(IB_TRX_REPEATABLE_READ);
-    if (!trx) {
-        fprintf(stderr, "ib_trx_begin() failed for insert\n");
-        return 1;
-    }
-
-    ib_crsr_t crsr;
-    err = ib_cursor_open_table_using_id(table_id, trx, &crsr);
-    if (err != DB_SUCCESS) {
-        fprintf(stderr, "ib_cursor_open_table_using_id() failed: %s\n", ib_strerror(err));
-        ib_trx_rollback(trx);
-        return 1;
-    }
-
-    ib_tpl_t ins_tpl = ib_clust_read_tuple_create(crsr);
-    if (!ins_tpl) {
-        fprintf(stderr, "ib_clust_read_tuple_create failed\n");
-        ib_cursor_close(crsr);
-        ib_trx_rollback(trx);
-        return 1;
-    }
-
-    err = ib_tuple_write_u64(ins_tpl, 0, 1234ULL);
-    if (err != DB_SUCCESS) {
-        fprintf(stderr, "ib_tuple_write_u64 failed: %s\n", ib_strerror(err));
-        ib_tuple_delete(ins_tpl);
-        ib_cursor_close(crsr);
-        ib_trx_rollback(trx);
-        return 1;
-    }
-
-    err = ib_cursor_insert_row(crsr, ins_tpl);
-    if (err != DB_SUCCESS) {
-        fprintf(stderr, "ib_cursor_insert_row() failed: %s\n", ib_strerror(err));
-        ib_tuple_delete(ins_tpl);
-        ib_cursor_close(crsr);
-        ib_trx_rollback(trx);
-        return 1;
-    }
-
-    ib_tuple_delete(ins_tpl);
-    err = ib_trx_commit(trx);
-    if (err != DB_SUCCESS) {
-        fprintf(stderr, "commit after insert failed: %s\n", ib_strerror(err));
-    }
-
-    ib_cursor_close(crsr);
-
-// 6. Search for the inserted row
-    trx = ib_trx_begin(IB_TRX_REPEATABLE_READ);
-    ib_cursor_attach_trx(crsr, trx);
-    ib_tpl_t search_tpl = ib_clust_search_tuple_create(crsr);
-    ib_tuple_write_u64(search_tpl, 0, 1234ULL); // Searching by 'id'
-
-    int result;
-    err = ib_cursor_moveto(crsr, search_tpl, IB_CUR_GE, &result);
-    if (err == DB_SUCCESS && result == 0 && ib_cursor_is_positioned(crsr)) {
-        // We found the exact match
-        ib_tpl_t read_tpl = ib_clust_read_tuple_create(crsr);
-        err = ib_cursor_read_row(crsr, read_tpl);
-        if (err == DB_SUCCESS) {
-            char buf[256];
-            ib_ulint_t len = ib_col_copy_value(read_tpl, 1, buf, sizeof(buf)-1);
-            if (len != IB_SQL_NULL) {
-                buf[len] = '\0';
-                printf("Found row: id=1234, name=%s\n", buf);
-            }
-        }
-        ib_tuple_delete(read_tpl);
-    } else {
-        printf("Row not found.\n");
-    }
-
-    // Clean up search
-    ib_tuple_delete(search_tpl);
-
-    // Commit after reading
-    ib_trx_commit(trx);
-
-    // Close cursor and shutdown
-    ib_cursor_close(crsr);
-
-    ib_shutdown(IB_SHUTDOWN_NORMAL);
-    if (err != DB_SUCCESS) {
-        fprintf(stderr, "ib_shutdown() failed: %s\n", ib_strerror(err));
-    }
-
+    err = ib_shutdown(IB_SHUTDOWN_NORMAL);
+    assert(err == DB_SUCCESS);
     return 0;
 }
