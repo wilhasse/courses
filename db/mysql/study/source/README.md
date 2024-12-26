@@ -1,19 +1,19 @@
 # Introduction
 
-Percona MySQL source code generation by OpenAI o1 pro
-
-Prompt
-```
-This is part of Percona MySQL source code 
-Could you explain this code in great detail for me to understand all the concepts. 
-```
+MySQL 8 Parse is a utility project to read ibd files 
+It will read encryped / compressed tablespace
 
 # Main
 
 - [Core source code files](./main_files.md)
 - [main() function class](./sql/mysqld.md)
 - [handler class](./sql/handler.md)
-   
+
+# Utility
+
+- [innochecksum](./innobase/innochecksum.md)
+- [xtrabackup](./innobase/xtrabackup.md)
+
 # InnoDB
 
 - [Embedded InnoDB 1.0.6](./embedded/README.md)
