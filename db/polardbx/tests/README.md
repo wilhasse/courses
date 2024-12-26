@@ -2,7 +2,7 @@
 
 ## [mysql-server](./mysql-server)
 
-Simple mysql server that respond to SELECT 1
+Simple mysql server that respond to SELECT 1 implementing wire protocol
 
 ## [xplugin-test](./xplugin-test)
 
@@ -10,12 +10,13 @@ Testing get a list of databases using native MySQL X Plugin
 
 ## [select-test](./select-test)
 
+Testing a select interacting to PolarDBX Engine XProtocol
 Uses XDataSource to create a connection using method getConnection().  
 XDataSource uses XConnectionManager
 
 ## [calcite-test](./calcite-test)
 
-Simple query test using Apache Calcite
+Simple query breakdown test using Apache Calcite Framework
 
 ## [polardbx-test](./polardbx-test)
 
@@ -43,7 +44,6 @@ General
 
 - [calcite-test](./docs/calcite-test.md)
 
-
 PolarDBX Test
 
 - [ParseSQL.java](./docs/polardbx-test-parse.md)
@@ -52,3 +52,6 @@ PolarDBX Test
 
 - [SimpleServer.java](./docs/polardbx-test-server.md)
 
+Comparison
+
+- [Calcite X PolarDBX (ParseSQL.java)](./docs/compare-sql.md)
