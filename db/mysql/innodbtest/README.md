@@ -6,9 +6,10 @@ The last time Innobase Oy released an Innodb version
 
 [Source Code Analysis (o1-pro)](./../study/source/embedded/README.md)
 
-Compile
+# Compile
 
 ```bash
+git clone https://github.com/nextgres/oss-embedded-innodb
 ./configure
 ./make
 ./make install
