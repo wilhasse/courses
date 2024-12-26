@@ -1,7 +1,7 @@
 # Current
 
 My learning approach has shifted in 2024 from traditional courses to AI-guided education.  
-I have been using o1-pro and claude as primarily learning sources.
+I have been using o1-pro and Claude as primary learning sources."
 
 | Course  | Start | Description |
 |---------|-------|-------------|
