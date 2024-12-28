@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "defaultSchema": "ssb",
+  "schemas": [
+    {
+      "name": "ssb",
+      "type": "custom",
+      "factory": "org.apache.calcite.adapter.innodb.InnodbSchemaFactory",
+      "operand": {
+        "sqlFilePath": ["D:/courses/db/calcite/innodb-example/src/main/resources/ssb-tables.sql"],
+        "ibdDataFileBasePath": "D:/ssb"
+      }
+    }
+  ]
+}
