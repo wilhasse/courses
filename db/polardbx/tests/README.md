@@ -21,9 +21,10 @@ Simple query breakdown test using Apache Calcite Framework
 ## [polardbx-test](./polardbx-test)
 
 A more complete example:
+- QuerySQL.java - Executes a simple query from code against percona-server 
 - ParseSQL.java / TestSchemaManager.java - Parse a query
-- SimpleDbQueryApp.java - Executes a simple query from code against percona-server 
 - SimpleServer.java - Complete server , client connect to a server send a SQL query that runs against percona-server with xprotocol plugin
+- SimpleSplitServer.java - Extends SimpleServer by spliting query to run by chunk
 
 Option to run:
 
@@ -48,7 +49,7 @@ PolarDBX Test
 
 - [ParseSQL.java](./docs/polardbx-test-parse.md)
 
-- [SimpleDBQueryApp.java](./docs/polardbx-test-db-query.md)
+- [QuerySQL.java](./docs/polardbx-test-db-query.md)
 
 - [SimpleServer.java](./docs/polardbx-test-server.md)
 
