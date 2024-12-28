@@ -5,9 +5,10 @@ public class MainLauncher {
     private static final Map<String, CommandInfo> COMMANDS = new LinkedHashMap<>();  // Changed to LinkedHashMap to maintain order
 
     static {
-        COMMANDS.put("query", new CommandInfo(SimpleDbQueryApp.class, "Run database query tests"));
+        COMMANDS.put("query", new CommandInfo(QuerySQL.class, "Run database query tests"));
+        COMMANDS.put("parse", new CommandInfo(ParseSQL.class, "Run SQL parsing tests"));
         COMMANDS.put("server", new CommandInfo(SimpleServer.class, "Run simple server"));
-        COMMANDS.put("parsesql", new CommandInfo(ParseSQL.class, "Run SQL parsing tests"));
+        COMMANDS.put("server2", new CommandInfo(SimpleSplitServer.class, "Run simple server splitting query"));
     }
 
     private static class CommandInfo {
@@ -51,7 +52,7 @@ public class MainLauncher {
 
         String command = args[0];
         CommandInfo info = getCommandInfo(command);
-
+        System.out.println("Command: " + info.classToRun.getName());
         if (info == null) {
             System.out.println("Unknown command: " + command);
             printHelp();

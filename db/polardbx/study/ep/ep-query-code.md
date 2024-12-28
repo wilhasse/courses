@@ -14,7 +14,7 @@ Below is a **conceptual map** showing how you can **connect** the **steps** of t
 
      `FastsqlUtils`
 
-     - Uses the Druid / FastSQL parser to parse text into an AST or `SqlNode`.
+     - Uses the [Alibaba Druid  / FastSQL](https://github.com/alibaba/druid) parser to parse text into an AST or `SqlNode`.
 
   2. `com.alibaba.polardbx.optimizer.parse.visitor.CalciteVisitor`
 

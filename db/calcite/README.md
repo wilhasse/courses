@@ -4,7 +4,6 @@ Apache Calcite
 
 https://calcite.apache.org  
 
-
 # Documentation
 
 - [Background](./docs/background.md)
@@ -14,3 +13,7 @@ https://calcite.apache.org
 - [Algebra](./docs/algebra.md)
 
 - [Adapters](./docs/adapters.md)
+
+# Code
+
+- [Innodb Example](./innodb-example/README.md)

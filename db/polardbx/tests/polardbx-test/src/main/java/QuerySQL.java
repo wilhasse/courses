@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.TimeZone;
 
-public class SimpleDbQueryApp {
+public class QuerySQL {
     
     public static void main(String[] args) {
         try {

@@ -14,6 +14,14 @@
     </properties>
 
     <dependencies>
+
+        <!-- Alibaba Druid -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid</artifactId>
+            <version>1.2.23</version>
+        </dependency>
+
         <!-- PolarDB-X RPC -->
         <dependency>
             <groupId>com.alibaba.polardbx</groupId>
@@ -21,23 +29,17 @@
             <version>${polardbx.version}</version>
         </dependency>
 
+        <!-- PolarDB-X Net -->
+        <dependency>
+            <groupId>com.alibaba.polardbx</groupId>
+            <artifactId>polardbx-net</artifactId>
+            <version>${polardbx.version}</version>
+        </dependency>
+
         <!-- PolarDB-X Optimizer -->
         <dependency>
             <groupId>com.alibaba.polardbx</groupId>
             <artifactId>polardbx-optimizer</artifactId>
-            <version>${polardbx.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.alibaba.polardbx</groupId>
-            <artifactId>polardbx-gms</artifactId>
-            <version>${polardbx.version}</version>
-        </dependency>
-
-        <!-- PolarDB-X Parser -->
-        <dependency>
-            <groupId>com.alibaba.polardbx</groupId>
-            <artifactId>polardbx-parser</artifactId>
             <version>${polardbx.version}</version>
         </dependency>
 
@@ -87,6 +89,16 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <encoding>UTF-8</encoding>
+                </configuration>
             </plugin>
         </plugins>
     </build>
