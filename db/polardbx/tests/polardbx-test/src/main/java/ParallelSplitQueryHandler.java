@@ -24,18 +24,17 @@ public class ParallelSplitQueryHandler extends SimpleSplitQueryHandler {
     protected void doChunkedQuery(SQLSelectStatement originalSelect) {
         try {
             List<String> chunks = new ArrayList<>();
-            chunks.add(buildChunkSQL(originalSelect, "< 5"));
-            chunks.add(buildChunkSQL(originalSelect, ">= 5 AND c_custkey < 10"));
-            chunks.add(buildChunkSQL(originalSelect, ">= 10 AND c_custkey < 15"));
-            chunks.add(buildChunkSQL(originalSelect, ">= 15"));
+            chunks.add(buildChunkSQL(originalSelect, "< 7500"));
+            chunks.add(buildChunkSQL(originalSelect, ">= 7500 AND c_custkey < 15000"));
+            chunks.add(buildChunkSQL(originalSelect, ">= 15000 AND c_custkey < 22500"));
+            chunks.add(buildChunkSQL(originalSelect, ">= 22500"));
 
             System.out.println("Created " + chunks.size() + " chunks:");
-            for (String sql : chunks) {
-                System.out.println("Chunk SQL: " + sql);
-            }
+            chunks.forEach(sql -> System.out.println("Chunk SQL: " + sql));
 
-            List<Future<List<List<Object>>>> futures = new ArrayList<>();
-            AtomicInteger chunkIndex = new AtomicInteger(0); // To track chunk execution
+            // Execute all chunks in parallel, but keep track of XResults
+            List<Future<ChunkResult>> futures = new ArrayList<>();
+            AtomicInteger chunkIndex = new AtomicInteger(0);
 
             for (String sql : chunks) {
                 futures.add(executorService.submit(() -> {
@@ -49,7 +48,7 @@ public class ParallelSplitQueryHandler extends SimpleSplitQueryHandler {
                         XResult result = conn.execQuery(sql);
                         List<List<Object>> rows = readAllRows(result);
                         System.out.println("Finished chunk " + index + " with " + rows.size() + " rows");
-                        return rows;
+                        return new ChunkResult(result, rows);
                     } catch (Exception e) {
                         System.out.println("Error executing chunk " + index + ": " + e.getMessage());
                         throw new RuntimeException("Error executing chunk: " + sql, e);
@@ -57,14 +56,21 @@ public class ParallelSplitQueryHandler extends SimpleSplitQueryHandler {
                 }));
             }
 
-            System.out.println("All chunks submitted, waiting for results...");
-
             // Collect results with timeout
             List<List<List<Object>>> chunkResults = new ArrayList<>();
+            XResult metadataResult = null;
+
             for (int i = 0; i < futures.size(); i++) {
                 try {
                     System.out.println("Waiting for chunk " + i + " result...");
-                    chunkResults.add(futures.get(i).get(30, TimeUnit.SECONDS));
+                    ChunkResult chunkResult = futures.get(i).get(30, TimeUnit.SECONDS);
+
+                    // Store the first completed XResult for metadata
+                    if (metadataResult == null) {
+                        metadataResult = chunkResult.result;
+                    }
+
+                    chunkResults.add(chunkResult.rows);
                     System.out.println("Received chunk " + i + " result");
                 } catch (Exception e) {
                     System.out.println("Error getting chunk " + i + " result: " + e.getMessage());
@@ -72,22 +78,31 @@ public class ParallelSplitQueryHandler extends SimpleSplitQueryHandler {
                 }
             }
 
-            System.out.println("All chunks completed, merging results...");
+            if (metadataResult == null) {
+                throw new RuntimeException("No chunk completed successfully to get metadata");
+            }
 
-            // Merge results using priority queue
+            System.out.println("All chunks completed, merging results...");
             List<List<Object>> mergedRows = mergeChunks(chunkResults);
             System.out.println("Merged " + mergedRows.size() + " total rows");
 
-            // Send response using metadata from first chunk
-            System.out.println("Getting metadata using first chunk query");
-            XResult metadataResult = connectionPool.getNextConnection()
-                    .execQuery(chunks.get(0));
             sendMergedResponse(metadataResult, mergedRows);
 
         } catch (Exception e) {
             System.out.println("Error in parallel execution: " + e.getMessage());
             e.printStackTrace();
             sendErrorResponse("Error in parallel execution: " + e.getMessage());
+        }
+    }
+
+    // Helper class to keep XResult and rows together
+    private static class ChunkResult {
+        final XResult result;
+        final List<List<Object>> rows;
+
+        ChunkResult(XResult result, List<List<Object>> rows) {
+            this.result = result;
+            this.rows = rows;
         }
     }
 

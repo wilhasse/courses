@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "/home/cslog/courses/db/heap"
+    "cmake.sourceDirectory": "/home/cslog/courses/db/heap",
+    "java.configuration.updateBuildConfiguration": "interactive"
 }
