@@ -11,45 +11,210 @@ import com.alibaba.polardbx.rpc.result.XResult;
 import com.alibaba.polardbx.rpc.result.XResultUtil;
 import com.mysql.cj.polarx.protobuf.PolarxResultset;
 
-import java.util.TimeZone;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SimpleQueryHandler implements QueryHandler {
     protected final DebugConnection connection;
-    protected final XConnection polardbConnection;
+    protected final MultiServerConnectionPool connectionPool;
     protected final XConnectionManager manager;
+    private static final int POOL_SIZE_PER_SERVER = 1;
+
+    protected class ServerInfo {
+        final String host;
+        final int port;
+        final String username;
+        final String password;
+        final String defaultDB;
+
+        public ServerInfo(String host, int port, String username, String password, String defaultDB) {
+            this.host = host;
+            this.port = port;
+            this.username = username;
+            this.password = password;
+            this.defaultDB = defaultDB;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ServerInfo that = (ServerInfo) o;
+            return port == that.port &&
+                    Objects.equals(host, that.host) &&
+                    Objects.equals(username, that.username);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(host, port, username);
+        }
+    }
+
+    protected class MultiServerConnectionPool {
+        private final Map<ServerInfo, List<XConnection>> serverConnections;
+        private final List<ServerInfo> serverList;
+        private final AtomicInteger nextServerIndex = new AtomicInteger(0);
+        private final AtomicInteger nextConnectionIndex = new AtomicInteger(0);
+        private final Object connectionLock = new Object();
+
+        public MultiServerConnectionPool() {
+            this.serverConnections = new ConcurrentHashMap<>();
+            this.serverList = Collections.synchronizedList(new ArrayList<>());
+        }
+
+        public XConnection getNextConnection() {
+            synchronized(connectionLock) {
+                if (serverList.isEmpty()) {
+                    throw new IllegalStateException("No servers available in the pool");
+                }
+
+                // Round-robin between servers
+                int currentServerIndex = nextServerIndex.getAndIncrement() % serverList.size();
+                ServerInfo server = serverList.get(currentServerIndex);
+
+                List<XConnection> connections = serverConnections.get(server);
+                if (connections == null || connections.isEmpty()) {
+                    throw new IllegalStateException("No connections available for server " +
+                            server.host + ":" + server.port);
+                }
+
+                // Round-robin between connections
+                int connIndex = nextConnectionIndex.getAndIncrement() % connections.size();
+                XConnection conn = connections.get(connIndex);
+
+                // Create new connection if current one is invalid
+                try {
+                    if (!isConnectionValid(conn)) {
+                        conn = createConnection(server);
+                        connections.set(connIndex, conn);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error with connection to " + server.host + ": " + e.getMessage());
+                    // Try to create a new connection
+                    try {
+                        conn = createConnection(server);
+                        connections.set(connIndex, conn);
+                    } catch (Exception e2) {
+                        throw new RuntimeException("Failed to create new connection: " + e2.getMessage());
+                    }
+                }
+
+                return conn;
+            }
+        }
+
+        private boolean isConnectionValid(XConnection conn) {
+            try {
+                XResult result = conn.execQuery("SELECT 1");
+                // Make sure to finish fetching all results
+                while (result.next() != null) {
+                    // Consume all results
+                }
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        private XConnection createConnection(ServerInfo serverInfo) throws Exception {
+            synchronized(connectionLock) {
+                XConnection conn = manager.getConnection(
+                        serverInfo.host, serverInfo.port,
+                        serverInfo.username, serverInfo.password,
+                        serverInfo.defaultDB, 30000 * 1000000L
+                );
+                conn.setStreamMode(true);
+
+                // Execute USE statement and consume all results
+                XResult result = conn.execQuery("USE " + serverInfo.defaultDB);
+                while (result.next() != null) {
+                    // Consume all results
+                }
+
+                return conn;
+            }
+        }
+
+        public void addServer(ServerInfo serverInfo) {
+            synchronized(connectionLock) {
+                if (!serverConnections.containsKey(serverInfo)) {
+                    try {
+                        manager.initializeDataSource(serverInfo.host, serverInfo.port,
+                                serverInfo.username, serverInfo.password, "test-instance");
+
+                        List<XConnection> connections = new ArrayList<>(POOL_SIZE_PER_SERVER);
+                        for (int i = 0; i < POOL_SIZE_PER_SERVER; i++) {
+                            try {
+                                XConnection conn = createConnection(serverInfo);
+                                if (conn != null) {
+                                    connections.add(conn);
+                                }
+                            } catch (Exception e) {
+                                System.err.println("Failed to create connection " + i +
+                                        " for server " + serverInfo.host + ": " + e.getMessage());
+                            }
+                        }
+
+                        if (!connections.isEmpty()) {
+                            serverConnections.put(serverInfo, connections);
+                            serverList.add(serverInfo);
+                            System.out.println("Added server " + serverInfo.host +
+                                    " with " + connections.size() + " connections");
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Failed to initialize server " +
+                                serverInfo.host + ": " + e.getMessage());
+                    }
+                }
+            }
+        }
+
+        public void close() {
+            synchronized(connectionLock) {
+                for (Map.Entry<ServerInfo, List<XConnection>> entry : serverConnections.entrySet()) {
+                    ServerInfo server = entry.getKey();
+                    List<XConnection> connections = entry.getValue();
+
+                    for (XConnection conn : connections) {
+                        try {
+                            if (conn != null) {
+                                conn.close();
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error closing connection to " +
+                                    server.host + ": " + e);
+                        }
+                    }
+
+                    manager.deinitializeDataSource(server.host, server.port,
+                            server.username, server.password);
+                }
+            }
+        }
+    }
 
     public SimpleQueryHandler(DebugConnection connection) {
         this.connection = connection;
         this.manager = XConnectionManager.getInstance();
-        System.out.println("Created query handler for connection: " + connection);
+        this.connectionPool = new MultiServerConnectionPool();
 
         try {
-            String host = "10.1.1.148";
-            int port = 33660;
-            String username = "teste";
-            String password = "teste";
-            String defaultDB = "ssb";
-            long timeoutNanos = 30000 * 1000000L;
+            // Add servers with error handling
+            ServerInfo mainServer = new ServerInfo(
+                    "10.1.1.148", 33660, "teste", "teste", "ssb"
+            );
+            connectionPool.addServer(mainServer);
 
-            manager.initializeDataSource(host, port, username, password, "test-instance");
-            this.polardbConnection = manager.getConnection(host, port, username, password, defaultDB, timeoutNanos);
-            this.polardbConnection.setStreamMode(true);
-            this.polardbConnection.execUpdate("USE " + defaultDB);
+            ServerInfo secondServer = new ServerInfo(
+                    "10.1.1.158", 33660, "teste", "teste", "ssb"
+            );
+            connectionPool.addServer(secondServer);
 
-            System.out.println("Connected to PolarDB-X engine");
+            System.out.println("Successfully initialized connection pool");
         } catch (Exception e) {
-            throw new RuntimeException("Failed to connect to PolarDB-X: " + e.getMessage(), e);
-        }
-    }
-
-    public void close() {
-        try {
-            if (polardbConnection != null) {
-                polardbConnection.close();
-            }
-            manager.deinitializeDataSource("10.1.1.148", 33660, "teste", "teste");
-        } catch (Exception e) {
-            System.err.println("Error closing PolarDB-X connection: " + e);
+            throw new RuntimeException("Failed to initialize connection pool: " + e.getMessage());
         }
     }
 
@@ -57,7 +222,7 @@ public class SimpleQueryHandler implements QueryHandler {
     public void query(String sql) {
         System.out.println("Received query: " + sql);
         try {
-            XResult result = polardbConnection.execQuery(sql);
+            XResult result = connectionPool.getNextConnection().execQuery(sql);
             sendResultSetResponse(result);
         } catch (Exception e) {
             System.err.println("Error executing query on PolarDB-X: " + e.getMessage());
@@ -149,8 +314,8 @@ public class SimpleQueryHandler implements QueryHandler {
             proxy.packetBegin();
 
             ErrorPacket err = new ErrorPacket();
-            err.packetId = (byte)1;
-            err.errno = (short)1064;
+            err.packetId = (byte) 1;
+            err.errno = (short) 1064;
             err.message = message.getBytes();
             err.write(proxy);
 
@@ -168,5 +333,10 @@ public class SimpleQueryHandler implements QueryHandler {
         // Cast to byte will preserve the correct bits for MySQL protocol
         // 253 as int -> 11111101 in binary -> -3 as signed byte
         // When transmitted, it will be read correctly as 253 by MySQL clients
-        return (byte) Fields.FIELD_TYPE_VAR_STRING;          }
+        return (byte) Fields.FIELD_TYPE_VAR_STRING;
+    }
+
+    public void close() {
+
+    }
 }

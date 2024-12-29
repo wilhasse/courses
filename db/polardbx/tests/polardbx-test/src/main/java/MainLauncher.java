@@ -8,7 +8,8 @@ public class MainLauncher {
         COMMANDS.put("query", new CommandInfo(QuerySQL.class, "Run database query tests"));
         COMMANDS.put("parse", new CommandInfo(ParseSQL.class, "Run SQL parsing tests"));
         COMMANDS.put("server", new CommandInfo(SimpleServer.class, "Run simple server"));
-        COMMANDS.put("server2", new CommandInfo(SimpleSplitServer.class, "Run simple server splitting query"));
+        COMMANDS.put("server_split", new CommandInfo(SimpleSplitServer.class, "Run simple server splitting query"));
+        COMMANDS.put("server_parallel", new CommandInfo(ParallelSplitServer.class, "Run parallel server splitting query"));
     }
 
     private static class CommandInfo {
@@ -50,6 +51,7 @@ public class MainLauncher {
             return;
         }
 
+        // Class info
         String command = args[0];
         CommandInfo info = getCommandInfo(command);
         System.out.println("Command: " + info.classToRun.getName());
@@ -59,6 +61,7 @@ public class MainLauncher {
             return;
         }
 
+        // Args
         String[] remainingArgs = new String[args.length - 1];
         System.arraycopy(args, 1, remainingArgs, 0, args.length - 1);
 

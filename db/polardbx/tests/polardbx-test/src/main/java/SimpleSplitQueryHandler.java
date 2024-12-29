@@ -52,7 +52,7 @@ public class SimpleSplitQueryHandler extends SimpleQueryHandler {
 
         // 4) Fallback: if not chunkable, just run directly
         try {
-            XResult result = polardbConnection.execQuery(sql);
+            XResult result = connectionPool.getNextConnection().execQuery(sql);
             sendResultSetResponse(result);
         } catch (Exception e) {
             e.printStackTrace();
@@ -60,7 +60,7 @@ public class SimpleSplitQueryHandler extends SimpleQueryHandler {
         }
     }
 
-    private boolean canChunk(SQLSelectStatement selectStmt) {
+    protected boolean canChunk(SQLSelectStatement selectStmt) {
         // Simplify to a single SELECT query block
         if (!(selectStmt.getSelect().getQuery() instanceof SQLSelectQueryBlock)) {
             return false;
@@ -93,7 +93,7 @@ public class SimpleSplitQueryHandler extends SimpleQueryHandler {
         return true;
     }
 
-    private void doChunkedQuery(SQLSelectStatement originalSelect) {
+    protected void doChunkedQuery(SQLSelectStatement originalSelect) {
         // In a real solution, you'd rewrite the AST carefully.
         // For demonstration, we just build two new strings by appending
         // the chunked conditions.
@@ -112,8 +112,8 @@ public class SimpleSplitQueryHandler extends SimpleQueryHandler {
             // 1) Execute both queries on two separate "backends"
             //    - This example still uses the same polardbConnection, but you
             //      could have two different XConnection objects, or multiple servers
-            XResult result1 = polardbConnection.execQuery(sqlChunk1);
-            XResult result2 = polardbConnection.execQuery(sqlChunk2);
+            XResult result1 = connectionPool.getNextConnection().execQuery(sqlChunk1);
+            XResult result2 = connectionPool.getNextConnection().execQuery(sqlChunk1);
 
             // 2) Merge the results in memory (since we have an ORDER BY on col2)
             //    - We'll do a naive 2-way merge
@@ -130,7 +130,7 @@ public class SimpleSplitQueryHandler extends SimpleQueryHandler {
         }
     }
 
-    private String buildChunkSQL(SQLSelectStatement original, String rangeCondition) {
+    protected String buildChunkSQL(SQLSelectStatement original, String rangeCondition) {
         // Convert AST back to string, then tack on "AND c_custkey < 10" (or ">= 10")
         // A real approach would manipulate the AST instead of just string hacks.
 
@@ -156,7 +156,7 @@ public class SimpleSplitQueryHandler extends SimpleQueryHandler {
         return beforeOrder + afterOrder;
     }
 
-    private List<List<Object>> mergeOrderedResults(XResult result1, XResult result2) throws Exception {
+    protected List<List<Object>> mergeOrderedResults(XResult result1, XResult result2) throws Exception {
         // Pull row data from each result into memory (for demonstration).
         // In reality, you'd stream them or do a smarter merge.
         List<List<Object>> rows1 = readAllRows(result1);
@@ -187,7 +187,7 @@ public class SimpleSplitQueryHandler extends SimpleQueryHandler {
         return merged;
     }
 
-    private List<List<Object>> readAllRows(XResult xres) throws Exception {
+    protected List<List<Object>> readAllRows(XResult xres) throws Exception {
         List<List<Object>> rows = new ArrayList<>();
         while (xres.next() != null) {
             // each row is stored in xres.current().getRow()
@@ -207,7 +207,7 @@ public class SimpleSplitQueryHandler extends SimpleQueryHandler {
         return rows;
     }
 
-    private void sendMergedResponse(XResult chunk1Meta, List<List<Object>> mergedRows) {
+    protected void sendMergedResponse(XResult chunk1Meta, List<List<Object>> mergedRows) {
         ByteBufferHolder buffer = null;
         try {
             byte packetId = 0;

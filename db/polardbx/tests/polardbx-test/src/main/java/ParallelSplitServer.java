@@ -3,9 +3,9 @@ import com.alibaba.polardbx.net.factory.FrontendConnectionFactory;
 
 import java.nio.channels.SocketChannel;
 
-public class SimpleSplitServer extends SimpleServer {
+public class ParallelSplitServer extends SimpleServer {
 
-    private static final SimpleSplitServer INSTANCE_SPLIT = new SimpleSplitServer();
+    private static final ParallelSplitServer INSTANCE_SPLIT = new ParallelSplitServer();
 
     public static SimpleServer getInstance() {
         return INSTANCE_SPLIT;
@@ -16,7 +16,7 @@ public class SimpleSplitServer extends SimpleServer {
         protected FrontendConnection getConnection(SocketChannel channel) {
             System.out.println("Creating new connection for channel: " + channel);
             DebugConnection c = new DebugConnection(channel);
-            c.setQueryHandler(new SimpleSplitQueryHandler(c));
+            c.setQueryHandler(new ParallelSplitQueryHandler(c));
             return c;
         }
     }

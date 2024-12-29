@@ -114,9 +114,11 @@ public class DebugConnection extends FrontendConnection {
     @Override
     protected void cleanup() {
         try {
-            //queryHandler.closeConnection();
+            if (queryHandler instanceof SimpleQueryHandler) {
+                ((SimpleQueryHandler) queryHandler).close();
+            }
         } catch (Exception e) {
-            logger.error("Error closing PolarDB-X connection", e);
+            logger.error("Error closing query handler", e);
         }
         super.cleanup();
     }

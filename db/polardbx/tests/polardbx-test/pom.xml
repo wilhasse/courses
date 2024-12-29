@@ -14,51 +14,65 @@
     </properties>
 
     <dependencies>
-
         <!-- Alibaba Druid -->
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>druid</artifactId>
             <version>1.2.23</version>
         </dependency>
-
         <!-- PolarDB-X RPC -->
         <dependency>
             <groupId>com.alibaba.polardbx</groupId>
             <artifactId>polardbx-rpc</artifactId>
             <version>${polardbx.version}</version>
         </dependency>
-
         <!-- PolarDB-X Net -->
         <dependency>
             <groupId>com.alibaba.polardbx</groupId>
             <artifactId>polardbx-net</artifactId>
             <version>${polardbx.version}</version>
         </dependency>
-
         <!-- PolarDB-X Optimizer -->
         <dependency>
             <groupId>com.alibaba.polardbx</groupId>
             <artifactId>polardbx-optimizer</artifactId>
             <version>${polardbx.version}</version>
         </dependency>
-
         <!-- PolarDB-X Common -->
         <dependency>
             <groupId>com.alibaba.polardbx</groupId>
             <artifactId>polardbx-common</artifactId>
             <version>${polardbx.version}</version>
         </dependency>
-
         <!-- Protocol Buffers -->
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
             <version>3.19.4</version>
         </dependency>
-    </dependencies>
+
+	    <!-- SLF4J API -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+	        <artifactId>slf4j-api</artifactId>
+		    <version>1.7.36</version>
+		</dependency>
+
+		<!-- Logback -->
+	    <dependency>
+       	    <groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>1.2.11</version>
+		</dependency>
+	</dependencies>
 
     <build>
+	    <resources>
+			<resource>
+				<directory>src/main/resources</directory>
+		        <filtering>true</filtering>
+			</resource>
+		</resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
