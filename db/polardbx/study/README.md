@@ -11,6 +11,7 @@ https://github.com/polardb
 - [Sartup Process](./cn/cn_article_2.md)
 - [CDC Code Structure](./cn/cn_article_3.md)
 - [Life of SQL](./cn/cn_article_4.md)
+- [Life of Private Protocol](./cn/cn_article_7.md)
 
 # Analyzing Polarx RPC Plugin
 
