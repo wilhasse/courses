@@ -11,7 +11,7 @@ public class ParallelSplitServer extends SimpleServer {
         return INSTANCE_SPLIT;
     }
 
-    class DebugSplitConnectionFactory extends FrontendConnectionFactory {
+    class ParallelSplitConnectionFactory extends FrontendConnectionFactory {
         @Override
         protected FrontendConnection getConnection(SocketChannel channel) {
             System.out.println("Creating new connection for channel: " + channel);
@@ -23,7 +23,7 @@ public class ParallelSplitServer extends SimpleServer {
 
     @Override
     protected FrontendConnectionFactory createConnectionFactory() {
-        return new DebugSplitConnectionFactory();
+        return new ParallelSplitConnectionFactory();
     }
 
     public static void main(String[] args) {

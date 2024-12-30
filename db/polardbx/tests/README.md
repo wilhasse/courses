@@ -47,6 +47,8 @@ General
 
 PolarDBX Test
 
+- [Class Diagram](./docs/polardbx-test-diagram.md)
+
 - [ParseSQL.java](./docs/polardbx-test-parse.md)
 
 - [QuerySQL.java](./docs/polardbx-test-db-query.md)
