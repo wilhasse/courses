@@ -1,0 +1,29 @@
+LOAD DATA INFILE '/data2/doris/tools/ssb-tools/bin/ssb-data/customer.tbl' 
+INTO TABLE customer 
+FIELDS TERMINATED BY '|' 
+LINES TERMINATED BY '\n';
+
+truncate table customer;
+truncate table date;
+truncate table lineorder;
+truncate table part;
+truncate table supplier;
+
+SET GLOBAL innodb_flush_log_at_trx_commit = 0;
+SET GLOBAL foreign_key_checks = 0;
+SET GLOBAL unique_checks = 0;
+
+mysqlimport --local --fields-terminated-by='|' --lines-terminated-by='\n' -u root ssb /data2/doris/tools/ssb-tools/bin/ssb-data/customer.tbl
+mysqlimport --local --fields-terminated-by='|' --lines-terminated-by='\n' -u root ssb /data2/doris/tools/ssb-tools/bin/ssb-data/date.tbl
+mysqlimport --local --fields-terminated-by='|' --lines-terminated-by='\n' -u root ssb /data2/doris/tools/ssb-tools/bin/ssb-data/part.tbl
+mysqlimport --local --fields-terminated-by='|' --lines-terminated-by='\n' -u root ssb /data2/doris/tools/ssb-tools/bin/ssb-data/supplier.tbl
+mysqlimport --local --fields-terminated-by='|' --lines-terminated-by='\n' -u root ssb /data2/doris/tools/ssb-tools/bin/ssb-data/lineorder.tbl.1
+mysqlimport --local --fields-terminated-by='|' --lines-terminated-by='\n' -u root ssb /data2/doris/tools/ssb-tools/bin/ssb-data/lineorder.tbl.2
+mysqlimport --local --fields-terminated-by='|' --lines-terminated-by='\n' -u root ssb /data2/doris/tools/ssb-tools/bin/ssb-data/lineorder.tbl.3
+mysqlimport --local --fields-terminated-by='|' --lines-terminated-by='\n' -u root ssb /data2/doris/tools/ssb-tools/bin/ssb-data/lineorder.tbl.4
+mysqlimport --local --fields-terminated-by='|' --lines-terminated-by='\n' -u root ssb /data2/doris/tools/ssb-tools/bin/ssb-data/lineorder.tbl.5
+mysqlimport --local --fields-terminated-by='|' --lines-terminated-by='\n' -u root ssb /data2/doris/tools/ssb-tools/bin/ssb-data/lineorder.tbl.6
+mysqlimport --local --fields-terminated-by='|' --lines-terminated-by='\n' -u root ssb /data2/doris/tools/ssb-tools/bin/ssb-data/lineorder.tbl.7
+mysqlimport --local --fields-terminated-by='|' --lines-terminated-by='\n' -u root ssb /data2/doris/tools/ssb-tools/bin/ssb-data/lineorder.tbl.8
+mysqlimport --local --fields-terminated-by='|' --lines-terminated-by='\n' -u root ssb /data2/doris/tools/ssb-tools/bin/ssb-data/lineorder.tbl.9
+mysqlimport --local --fields-terminated-by='|' --lines-terminated-by='\n' -u root ssb /data2/doris/tools/ssb-tools/bin/ssb-data/lineorder.tbl.10

@@ -2,8 +2,6 @@
 
 PolarDB-X Plugin Java Test
 
-[Explaining code by o1-pro](./code_overview.md)
-
 # Build
 
 ```bash
@@ -22,8 +20,10 @@ Choosing the class to run:
 D:\courses\db\polardbx\tests\polardbx-test>java -jar target/polardbx-test-1.0-SNAPSHOT.jar
 Please provide a command number or name:
   1) query        - Run database query tests
-  2) server       - Run simple server
-  3) parsesql     - Run SQL parsing tests
+  2) parse        - Run SQL parsing tests
+  3) server       - Run simple server
+  4) server_split - Run simple server splitting query
+  5) server_parallel - Run server parallel splitting query
 ```
 
 # Direct Query (XProtocol)
@@ -38,6 +38,19 @@ Initializing connection to 10.1.1.148:33660
 Attempting to establish connection...
 
 Enter SQL query (or 'exit' to quit):
+```
+
+# Parse SQL
+
+``` bash
+D:\courses\db\polardbx\tests\polardbx-test>java -jar target/polardbx-test-1.0-SNAPSHOT.jar 2 "SELECT User FROM user WHERE User = 'root'"
+21:21:52.052 [main] INFO com.alibaba.polardbx.common.utils.logger.LoggerFactory - using logger: com.alibaba.polardbx.common.utils.logger.slf4j.Slf4jLoggerAdapter
+Parsed AST: SELECT `User`
+FROM `user`
+WHERE (`User` = 'root')
+Validated SQL: SELECT `user`.`User`
+FROM `user`
+WHERE (`user`.`User` = 'root')
 ```
 
 # Simple Server
@@ -85,15 +98,3 @@ mysql> show processlist;
 | 3763 | teste| 10.1.1.139:60876 | ssb | Query   |   9 | executing| PLUGIN: select count(*) from lineorder | 8725 |   0 |  0 |
 ```
 
-# Parse SQL
-
-``` bash
-D:\courses\db\polardbx\tests\polardbx-test>java -jar target/polardbx-test-1.0-SNAPSHOT.jar 3 "SELECT User FROM user WHERE User = 'root'"
-21:21:52.052 [main] INFO com.alibaba.polardbx.common.utils.logger.LoggerFactory - using logger: com.alibaba.polardbx.common.utils.logger.slf4j.Slf4jLoggerAdapter
-Parsed AST: SELECT `User`
-FROM `user`
-WHERE (`User` = 'root')
-Validated SQL: SELECT `user`.`User`
-FROM `user`
-WHERE (`user`.`User` = 'root')
-```

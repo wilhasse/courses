@@ -53,6 +53,10 @@ PolarDBX Test
 
 - [SimpleServer.java](./docs/polardbx-test-server.md)
 
+- [SimpleSplitServer.java](./docs/polardbx-test-split-server.md)
+
+- [ParallelSplitServer.java](./docs/polardbx-test-parallel-server.md)
+
 Comparison
 
 - [Calcite X PolarDBX (ParseSQL.java)](./docs/compare-sql.md)
