@@ -203,12 +203,12 @@ public class SimpleQueryHandler implements QueryHandler {
         try {
             // Add servers with error handling
             ServerInfo mainServer = new ServerInfo(
-                    "10.1.1.148", 33660, "teste", "teste", "ssb"
+                    "10.1.1.156", 33660, "teste", "teste", "ssb"
             );
             connectionPool.addServer(mainServer);
 
             ServerInfo secondServer = new ServerInfo(
-                    "10.1.1.158", 33660, "teste", "teste", "ssb"
+                    "10.1.1.157", 33660, "teste", "teste", "ssb"
             );
             connectionPool.addServer(secondServer);
 

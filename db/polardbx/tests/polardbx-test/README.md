@@ -98,3 +98,41 @@ mysql> show processlist;
 | 3763 | teste| 10.1.1.139:60876 | ssb | Query   |   9 | executing| PLUGIN: select count(*) from lineorder | 8725 |   0 |  0 |
 ```
 
+# Simple Split Server
+
+Split queries and run sequentially:
+
+1. **SQL Parsing (via Alibaba Druid)**  
+   - Receives an SQL query string from the client.  
+   - Parses the query using `MySqlStatementParser` (from Alibaba Druid).  
+
+2. **Chunkable Query Check**  
+   - Inspects if the parsed statement is a single-table `SELECT` with a particular order-by column.  
+   - Determines whether the query can be “chunked” by primary key for demonstration (e.g., table named `customer`, ordered by `c_name`).
+
+3. **Query Splitting**  
+   - If “chunkable” constructs two modified SQL queries with explicit `WHERE` conditions on the primary key to partition the data range.
+   - Dispatches the split queries to the database (potentially different backend connections).  
+   - For unchunkable queries, simply runs the query as-is.
+
+4. **Merging Results**  
+   - Retrieves rows from each chunked query.  
+   - Performs an in-memory merge of the partial results based on the sorted column.  
+   - This simulates a “merge” step for combining partial data sets.
+
+# Parallel Split Server
+
+Split queries and run in parallel:
+
+1. **Multi-Threaded Execution**  
+   - Uses an `ExecutorService` with a fixed thread pool (`NUM_THREADS = X`).  
+   - Submits each chunk’s query to be executed concurrently instead of running them one by one.
+
+2. **Asynchronous Chunk Processing**  
+   - Each chunk’s execution is handled via a `Future<ChunkResult>`.  
+   - The main thread waits for completion (`.get()`) and consolidates results.
+
+Note: In order to retrieve the results it does sequentially if it finishes or not:  
+The main thread simply blocks when retrieving them in a specific order, but while it’s blocked for chunk i, chunk i+1 is still running in parallel.
+
+Improvement: [CompletionService and Completable Future](./parallel_execution.md)

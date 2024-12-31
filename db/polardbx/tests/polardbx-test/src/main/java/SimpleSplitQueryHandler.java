@@ -23,6 +23,11 @@ public class SimpleSplitQueryHandler extends SimpleQueryHandler {
 
     @Override
     public void query(String sql) {
+
+        // Convert, hint I get: SQL parse error: TODO
+        if (sql != null && sql.equals("SHOW /*!50002 GLOBAL */ STATUS")) {
+            sql = "SHOW STATUS";
+        }
         System.out.println("Received query: " + sql);
 
         // 1) Parse with Alibaba Druid

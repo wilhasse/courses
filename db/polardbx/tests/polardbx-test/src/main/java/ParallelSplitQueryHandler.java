@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ParallelSplitQueryHandler extends SimpleSplitQueryHandler {
     private final ExecutorService executorService;
-    private static final int NUM_THREADS = 4;
+    private static final int NUM_THREADS = 2;
 
     public ParallelSplitQueryHandler(DebugConnection connection) {
         super(connection);
@@ -23,73 +23,77 @@ public class ParallelSplitQueryHandler extends SimpleSplitQueryHandler {
     @Override
     protected void doChunkedQuery(SQLSelectStatement originalSelect) {
         try {
+            TimestampLogger.startTimer("fullQuery");
+
             List<String> chunks = new ArrayList<>();
-            chunks.add(buildChunkSQL(originalSelect, "< 7500"));
-            chunks.add(buildChunkSQL(originalSelect, ">= 7500 AND c_custkey < 15000"));
-            chunks.add(buildChunkSQL(originalSelect, ">= 15000 AND c_custkey < 22500"));
-            chunks.add(buildChunkSQL(originalSelect, ">= 22500"));
+            chunks.add(buildChunkSQL(originalSelect, "< 3000000"));
+            chunks.add(buildChunkSQL(originalSelect, ">= 3000000 AND c_custkey <6000000"));
 
-            System.out.println("Created " + chunks.size() + " chunks:");
-            chunks.forEach(sql -> System.out.println("Chunk SQL: " + sql));
+            TimestampLogger.logWithTime("Created " + chunks.size() + " chunks:");
+            chunks.forEach(sql -> TimestampLogger.logWithTime("Chunk SQL: " + sql));
 
-            // Execute all chunks in parallel, but keep track of XResults
             List<Future<ChunkResult>> futures = new ArrayList<>();
             AtomicInteger chunkIndex = new AtomicInteger(0);
 
             for (String sql : chunks) {
                 futures.add(executorService.submit(() -> {
                     int index = chunkIndex.getAndIncrement();
-                    System.out.println("Executing chunk " + index + " on thread " +
+                    String chunkId = "chunk" + index;
+                    TimestampLogger.startTimer(chunkId);
+
+                    TimestampLogger.logWithTime("Executing chunk " + index + " on thread " +
                             Thread.currentThread().getName());
 
                     XConnection conn = connectionPool.getNextConnection();
                     try {
-                        System.out.println("Starting execution of chunk " + index + ": " + sql);
+                        TimestampLogger.logWithTime("Starting execution of chunk " + index + ": " + sql);
                         XResult result = conn.execQuery(sql);
                         List<List<Object>> rows = readAllRows(result);
-                        System.out.println("Finished chunk " + index + " with " + rows.size() + " rows");
+                        TimestampLogger.logWithDuration(chunkId, "Finished chunk " + index + " with " + rows.size() + " rows");
                         return new ChunkResult(result, rows);
                     } catch (Exception e) {
-                        System.out.println("Error executing chunk " + index + ": " + e.getMessage());
+                        TimestampLogger.logWithTime("Error executing chunk " + index + ": " + e.getMessage());
                         throw new RuntimeException("Error executing chunk: " + sql, e);
                     }
                 }));
             }
 
-            // Collect results with timeout
             List<List<List<Object>>> chunkResults = new ArrayList<>();
             XResult metadataResult = null;
 
+            TimestampLogger.startTimer("resultCollection");
             for (int i = 0; i < futures.size(); i++) {
                 try {
-                    System.out.println("Waiting for chunk " + i + " result...");
-                    ChunkResult chunkResult = futures.get(i).get(30, TimeUnit.SECONDS);
+                    TimestampLogger.logWithTime("Waiting for chunk " + i + " result...");
+                    ChunkResult chunkResult = futures.get(i).get(300, TimeUnit.SECONDS);
 
-                    // Store the first completed XResult for metadata
                     if (metadataResult == null) {
                         metadataResult = chunkResult.result;
                     }
 
                     chunkResults.add(chunkResult.rows);
-                    System.out.println("Received chunk " + i + " result");
+                    TimestampLogger.logWithTime("Received chunk " + i + " result");
                 } catch (Exception e) {
-                    System.out.println("Error getting chunk " + i + " result: " + e.getMessage());
+                    TimestampLogger.logWithTime("Error getting chunk " + i + " result: " + e.getMessage());
                     throw new RuntimeException("Error getting chunk result", e);
                 }
             }
+            TimestampLogger.logWithDuration("resultCollection", "Finished collecting all results");
 
             if (metadataResult == null) {
                 throw new RuntimeException("No chunk completed successfully to get metadata");
             }
 
-            System.out.println("All chunks completed, merging results...");
+            TimestampLogger.startTimer("merging");
+            TimestampLogger.logWithTime("All chunks completed, merging results...");
             List<List<Object>> mergedRows = mergeChunks(chunkResults);
-            System.out.println("Merged " + mergedRows.size() + " total rows");
+            TimestampLogger.logWithDuration("merging", "Merged " + mergedRows.size() + " total rows");
 
             sendMergedResponse(metadataResult, mergedRows);
+            TimestampLogger.logWithDuration("fullQuery", "Query completed");
 
         } catch (Exception e) {
-            System.out.println("Error in parallel execution: " + e.getMessage());
+            TimestampLogger.logWithTime("Error in parallel execution: " + e.getMessage());
             e.printStackTrace();
             sendErrorResponse("Error in parallel execution: " + e.getMessage());
         }
