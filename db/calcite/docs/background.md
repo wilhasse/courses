@@ -192,7 +192,7 @@ Schema schema = JdbcSchema.create(rootSchema, "hr", dataSource, null, "name");
 
 ### 6.1 Optimizer Rules
 
-- Calcite uses a **cost-based** optimization engine (based on the [Volcano planner](https://calcite.apache.org/docs/planner.html)).
+- Calcite uses a **cost-based** optimization engine (based on the Volcano planner).
 - You can add your own rules to teach Calcite:
   1. How to rewrite logical plans into more optimal forms for your data source.
   2. How to substitute your own physical operators if your data source or system has specialized capabilities.

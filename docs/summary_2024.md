@@ -58,10 +58,9 @@ C Threads/Network
 Boot.Dev Go Course  
 Webservers Go
 
-## Docker/Kubernetes (12/07 ~19/07)
+## Docker (12/07 ~19/07)
 
 Ardan Labs Docker  
-Ardan Labs Kubernetes
 
 ## Zig (19/07 ~ 14/08)
 
@@ -79,8 +78,14 @@ Course CMU Databases
 Doris Test  
 Apache Flink / CDC  
 
-## MySQL Custom Storage Engine (21/09 ~ 31/12)
+## MySQL Custom Storage Engine (21/09 ~ 13/11)
 
 Test with InnoDB / Processing ibd fies   
 Study Memory Storage Engine  
 CSLOG Storage: Memory + RocksDB  
+
+## PolarDBX (15/11 ~ 31/12)
+
+PolarDBX Study  
+Adapting PolarDBX into Percona Server  
+Building a proof of concept for PolarDBS SQL  
