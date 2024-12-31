@@ -2,71 +2,64 @@
 
 ```mermaid
 flowchart TB
-    %% =====================
-    %% Subgraph: Connection Interface
-    %% =====================
-    subgraph A[Connection & Protocol Layer]
-        A1(Client Connections)
-        A2(Communication Protocol)
+    %% Style definitions
+    classDef default fill:#f5f5f5,stroke:#333,stroke-width:2px,color:#1a1a1a
+    classDef mainComponent fill:#f0f2f5,stroke:#2f4f4f,stroke-width:2px,color:#1a1a1a
+    classDef subComponent fill:#ffffff,stroke:#4a4a4a,stroke-width:1px,color:#1a1a1a
+    classDef highlight fill:#f2f4f7,stroke:#2f4f4f,stroke-width:2px,color:#1a1a1a
+
+    %% Connection & Protocol Layer
+    subgraph A["Connection & Protocol Layer"]
+        style A fill:#f2f4f7,stroke:#2f4f4f,stroke-width:2px
+        A1["Client Connections"]
+        A2["Communication Protocol"]
     end
 
-    %% =====================
-    %% Subgraph: SQL Layer
-    %% =====================
-    subgraph B[SQL Layer]
-        B1[Parser & Lexical Scanner]
-        B2[Optimizer]
-        B3[SQL Executor]
+    %% SQL Layer
+    subgraph B["SQL Layer"]
+        style B fill:#f0f2f5,stroke:#2f4f4f,stroke-width:2px
+        B1["Parser & Lexical Scanner"]
+        B2["Optimizer"]
+        B3["SQL Executor"]
     end
 
-    %% =====================
-    %% Subgraph: Storage Engine Interface
-    %% =====================
-    subgraph C[Handler/SE Interface]
-        C1[Handler API]
-        C2[Data Dictionary]
+    %% Handler/SE Interface
+    subgraph C["Handler/SE Interface"]
+        style C fill:#f2f4f7,stroke:#2f4f4f,stroke-width:2px
+        C1["Handler API"]
+        C2["Data Dictionary"]
     end
 
-    %% =====================
-    %% Subgraph: Storage Engines
-    %% =====================
-    subgraph D[Storage Engines]
-        direction TB
-        D1["InnoDB(Default engine)"]
-        D3[Memory/CSV]
+    %% Storage Engines
+    subgraph D["Storage Engines"]
+        style D fill:#f0f2f5,stroke:#2f4f4f,stroke-width:2px
+        D1["InnoDB (Default engine)"]
+        D3["Memory/CSV"]
     end
 
-    %% =====================
-    %% Subgraph: Replication
-    %% =====================
-    subgraph E[Replication Subsystem]
-        direction TB
-        E1["Master/Replica(Async)"]
-        E2[GTID / Binlog]
+    %% Replication
+    subgraph E["Replication Subsystem"]
+        style E fill:#f2f4f7,stroke:#2f4f4f,stroke-width:2px
+        E1["Master/Replica (Async)"]
+        E2["GTID / Binlog"]
     end
 
-    %% =====================
-    %% Subgraph: Performance & System Tools
-    %% =====================
-    subgraph F[Performance & System Tools]
-        direction TB
-        F1[Performance Schema]
-        F2[Information Schema]
-        F3[Sys Schema]
+    %% Performance & System Tools
+    subgraph F["Performance & System Tools"]
+        style F fill:#f0f2f5,stroke:#2f4f4f,stroke-width:2px
+        F1["Performance Schema"]
+        F2["Information Schema"]
+        F3["Sys Schema"]
     end
 
-    %% =====================
-    %% Subgraph: Percona-Specific Components
-    %% =====================
-    subgraph G[Percona Enhancements]
-        direction TB
-        G1[Percona Toolkit Integration]
-        G2[Xtrabackup]
+    %% Percona Enhancements
+    subgraph G["Percona Enhancements"]
+        style G fill:#f2f4f7,stroke:#2f4f4f,stroke-width:2px
+        G1["Percona Toolkit Integration"]
+        G2["Xtrabackup"]
     end
 
-    %% =====================
-    %% Links: Data Flow
-    %% =====================
+    %% Connections
     A --> B
     B1 --> B2
     B2 --> B3
@@ -75,6 +68,9 @@ flowchart TB
     B3 --> E
     B3 --> F
     C --> G
+
+    %% Apply styles to all nodes
+    class A1,A2,B1,B2,B3,C1,C2,D1,D3,E1,E2,F1,F2,F3,G1,G2 subComponent
 ```
 
 # Source code
