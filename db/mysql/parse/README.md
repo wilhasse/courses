@@ -112,7 +112,19 @@ flowchart TD
 
 [Innodb-space Tests](../study/docs/innodb_space.md)
 
+# Drafts
+
 [Decompress Only Draft](./docs/decompress_only.md)
 
 [Encryption Draft](./docs/keyring1.md)
+
+# Innodb Concepts for parsing
+
+[Infimum/Supremum](./docs/infimum_supremum.doc)
+
+[Spare Directory](./docs/sparse_directory.md)
+
+[Compressed Dense directory](./docs/dense_directory.md)
+
+
 
