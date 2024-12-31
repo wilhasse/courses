@@ -1,3 +1,9 @@
+CREATE PROCEDURE `analyze_db`()
+LANGUAGE SQL
+NOT DETERMINISTIC
+CONTAINS SQL
+SQL SECURITY DEFINER
+COMMENT ''
 BEGIN
     -- Declarations must all come first
     DECLARE done INT DEFAULT 0;
@@ -59,9 +65,6 @@ BEGIN
             SET status = 'COMPLETED', 
                 end_time = NOW() 
             WHERE table_name = TNAME;
-            
-            -- Show progress
-            SELECT CONCAT('Processing table ', current_table, ' of ', table_count, ': ', TNAME) AS Progress;
         END IF;
     END WHILE;
     

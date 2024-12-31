@@ -5,9 +5,9 @@ I have been using o1-pro and Claude as primary learning sources."
 
 | Course  | Start | Description |
 |---------|-------|-------------|
-| [PolarDBX Project](./db/polardbx/README.md) | 14/11/2024 | Exploring each PolarDBX component individually and running non-distributed implementation |
-| [Percona Source Code](.//db/mysql/study/README.md) | 08/12/2024 | Understanding core functionality of MySQL through source code analysis |
-| [InnoDB Parser Project](./db/mysql/parse/README.md) | 21/12/2024 | Creating a utility to decrypt, uncompress and parse InnoDB pages for data extraction |
+| [PolarDBX](./db/polardbx/README.md) | 14/11/2024 | Exploring PolarDBX modules and running non-distributed implementation |
+| [Percona Code](.//db/mysql/study/README.md) | 08/12/2024 | Understanding core functionality of MySQL through source code analysis |
+| [InnoDB Parser](./db/mysql/parse/README.md) | 21/12/2024 | Creating a utility to decrypt, uncompress and parse InnoDB pages |
 
 # Archive
 
