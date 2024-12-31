@@ -112,5 +112,7 @@ flowchart TD
 
 [Innodb-space Tests](../study/docs/innodb_space.md)
 
+[Decompress Only Draft](./docs/decompress_only.md)
+
 [Encryption Draft](./docs/keyring1.md)
 
