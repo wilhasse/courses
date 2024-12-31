@@ -1,7 +1,8 @@
 # Innodb Architecture
 
 ```mermaid
-%% =================================
+flowchart TB
+    %% =================================
     %% Subgraph: InnoDB Transaction & Concurrency
     %% =================================
     subgraph A[Transaction & Concurrency]
