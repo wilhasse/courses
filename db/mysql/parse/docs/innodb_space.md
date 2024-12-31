@@ -6,7 +6,7 @@ https://github.com/baotiao/inno_space
 My fork:  
 https://github.com/wilhasse/inno_space
 
-- [Code detail by o1-pro](./innodb_space_doc.md)
+- [Code detail](./innodb_space_doc.md)
 
 ## Usage
 
