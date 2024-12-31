@@ -10,4 +10,6 @@ Administration Procedures
 
 - [Syncronize Source and Replicas](./checksum.md)
 
+- [Install mytop](./mytop.md)
+
 - [Internal Innodb Sys Tables](./sys_tables.md)

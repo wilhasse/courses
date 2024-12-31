@@ -79,6 +79,7 @@ flowchart TB
 
 # InnoDB
 
+- [Diagram and each component](./docs/innodb_diagram.md)
 - [Embedded Innodb 1.0.6](./../innodbtest/README.md)
 - [InnoDB File Formats Evolution](./docs/inndb_format.md)
 - [InnoDB space (parse .ibd without mysql)](./docs/innodb_space.md)
