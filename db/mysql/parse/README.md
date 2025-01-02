@@ -9,6 +9,7 @@ Essentially an “uncompressed/unencrypted ibd converter.”
 [Items 1 and 2 - Attempt](./docs/attempt1.md)  
 [Innodb-java-read Tests](./../../calcite/innodb-example/README.md)  
 [Innodb-space Tests](./docs/innodb_space.md)  
+[MySQL Utility Attempt](./docs/utility_attempt.md)
 
 # Drafts
 
@@ -21,6 +22,7 @@ Essentially an “uncompressed/unencrypted ibd converter.”
 [Infimum/Supremum](./docs/infimum_supremum.md)  
 [Sparse Directory](./docs/sparse_directory.md)  
 [Compressed Dense directory](./docs/dense_directory.md)  
+[Compressed Table in Innochecksum](./docs/compressed_table.md)
 
 # Strategies
 
