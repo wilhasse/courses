@@ -31,6 +31,14 @@ Created a simple example to call page_zip_decompress_low() and stubbed some part
 Commit:
 https://github.com/wilhasse/percona-server/commit/40615d2ee116143687b99b0acb5b44311bd1f2eb  
 
+
+How to build only this target I created:
+
+```bash
+cd build
+cmake --build . --target decompress
+```
+
 Error
 
 ```bash

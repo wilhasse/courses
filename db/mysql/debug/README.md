@@ -3,6 +3,7 @@
 - [Build Debian 11](./build_d11.md)
 - [Build Debian 12](./build.md)
 - [Environment](./environment.md)
+- [Visual Code Config](./visual_code.md)
 - [Logs](./logs.md)
 
 # Utils
