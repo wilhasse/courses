@@ -74,10 +74,41 @@ How to configure VS code to be able to debug MySQL C/C++ code
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "C/C++: g++ build active file",
+            "preLaunchTask": "Build decompress"
             "miDebuggerPath": "/usr/bin/gdb"
         }
     ]
+}
+```
+
+# tasks.json
+
+Execute cmake to build the project before debugging
+
+```json
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build decompress",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "${workspaceFolder}/build",   // The build dir
+        "--target",
+        "decompress"                  // The target name
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        // Or pick the correct problem matcher, e.g. "$gcc"
+        "$gcc"
+      ]
+    }
+  ]
 }
 ```
 
@@ -121,3 +152,4 @@ Open the command palette (Ctrl+Shift+P or Cmd+Shift+P) and run:
 ```bash
 C/C++: Log Diagnostics
 ```
+
