@@ -4,6 +4,7 @@ Calcite using Innodb Adapter to query SSB Benchmark ibd files
 
 https://calcite.apache.org/docs/innodb_adapter.html  
 
+
 # Tools
 
 Innodb Java Reader  
@@ -24,6 +25,7 @@ https://github.com/julianhyde/sqlline
 
 ```bash
 git clone https://github.com/julianhyde/sqlline
+cd sqlline
 mvn clean install
 # Windows: add environment path
 # D:\sqlline-sqlline-1.12.0\bin
@@ -31,8 +33,16 @@ mvn clean install
 
 # Example
 
+Edit src/main/resources/ssb-model.json, adjust create table sql file and data:
+
+```xml
+        "sqlFilePath": ["/home/cslog/courses/db/calcite/innodb-example/src/main/resources/ssb-tables.sql"],
+        "ibdDataFileBasePath": "/data/polardb/ssb"
+```
+
 ```bash
 # compile
+ cd courses/db/calcite/innodb-example/
 mvn clean install
 
 # run code
@@ -59,4 +69,32 @@ sqlline> !connect jdbc:calcite:model=src\main\resources\ssb-model.json admin adm
 Transaction isolation level TRANSACTION_REPEATABLE_READ is not supported. Default (TRANSACTION_NONE) will be used instead.
 0: jdbc:calcite:model=src\main\resources\ssb->
 0: jdbc:calcite:model=src\main\resources\ssb-> SELECT * FROM "customer" LIMIT 5;
+```
+
+# Jdk
+
+I got an error complaining about javadoc
+
+```bash
+sudo apt-get install default-jdk
+update-alternatives --config java
+0            /usr/lib/jvm/java-17-openjdk-amd64/bin/java   1711      modo automático
+echo 'export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' >> ~/.bashrc
+source ~/.bashrc
+```
+
+I also got an error about:
+
+```bash
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.8.1:compile (default-compile) on project calcite-innodb-example: Fatal error compiling: java.lang.IllegalAccessError: class lombok.javac.apt.LombokProcessor (in unnamed module @0x517a2b0) cannot access class 
+```
+
+I added pom.xml
+
+```xml
+<dependency>
+    <groupId>org.projectlombok</groupId>
+    <artifactId>lombok</artifactId>
+    <version>1.18.30</version>
+</dependency>
 ```
