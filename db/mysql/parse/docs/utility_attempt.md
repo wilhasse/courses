@@ -13,6 +13,8 @@ This RB is mainly about moving code around.
 style.
 ```
 
+# Program
+
 I found out that two utilities: innochecksum and ibd2sdi uses this code
 
 Size of utility:
@@ -63,5 +65,16 @@ Error reading/decompressing page 0.
 Investigating how to identify if a page is compressed:
 
 [Compressed Table in Innochecksum](./compressed_table.md)
+
+Command to check ibd file the size of the block
+
+# B+Tree Pages
+
+Ignoring the four first pages (header/dictionary/etc) they are not B+TREE pages.  
+
+- **`zipdecompress.cc` is solely for B‑tree (index) page decompression.**  
+- The first 4 pages of the system tablespace (file header pages, dictionary header pages, etc.) are *not* B‑tree pages.  
+- If uses `page_zip_decompress_low()`, it would fail to find record directories or the usual “infimum/supremum” markers, and page_zip_decompress_low() will return false.
+
 
 
