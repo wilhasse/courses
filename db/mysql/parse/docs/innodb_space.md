@@ -47,10 +47,13 @@ gdb
 
 ## Problems
 
-- The original code didn't work with tables with composite primary key.
+### 1) The original code didn't work with tables with composite primary key.  
+OpenAi o1-pro was able to solve it in two shots.  
+
+[Correction Explained](./innodb_space_o1_fix.md)
+
 Correction here:  
 https://github.com/wilhasse/inno_space/commit/ac844d248e95ee6c1427595ea008f73c8646fec4
 
-- It doesn't read all types VARCHAR (length may vary), unsigned int , etc
-Need to implement custom logic
+
 

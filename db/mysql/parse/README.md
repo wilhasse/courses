@@ -10,9 +10,9 @@ This tool would allow you to take any `.ibd` file (InnoDB tablespace file) and c
 
 # Attempts
 
-[1 / 2 Testing mysql code](./docs/attempt1.md)
+[1 / 2 Testing mysql code](./docs/attempt1.md)  
 [3 Innodb-java-read Tests](./../../calcite/innodb-example/README.md)  
-[4 Innodb-space Tests](./docs/innodb_space.md)  
+[4 Inno-space Tests](./docs/innodb_space.md)  
 [Final 1 MySQL Utility Attempt](./docs/utility_attempt.md)
 
 # Drafts

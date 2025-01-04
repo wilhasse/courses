@@ -9,13 +9,13 @@ flowchart TD
     classDef challenge fill:#fff0f0,stroke:#4a4a4a,stroke-width:1px,color:#1a1a1a
 
     %% Main Goal
-    subgraph G["Database Optimization Project"]
+    subgraph G["Database Optimization"]
         style G fill:#f2f4f7,stroke:#2f4f4f,stroke-width:2px
         goal["Improve Database Performance<br/>Enable Fast Analytics<br/>Maintain Data Consistency"]
     end
 
     %% TiDB Strategy
-    subgraph S1["Strategy 1: TiDB Implementation"]
+    subgraph S1["Strategy 1: Pingcap TiDB"]
         style S1 fill:#f0f2f5,stroke:#2f4f4f,stroke-width:2px
         direction TB
         tidb["TiDB Distributed<br/>Database"]
@@ -24,7 +24,7 @@ flowchart TD
     end
 
     %% Doris Strategy
-    subgraph S2["Strategy 2: Doris Integration"]
+    subgraph S2["Strategy 2: Doris DB"]
         style S2 fill:#f0f2f5,stroke:#2f4f4f,stroke-width:2px
         direction TB
         doris["Apache Doris<br/>OLAP Engine"]
@@ -55,7 +55,7 @@ flowchart TD
         style S5 fill:#f0f2f5,stroke:#2f4f4f,stroke-width:2px
         direction TB
         polar["Modified PolarDBX<br/>Architecture"]
-        polar_ben["Benefits:<br/>- Same InnoDB Storage<br/>- Full SQL/Exec Plan Control<br/>- Simplified Infrastructure"]
+        polar_ben["Benefits:<br/>- Same InnoDB Storage<br/>- SQL/Exec Plan Control<br/>- Simplified Infrastructure"]
         polar_chal["Challenges:<br/>- Protocol Porting<br/>- Query Plan Optimization<br/>- Cache Implementation"]
     end
 
