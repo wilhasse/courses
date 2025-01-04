@@ -1,5 +1,6 @@
 # Diagram
 
+```mermaid
 flowchart TD
     %% Style definitions
     classDef goal fill:#f2f4f7,stroke:#2f4f4f,stroke-width:2px,color:#1a1a1a
@@ -77,6 +78,7 @@ flowchart TD
     class tidb,doris,innodb,storage,polar strategy
     class tidb_ben,doris_ben,innodb_ben,storage_ben,polar_ben benefit
     class tidb_chal,doris_chal,innodb_chal,storage_chal,polar_chal challenge
+```
 
 # Detail
 
@@ -95,7 +97,7 @@ Understanding the Challenge:
 
 Attempts:
 
-* **TiDB Implementation Details**
+* **1 - TiDB Implementation Details**
   * **Architecture Exploration**
     * Distributed SQL database built on top of RocksDB
     * TiKV for distributed storage
@@ -111,7 +113,7 @@ Attempts:
     * Need for data rebalancing and maintenance windows
     * Additional operational complexity
 
-* **Doris Integration Experience**
+* **2 - Doris Integration Experience**
   * **Implementation Strategy**
     * Apache Flink CDC for data synchronization
     * Custom connectors for data transformation
@@ -122,7 +124,7 @@ Attempts:
     * Resource consumption of Java processes
     * Initial data loading complexity
 
-* **Custom Storage Layer Investigation**
+* **3 - Custom Storage Layer Investigation**
   * **Architecture Design**
     * RocksDB as persistent storage layer
     * In-memory cache for hot data (10%)
@@ -136,7 +138,7 @@ Attempts:
     * Memory management complexity
     * Transaction boundary handling
 
-* **InnoDB Direct Parsing Research**
+* **4 - InnoDB Direct Parsing Research**
   * **Technical Components**
     * B+ tree traversal implementation
     * Page compression handling
@@ -150,7 +152,7 @@ Attempts:
     * Page format and compression insights
     * Transaction handling complexities
 
-* **PolarDBX-Based Final Solution**
+* **5 - PolarDBX-Based Final Solution**
   * **Core Components**
     * Custom XProtocol implementation for Percona
     * Query splitting and routing layer
@@ -167,17 +169,3 @@ Attempts:
     * Enhanced query splitting algorithms
     * Improved cache hit ratios
     * Advanced execution plan optimization
-
-* **Key Learnings**
-  * **Architecture Decisions**
-    * Simplicity often outweighs distributed complexity
-    * Maintaining MySQL compatibility is crucial
-    * Storage engine choice impacts overall design
-  * **Performance Insights**
-    * Query routing optimization is critical
-    * Cache strategy significantly affects performance
-    * Balance between complexity and benefit
-  * **Development Strategy**
-    * Prototype-driven approach validates concepts
-    * Deep system understanding enables optimization
-    * Incremental improvements over complete rewrites
