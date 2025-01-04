@@ -1,22 +1,26 @@
 # Goal
 
-Develop a small program (within the Percona Server 8.0 codebase) to read `.ibd` files, decrypt them if needed, decompress the pages, and then parse them offline.  
+A program that acts as an "uncompressed/unencrypted ibd converter" for MySQL 8 by:
+1. Reading `.ibd` files
+2. Decrypting them (if encryption is present)
+3. Decompressing their pages
+4. Parsing the uncompressed/decrypted data for offline analysis
 
-Essentially an “uncompressed/unencrypted ibd converter.”
+This tool would allow you to take any `.ibd` file (InnoDB tablespace file) and convert it into a readable format by handling both encryption and compression, making it easier to inspect and analyze the data outside of MySQL.
 
 # Attempts
 
-[Items 1 and 2 - Attempt](./docs/attempt1.md)  
-[Innodb-java-read Tests](./../../calcite/innodb-example/README.md)  
-[Innodb-space Tests](./docs/innodb_space.md)  
-[MySQL Utility Attempt](./docs/utility_attempt.md)
+[1 / 2 Testing mysql code](./docs/attempt1.md)
+[3 Innodb-java-read Tests](./../../calcite/innodb-example/README.md)  
+[4 Innodb-space Tests](./docs/innodb_space.md)  
+[Final 1 MySQL Utility Attempt](./docs/utility_attempt.md)
 
 # Drafts
 
 [Decompress Only Draft](./docs/decompress_only.md)  
 [Encryption Draft](./docs/keyring1.md)  
 
-# Innodb Concepts for parsing
+# Innodb concepts for parsing
 
 [Innodb Page](./docs/innodb_page.md)  
 [Infimum/Supremum](./docs/infimum_supremum.md)  
@@ -24,26 +28,6 @@ Essentially an “uncompressed/unencrypted ibd converter.”
 [Compressed Dense directory](./docs/dense_directory.md)  
 [Compressed Table in Innochecksum](./docs/compressed_table.md)  
 [Source Code: innobase/page](./docs/page_dir.md)
-
-# Strategies
-
-[**Diagram Options**](./docs/strategy.md)
-
-1. **`innochecksum`** Create a new utility in original mysql branch 
-   - **Strategy**: Add decompression and encryption logic to MySQL’s minimal offline tool (`innochecksum`) within the MySQL `utilities` folder.
-   - **Difficulty**: Integrating MySQL’s encryption and keyring references can drag in broader server dependencies; requires carefully isolating or stubbing out non-utility code.
-
-2. **`xtraBackup`** Create a new binary using this percona xtrabackup fork
-   - **Strategy**: Repurpose Percona’s backup tool (`xtrabackup`) to read and decrypt `.ibd` files, removing the unneeded backup-related features.
-   - **Difficulty**: XtraBackup is patched heavily for hot-backups, so you’ll need to strip or adapt code tied to `UNIV_HOTBACKUP` and other backup hooks without breaking essential page-processing logic.
-
-3. **`innodb-java-reader`** Extend with compression & Encryption
-   - **Strategy**: Enhance the existing Java-based library (which already parses uncompressed, unencrypted `.ibd`) to handle compressed and encrypted pages.
-   - **Difficulty**: Must replicate MySQL’s internal logic for page compression (various algorithms) and encryption (AES variants, key retrieval). Ensuring correctness and performance requires deeper reimplementation work.
-
-4. **`innodb_space`** Complete and handle compressed & Encrypted Pages
-   - **Strategy**: Bring more complete support to the C project (`innodb_space`), which currently parses basic InnoDB structures.
-   - **Difficulty**: Similar to Java: you must integrate or replicate encryption algorithms and compression code. Potential complexities in loading keys and handling multiple row formats also apply.
 
 # Diagram
 
@@ -125,3 +109,22 @@ flowchart TD
     class challenge1,challenge2,challenge3,challenge4 challenge
 ```
 
+# Strategies
+
+[**Diagram Options**](./docs/strategy.md)
+
+1. **`innochecksum`** Create a new utility in original mysql branch 
+   - **Strategy**: Add decompression and encryption logic to MySQL’s minimal offline tool (`innochecksum`) within the MySQL `utilities` folder.
+   - **Difficulty**: Integrating MySQL’s encryption and keyring references can drag in broader server dependencies; requires carefully isolating or stubbing out non-utility code.
+
+2. **`xtraBackup`** Create a new binary using this percona xtrabackup fork
+   - **Strategy**: Repurpose Percona’s backup tool (`xtrabackup`) to read and decrypt `.ibd` files, removing the unneeded backup-related features.
+   - **Difficulty**: XtraBackup is patched heavily for hot-backups, so you’ll need to strip or adapt code tied to `UNIV_HOTBACKUP` and other backup hooks without breaking essential page-processing logic.
+
+3. **`innodb-java-reader`** Extend with compression & Encryption
+   - **Strategy**: Enhance the existing Java-based library (which already parses uncompressed, unencrypted `.ibd`) to handle compressed and encrypted pages.
+   - **Difficulty**: Must replicate MySQL’s internal logic for page compression (various algorithms) and encryption (AES variants, key retrieval). Ensuring correctness and performance requires deeper reimplementation work.
+
+4. **`innodb_space`** Complete and handle compressed & Encrypted Pages
+   - **Strategy**: Bring more complete support to the C project (`innodb_space`), which currently parses basic InnoDB structures.
+   - **Difficulty**: Similar to Java: you must integrate or replicate encryption algorithms and compression code. Potential complexities in loading keys and handling multiple row formats also apply.
