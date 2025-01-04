@@ -3,7 +3,9 @@
 - [Build Debian 11](./build_d11.md)
 - [Build Debian 12](./build.md)
 - [Environment](./environment.md)
+- [Using gdb command line](./gdb_cmd.md)
 - [Visual Code Config](./visual_code.md)
+- [Update fork from upstream](./update_fork.md)
 - [Logs](./logs.md)
 
 # Utils
