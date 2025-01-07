@@ -12,6 +12,10 @@ This tool would allow you to take any `.ibd` file (InnoDB tablespace file) and c
   
 https://github.com/wilhasse/percona-parser  
 
+[Environment and Development](./docs/development.md)
+
+[Code detail (until 06.01.2025)](./docs/code_20250106.md)
+
 # Attempts
 
 [1 / 2 Testing mysql code](./docs/attempt1.md)  
