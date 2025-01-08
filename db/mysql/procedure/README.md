@@ -11,3 +11,4 @@ Store Procedure Collection
 - [Compress All tables](./compress-all.sql)
 - [Run analyze in all tables](./analyze-all.sql)
 - [Truncate all tables **LOOSE DATA !!**](./truncate-all.sql)
+- [Encrypt all tables](./encrypt.sql)
