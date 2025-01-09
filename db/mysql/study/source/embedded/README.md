@@ -8,7 +8,7 @@ https://github.com/nextgres/oss-embedded-innodb
 | Folder  | Description                                                  |
 | ------- | ------------------------------------------------------------ |
 | [mach](./mach.md)    | Handles low-level, machine-dependent operations and fundamental constants. Abstracts processor architecture details, byte ordering, and basic arithmetic helpers to keep higher layers platform-agnostic. |
-| include | Shared header directory providing declarations, macros, and common definitions used throughout the entire InnoDB codebase. Centralizes function prototypes and data structures. |
+| [include](./include.md) | Shared header directory providing declarations, macros, and common definitions used throughout the entire InnoDB codebase. Centralizes function prototypes and data structures. |
 | ut      | Utility directory containing general-purpose helper routines such as data structure implementations (lists, arrays, hash), error handling utilities, and frequently reused algorithms. |
 | mem     | Manages InnoDB's specialized memory handling, including custom allocators, memory pools, and debugging mechanisms (like memory poisoning) to ensure consistent and efficient allocation patterns. |
 | sync    | Handles synchronization primitives such as mutexes, read-write locks, and condition variables. Provides concurrency control mechanisms at a low level. |
@@ -22,7 +22,7 @@ https://github.com/nextgres/oss-embedded-innodb
 | data    | Contains lower-level routines for handling row formats and field types, including code for reading/writing fields and data conversions. |
 | dict    | Holds data dictionary logic representing metadata about tables, indexes, and columns. Maps logical SQL objects to internal structures. |
 | [btr](./btr.md)   | Implements B+Tree index structures used for storing and retrieving table and index data, providing insertion, deletion, and search operations. |
-| buf     | Buffer pool management subsystem controlling page caching in memory, eviction strategies, and overall memory usage. |
+| [buf](./buf.md)     | Buffer pool management subsystem controlling page caching in memory, eviction strategies, and overall memory usage. |
 | ibuf    | Insert buffer optimization structure for secondary index entries, enhancing performance for write-heavy workloads. |
 | row     | Handles row-level operations including creation, updates, deletions, and versioning details. Manages physical storage of records. |
 | lock    | Implements the lock manager handling row-level locking, lock queues, deadlock detection, and concurrency control logic. |
