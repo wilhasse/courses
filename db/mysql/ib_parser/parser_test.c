@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include "innodb_page.h"
 
+#define UNIV_PAGE_SIZE 16384
+
 typedef struct {
     int id;
     char nome[101];
@@ -27,19 +29,29 @@ void hexdump(const byte *data, size_t len, const char *prefix) {
 }
 
 bool parse_user_record(const byte *rec_ptr, record_t *record) {
+    if (!is_user_rec(rec_ptr)) {
+        if (debug) printf("Skipping system record\n");
+        return false;
+    }
+    
     if (rec_get_deleted_flag(rec_ptr)) {
         if (debug) printf("Skipping deleted record\n");
         return false;
     }
     
-    /* Skip record header */
-    rec_ptr += REC_HEADER_SIZE;
+    /* Fields start after header */
+    rec_ptr += get_rec_field_start(rec_ptr);
     
-    /* Read ID */
+    if (debug) {
+        printf("Record data at offset %lu:\n", (ulint)rec_ptr);
+        hexdump(rec_ptr, 24, "  ");
+    }
+    
+    /* Read ID (4 bytes) */
     record->id = mach_read_from_4(rec_ptr);
     rec_ptr += 4;
     
-    /* Read NOME */
+    /* Read NOME (up to 100 bytes) */
     size_t name_len = 0;
     while (name_len < 100 && rec_ptr[name_len] && rec_ptr[name_len] != ' ') {
         name_len++;
@@ -51,22 +63,19 @@ bool parse_user_record(const byte *rec_ptr, record_t *record) {
 }
 
 void process_index_page(const page_t *page) {
-    const byte *rec = page_get_infimum_rec(page);
+    const byte *rec = get_first_user_rec(page);
     bool header_printed = false;
+    int records_on_page = 0;
     
     if (debug) {
-        printf("\nProcessing index page:\n");
+        printf("\nStarting record processing\n");
         page_header_print(page);
-        printf("\nInfimum record:\n");
-        hexdump(rec, 20, "  ");
     }
     
-    /* Skip infimum by getting next record */
-    rec = page_rec_get_next(rec, page);
-    while (rec && rec < page_get_supremum_rec(page)) {
+    while (rec) {
         if (debug) {
-            printf("\nRecord at offset %lu:\n", (ulint)(rec - (const byte*)page));
-            hexdump(rec, 20, "  ");
+            printf("\nExamining record at offset %lu:\n", (ulint)(rec - (const byte*)page));
+            hexdump(rec, 24, "  ");
         }
         
         record_t record;
@@ -78,9 +87,14 @@ void process_index_page(const page_t *page) {
             }
             printf("%d\t%s\n", record.id, record.nome);
             records_dumped_total++;
+            records_on_page++;
         }
         
-        rec = page_rec_get_next(rec, page);
+        rec = get_next_rec(page, rec);
+    }
+    
+    if (debug) {
+        printf("\nProcessed %d records on page\n", records_on_page);
     }
 }
 
@@ -146,7 +160,7 @@ int main(int argc, char** argv) {
         return 1;
     }
     
-    const size_t page_size = 16384;  /* InnoDB page size */
+    const size_t page_size = UNIV_PAGE_SIZE;
     size_t page_count = (size_t)(st.st_size / page_size);
     
     unsigned char *page_buf = malloc(page_size);

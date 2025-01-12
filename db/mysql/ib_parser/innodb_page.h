@@ -10,7 +10,7 @@ typedef unsigned char byte;
 typedef void* rec_t;
 typedef void* page_t;
 
-/* File page types */
+/* Page types */
 #define FIL_PAGE_INDEX          17855
 #define FIL_PAGE_TYPE_FSP_HDR   8
 #define FIL_PAGE_IBUF_BITMAP    5
@@ -19,38 +19,25 @@ typedef void* page_t;
 #define FIL_PAGE_TYPE_SYS      6
 
 /* Page header offsets */
-#define FIL_PAGE_SPACE_OR_CHKSUM 0
 #define FIL_PAGE_OFFSET          4
-#define FIL_PAGE_PREV            8
-#define FIL_PAGE_NEXT           12
-#define FIL_PAGE_LSN            16
 #define FIL_PAGE_TYPE           24
-#define FIL_PAGE_FILE_FLUSH_LSN 26
-#define FIL_PAGE_ARCH_LOG_NO    34
-
-/* Page directory offsets */
 #define PAGE_HEADER             38
-#define PAGE_N_DIR_SLOTS        0
-#define PAGE_HEAP_TOP           2
-#define PAGE_N_HEAP             4
-#define PAGE_FREE               6
-#define PAGE_GARBAGE            8
-#define PAGE_LAST_INSERT       10
-#define PAGE_DIRECTION         12
-#define PAGE_N_DIRECTION       14
 #define PAGE_N_RECS            16
-#define PAGE_MAX_TRX_ID        18
 #define PAGE_LEVEL             26
 #define PAGE_INDEX_ID          28
-#define PAGE_BTR_SEG_LEAF      36
 
 /* Record related constants */
-#define PAGE_OLD_INFIMUM       99
-#define PAGE_OLD_SUPREMUM      112
-#define REC_HEADER_SIZE        6
-#define REC_NEXT_POS           2
-#define REC_INFO_BITS_SHIFT    0
-#define REC_INFO_DELETED_MASK  0x20
+#define REC_N_OLD_EXTRA_BYTES   6
+#define REC_OLD_N_FIELDS        4
+#define REC_NEXT_POS            2
+#define REC_HEADER_SIZE         6
+#define REDUNDANT_REC_NEXT_SIZE 2
+
+/* Page directory slots */
+#define PAGE_DIR                 UNIV_PAGE_SIZE - 36
+#define PAGE_DIR_SLOT_SIZE      2
+#define PAGE_DIR_SLOT_MIN_N_OWNED 4
+#define PAGE_DIR_SLOT_MAX_N_OWNED 8
 
 /* Function declarations */
 bool page_is_index(const page_t *page);
@@ -58,12 +45,18 @@ ulint page_get_type(const page_t *page);
 bool page_is_leaf(const page_t *page);
 ulint page_get_n_recs(const page_t *page);
 ulint page_get_page_no(const page_t *page);
-const byte* page_get_infimum_rec(const page_t* page);
-const byte* page_get_supremum_rec(const page_t* page);
-const byte* page_rec_get_next(const byte* rec, const page_t* page);
-bool rec_get_deleted_flag(const byte* rec);
 ulint mach_read_from_2(const byte *b);
 ulint mach_read_from_4(const byte *b);
 void page_header_print(const page_t *page);
+
+/* Record navigation */
+const byte* get_first_user_rec(const page_t* page);
+const byte* get_next_rec(const page_t* page, const byte* rec);
+bool is_user_rec(const byte* rec);
+
+/* Record field access */
+ulint get_rec_field_start(const byte* rec);
+ulint get_rec_next_offset(const byte* rec);
+bool rec_get_deleted_flag(const byte* rec);
 
 #endif /* INNODB_PAGE_H */
