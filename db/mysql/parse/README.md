@@ -8,6 +8,14 @@ A program that acts as an "uncompressed/unencrypted ibd converter" for MySQL 8 b
 
 This tool would allow you to take any `.ibd` file (InnoDB tablespace file) and convert it into a readable format by handling both encryption and compression, making it easier to inspect and analyze the data outside of MySQL.
 
+# Project
+  
+https://github.com/wilhasse/percona-parser  
+
+[Environment and Development](./docs/development.md)
+
+[Code detail (until 06.01.2025)](./docs/code_20250106.md)
+
 # Attempts
 
 [1 / 2 Testing mysql code](./docs/attempt1.md)  
@@ -19,6 +27,7 @@ This tool would allow you to take any `.ibd` file (InnoDB tablespace file) and c
 
 [Decompress Only Draft](./docs/decompress_only.md)  
 [Encryption Draft](./docs/keyring1.md)  
+[Encription Draft (os0enc.cc)](./docs/keyring2.md)
 
 # Innodb concepts for parsing
 
