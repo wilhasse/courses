@@ -7,8 +7,6 @@
 #include <unistd.h>
 #include "innodb_page.h"
 
-#define UNIV_PAGE_SIZE 16384
-
 typedef struct {
     int id;
     char nome[101];
@@ -20,6 +18,7 @@ static unsigned long records_dumped_total = 0;
 static int records_lost = 0;
 
 void hexdump(const byte *data, size_t len, const char *prefix) {
+    if (!debug) return;
     printf("%s", prefix);
     for (size_t i = 0; i < len; i++) {
         if (i > 0 && i % 16 == 0) printf("\n%s", prefix);
@@ -29,53 +28,54 @@ void hexdump(const byte *data, size_t len, const char *prefix) {
 }
 
 bool parse_user_record(const byte *rec_ptr, record_t *record) {
-    if (!is_user_rec(rec_ptr)) {
-        if (debug) printf("Skipping system record\n");
+    if (is_system_record(rec_ptr)) {
+        if (debug) printf("  Skipping system record\n");
         return false;
     }
     
-    if (rec_get_deleted_flag(rec_ptr)) {
-        if (debug) printf("Skipping deleted record\n");
+    if (is_deleted_record(rec_ptr)) {
+        if (debug) printf("  Skipping deleted record\n");
         return false;
     }
     
-    /* Fields start after header */
-    rec_ptr += get_rec_field_start(rec_ptr);
+    /* Get ID field */
+    ulint id_offset = get_field_offset(rec_ptr, 0);
+    const byte* id_ptr = rec_ptr + id_offset;
+    record->id = mach_read_from_4(id_ptr);
     
-    if (debug) {
-        printf("Record data at offset %lu:\n", (ulint)rec_ptr);
-        hexdump(rec_ptr, 24, "  ");
-    }
-    
-    /* Read ID (4 bytes) */
-    record->id = mach_read_from_4(rec_ptr);
-    rec_ptr += 4;
-    
-    /* Read NOME (up to 100 bytes) */
+    /* Get NOME field */
+    ulint nome_offset = get_field_offset(rec_ptr, 1);
+    const byte* nome_ptr = rec_ptr + nome_offset;
     size_t name_len = 0;
-    while (name_len < 100 && rec_ptr[name_len] && rec_ptr[name_len] != ' ') {
+    while (name_len < 100 && nome_ptr[name_len] && nome_ptr[name_len] != ' ') {
         name_len++;
     }
-    memcpy(record->nome, rec_ptr, name_len);
+    memcpy(record->nome, nome_ptr, name_len);
     record->nome[name_len] = '\0';
+    
+    if (debug) {
+        printf("  Parsed record: ID=%d, NOME=%s\n", record->id, record->nome);
+        printf("  Raw data:\n");
+        hexdump(rec_ptr, 120, "    ");
+    }
     
     return true;
 }
 
 void process_index_page(const page_t *page) {
-    const byte *rec = get_first_user_rec(page);
     bool header_printed = false;
     int records_on_page = 0;
     
     if (debug) {
-        printf("\nStarting record processing\n");
+        printf("\nProcessing index page:\n");
         page_header_print(page);
     }
     
+    const byte* rec = get_first_record(page);
     while (rec) {
         if (debug) {
-            printf("\nExamining record at offset %lu:\n", (ulint)(rec - (const byte*)page));
-            hexdump(rec, 24, "  ");
+            printf("\nExamining record at offset %lu:\n", 
+                   (ulint)(rec - (const byte*)page));
         }
         
         record_t record;
@@ -90,7 +90,7 @@ void process_index_page(const page_t *page) {
             records_on_page++;
         }
         
-        rec = get_next_rec(page, rec);
+        rec = get_next_record(page, rec);
     }
     
     if (debug) {
