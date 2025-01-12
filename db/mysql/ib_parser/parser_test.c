@@ -7,7 +7,8 @@
 #include <unistd.h>
 #include "innodb_page.h"
 
-/* Custom table definitions */
+#define MAX_TABLE_FIELDS 50
+
 typedef struct {
     char* name;
     int type;
@@ -21,81 +22,74 @@ typedef struct {
     char* name;
     unsigned fields_count;
     unsigned n_nullable;
-    field_def_t fields[50];
+    field_def_t fields[MAX_TABLE_FIELDS];
     ulint data_min_size;
     ulint data_max_size;
     ulint min_rec_header_len;
 } table_def_t;
 
-#define FT_INT  1
-#define FT_CHAR 2
-#define MAX_TABLE_FIELDS 50
-#define record_extra_bytes 6
-
-/* Global variables */
 static bool debug = false;
 static table_def_t g_table;
 static bool g_has_table = false;
 static unsigned long records_expected_total = 0;
 static unsigned long records_dumped_total = 0;
 static int records_lost = 0;
-static bool deleted_records_only = false;
-static bool undeleted_records_only = true;
 
-/* Function declarations */
-bool check_page(const page_t *page, unsigned *n_records);
-void process_ibpage(page_t *page, bool hex_output);
-bool init_table_definition(void);
+void dump_record_data(const byte *record, ulint length) {
+    printf("Record data (%lu bytes): ", length);
+    for (ulint i = 0; i < length; i++) {
+        printf("%02x ", record[i]);
+    }
+    printf("\n");
+}
 
-/* Function implementations */
 bool check_page(const page_t *page, unsigned *n_records)
 {
     bool comp = page_is_compact(page);
-    ulint infimum = (comp ? PAGE_NEW_INFIMUM : PAGE_OLD_INFIMUM);
-    ulint supremum = (comp ? PAGE_NEW_SUPREMUM : PAGE_OLD_SUPREMUM);
+    ulint infimum = page_get_infimum_offset(comp);
+    ulint supremum = page_get_supremum_offset(comp);
+    const byte *page_ptr = (const byte *)page;
 
     if (debug) {
-        printf("check_page(): comp=%d, inf=%u, sup=%u\n",
-               (int)comp, (unsigned)infimum, (unsigned)supremum);
+        printf("check_page(): comp=%d, inf=%lu, sup=%lu\n",
+               (int)comp, infimum, supremum);
     }
 
-    ulint p_prev = 0;
-    ulint p = infimum;
-    *n_records = 0;
-
-    const int max_recs = UNIV_PAGE_SIZE / 5;
+    /* Start at infimum */
+    ulint curr = infimum;
     int rec_count = 0;
 
-    while (1) {
-        ulint next_p = page_offset_get_next(page, p, comp);
-
-        if (p < 2 || p >= UNIV_PAGE_SIZE) {
-            if (debug) printf("check_page(): pointer out of range: p=%u\n", (unsigned)p);
-            return false;
-        }
-        if (next_p == p || next_p >= UNIV_PAGE_SIZE) {
-            if (debug) printf("check_page(): next pointer out of range: next_p=%u\n", 
-                            (unsigned)next_p);
-            return false;
-        }
-        if (p == p_prev) {
-            if (debug) printf("check_page(): loop detected p=%u\n", (unsigned)p);
+    /* Walk the record chain */
+    while (curr != supremum && rec_count < 1000) {  // Added safety limit
+        if (curr < FIL_PAGE_DATA || curr >= UNIV_PAGE_SIZE - 8) {
+            if (debug) printf("Invalid offset: %lu\n", curr);
             return false;
         }
 
-        p_prev = p;
+        if (debug) {
+            printf("  Record at offset %lu: ", curr);
+            dump_record_data(page_ptr + curr, 20); // Dump first 20 bytes
+        }
+
+        ulint next = page_get_next_offset(page, curr, comp);
+        
+        if (next <= curr || next >= UNIV_PAGE_SIZE - 8) {
+            if (debug) printf("Invalid next pointer: %lu\n", next);
+            return false;
+        }
+
+        curr = next;
         rec_count++;
-
-        if (p == supremum) break;
-
-        p = next_p;
-        if (rec_count > max_recs) {
-            if (debug) printf("check_page(): rec_count > max_recs => corruption\n");
-            return false;
-        }
     }
 
-    *n_records = (rec_count < 2) ? 0 : rec_count - 2;
+    if (curr != supremum) {
+        if (debug) printf("Chain did not reach supremum\n");
+        return false;
+    }
+
+    *n_records = rec_count - 1; // Don't count infimum
+    if (debug) printf("Found %d user records\n", *n_records);
+    
     return true;
 }
 
@@ -105,7 +99,7 @@ void process_ibpage(page_t *page, bool hex_output)
     bool comp = page_is_compact(page);
 
     printf("-- process_ibpage() Page id: %lu, comp=%d\n",
-           (unsigned long)page_id, (int)comp);
+           page_id, (int)comp);
 
     unsigned expected_records = 0;
     bool valid_chain = check_page(page, &expected_records);
@@ -113,46 +107,19 @@ void process_ibpage(page_t *page, bool hex_output)
 
     printf("-- check_page() => is_valid_chain=%d, expected_records=%u, "
            "Page Header N_RECS=%lu\n",
-           (int)valid_chain, expected_records, (unsigned long)n_recs_in_header);
+           (int)valid_chain, expected_records, n_recs_in_header);
 
-    if (!g_has_table) {
-        printf("[Error] No table definition loaded.\n");
-        return;
+    if (valid_chain) {
+        if (debug) {
+            printf("Valid record chain found! Starting record processing...\n");
+            /* Here we would process individual records */
+        }
     }
 
-    bool is_leaf_page = page_is_leaf(page);
-    if (is_leaf_page) {
+    bool is_leaf = page_is_leaf(page);
+    if (is_leaf && n_recs_in_header > 0) {
         records_expected_total += n_recs_in_header;
-        /* For now, we'll just track the expected records */
     }
-}
-
-bool init_table_definition(void)
-{
-    g_table.name = strdup("TESTE");
-    g_table.fields_count = 2;
-    g_table.n_nullable = 0;
-    
-    g_table.fields[0].name = strdup("ID");
-    g_table.fields[0].type = FT_INT;
-    g_table.fields[0].can_be_null = false;
-    g_table.fields[0].fixed_length = 4;
-    g_table.fields[0].min_length = 4;
-    g_table.fields[0].max_length = 4;
-    
-    g_table.fields[1].name = strdup("NOME");
-    g_table.fields[1].type = FT_CHAR;
-    g_table.fields[1].can_be_null = false;
-    g_table.fields[1].fixed_length = 0;
-    g_table.fields[1].min_length = 0;
-    g_table.fields[1].max_length = 400;
-
-    g_table.data_min_size = 8;
-    g_table.data_max_size = 421;
-    g_table.min_rec_header_len = 5;
-
-    g_has_table = true;
-    return true;
 }
 
 int main(int argc, char** argv)
@@ -165,11 +132,6 @@ int main(int argc, char** argv)
     const char* ibd_path = argv[1];
     if (argc > 2 && strcmp(argv[2], "--debug") == 0) {
         debug = true;
-    }
-
-    if (!init_table_definition()) {
-        fprintf(stderr, "Failed to initialize table definition\n");
-        return 1;
     }
 
     int fd = open(ibd_path, O_RDONLY);
@@ -194,6 +156,8 @@ int main(int argc, char** argv)
         close(fd);
         return 1;
     }
+
+    printf("Processing %zu pages...\n\n", page_count);
 
     for (size_t i = 0; i < page_count; i++) {
         off_t offset = (off_t)(i * page_size);

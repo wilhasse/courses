@@ -1,15 +1,11 @@
-#define UNIV_MUST_NOT_INLINE
-#define UNIV_INLINE
-#define HAVE_BOOL 1
-
 #include "innodb_page.h"
+#include <stdio.h>
 
-/* Helper functions */
-static ulint mach_read_from_2(const byte *b) {
+ulint mach_read_from_2(const byte *b) {
     return ((ulint)(b[0]) << 8) | (ulint)(b[1]);
 }
 
-static ulint mach_read_from_4(const byte *b) {
+ulint mach_read_from_4(const byte *b) {
     return ((ulint)(b[0]) << 24) |
            ((ulint)(b[1]) << 16) |
            ((ulint)(b[2]) << 8)  |
@@ -18,7 +14,7 @@ static ulint mach_read_from_4(const byte *b) {
 
 bool page_is_compact(const page_t *page) {
     const byte *bytes = (const byte *)page;
-    return (mach_read_from_2(bytes + 26) & 0x8000) != 0;
+    return (bytes[PAGE_HEADER + PAGE_LEVEL] & 0x80) != 0;
 }
 
 ulint page_get_n_recs(const page_t *page) {
@@ -33,20 +29,27 @@ ulint page_get_page_no(const page_t *page) {
 
 bool page_is_leaf(const page_t *page) {
     const byte *bytes = (const byte *)page;
-    return mach_read_from_2(bytes + PAGE_HEADER + PAGE_LEVEL) == 0;
+    return (bytes[PAGE_HEADER + PAGE_LEVEL] & 0x7F) == 0;
 }
 
-ulint page_offset_get_next(const page_t *page, ulint offset, bool is_comp) {
+ulint page_get_infimum_offset(bool is_compact) {
+    return is_compact ? PAGE_NEW_INFIMUM : PAGE_OLD_INFIMUM;
+}
+
+ulint page_get_supremum_offset(bool is_compact) {
+    return is_compact ? PAGE_NEW_SUPREMUM : PAGE_OLD_SUPREMUM;
+}
+
+ulint page_get_next_offset(const page_t *page, ulint current_offset, bool is_compact) {
     const byte *bytes = (const byte *)page;
-    if (is_comp) {
-        ulint next_offset = mach_read_from_2(bytes + offset - 2);
-        return offset + next_offset;
+    
+    /* Get the pointer to the next record */
+    ulint next_ptr = mach_read_from_2(bytes + current_offset - REC_NEXT);
+    
+    /* In compact format, next_ptr is relative to current position */
+    if (is_compact) {
+        return current_offset + next_ptr;
     } else {
-        return mach_read_from_2(bytes + offset - 2);
+        return next_ptr;
     }
-}
-
-int page_get_deleted_flag(const page_t *page, ulint offset) {
-    const byte *bytes = (const byte *)page;
-    return (bytes[offset - 6] >> 5) & 1;  // Simplified deletion flag check
 }
