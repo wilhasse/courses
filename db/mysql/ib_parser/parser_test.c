@@ -7,123 +7,122 @@
 #include <unistd.h>
 #include "innodb_page.h"
 
-#define MAX_TABLE_FIELDS 50
-
 typedef struct {
-    char* name;
-    int type;
-    bool can_be_null;
-    int fixed_length;
-    int min_length;
-    int max_length;
-} field_def_t;
-
-typedef struct {
-    char* name;
-    unsigned fields_count;
-    unsigned n_nullable;
-    field_def_t fields[MAX_TABLE_FIELDS];
-    ulint data_min_size;
-    ulint data_max_size;
-    ulint min_rec_header_len;
-} table_def_t;
+    int id;
+    char nome[101];
+} record_t;
 
 static bool debug = false;
-static table_def_t g_table;
-static bool g_has_table = false;
 static unsigned long records_expected_total = 0;
 static unsigned long records_dumped_total = 0;
 static int records_lost = 0;
 
-void dump_record_data(const byte *record, ulint length) {
-    printf("Record data (%lu bytes): ", length);
-    for (ulint i = 0; i < length; i++) {
-        printf("%02x ", record[i]);
+void hexdump(const byte *data, size_t len, const char *prefix) {
+    printf("%s", prefix);
+    for (size_t i = 0; i < len; i++) {
+        if (i > 0 && i % 16 == 0) printf("\n%s", prefix);
+        printf("%02x ", data[i]);
     }
     printf("\n");
 }
 
-bool check_page(const page_t *page, unsigned *n_records)
-{
-    bool comp = page_is_compact(page);
-    ulint infimum = page_get_infimum_offset(comp);
-    ulint supremum = page_get_supremum_offset(comp);
-    const byte *page_ptr = (const byte *)page;
-
-    if (debug) {
-        printf("check_page(): comp=%d, inf=%lu, sup=%lu\n",
-               (int)comp, infimum, supremum);
-    }
-
-    /* Start at infimum */
-    ulint curr = infimum;
-    int rec_count = 0;
-
-    /* Walk the record chain */
-    while (curr != supremum && rec_count < 1000) {  // Added safety limit
-        if (curr < FIL_PAGE_DATA || curr >= UNIV_PAGE_SIZE - 8) {
-            if (debug) printf("Invalid offset: %lu\n", curr);
-            return false;
-        }
-
-        if (debug) {
-            printf("  Record at offset %lu: ", curr);
-            dump_record_data(page_ptr + curr, 20); // Dump first 20 bytes
-        }
-
-        ulint next = page_get_next_offset(page, curr, comp);
-        
-        if (next <= curr || next >= UNIV_PAGE_SIZE - 8) {
-            if (debug) printf("Invalid next pointer: %lu\n", next);
-            return false;
-        }
-
-        curr = next;
-        rec_count++;
-    }
-
-    if (curr != supremum) {
-        if (debug) printf("Chain did not reach supremum\n");
+bool parse_user_record(const byte *rec_ptr, record_t *record) {
+    if (rec_get_deleted_flag(rec_ptr)) {
+        if (debug) printf("Skipping deleted record\n");
         return false;
     }
-
-    *n_records = rec_count - 1; // Don't count infimum
-    if (debug) printf("Found %d user records\n", *n_records);
+    
+    /* Skip record header */
+    rec_ptr += REC_HEADER_SIZE;
+    
+    /* Read ID */
+    record->id = mach_read_from_4(rec_ptr);
+    rec_ptr += 4;
+    
+    /* Read NOME */
+    size_t name_len = 0;
+    while (name_len < 100 && rec_ptr[name_len] && rec_ptr[name_len] != ' ') {
+        name_len++;
+    }
+    memcpy(record->nome, rec_ptr, name_len);
+    record->nome[name_len] = '\0';
     
     return true;
 }
 
-void process_ibpage(page_t *page, bool hex_output)
-{
-    ulint page_id = page_get_page_no(page);
-    bool comp = page_is_compact(page);
-
-    printf("-- process_ibpage() Page id: %lu, comp=%d\n",
-           page_id, (int)comp);
-
-    unsigned expected_records = 0;
-    bool valid_chain = check_page(page, &expected_records);
-    ulint n_recs_in_header = page_get_n_recs(page);
-
-    printf("-- check_page() => is_valid_chain=%d, expected_records=%u, "
-           "Page Header N_RECS=%lu\n",
-           (int)valid_chain, expected_records, n_recs_in_header);
-
-    if (valid_chain) {
-        if (debug) {
-            printf("Valid record chain found! Starting record processing...\n");
-            /* Here we would process individual records */
-        }
+void process_index_page(const page_t *page) {
+    const byte *rec = page_get_infimum_rec(page);
+    bool header_printed = false;
+    
+    if (debug) {
+        printf("\nProcessing index page:\n");
+        page_header_print(page);
+        printf("\nInfimum record:\n");
+        hexdump(rec, 20, "  ");
     }
-
-    bool is_leaf = page_is_leaf(page);
-    if (is_leaf && n_recs_in_header > 0) {
-        records_expected_total += n_recs_in_header;
+    
+    /* Skip infimum by getting next record */
+    rec = page_rec_get_next(rec, page);
+    while (rec && rec < page_get_supremum_rec(page)) {
+        if (debug) {
+            printf("\nRecord at offset %lu:\n", (ulint)(rec - (const byte*)page));
+            hexdump(rec, 20, "  ");
+        }
+        
+        record_t record;
+        if (parse_user_record(rec, &record)) {
+            if (!header_printed) {
+                printf("\nID\tNOME\n");
+                printf("----------------------------------------\n");
+                header_printed = true;
+            }
+            printf("%d\t%s\n", record.id, record.nome);
+            records_dumped_total++;
+        }
+        
+        rec = page_rec_get_next(rec, page);
     }
 }
 
-int main(int argc, char** argv)
-{
+void process_ibpage(page_t *page, bool hex_output) {
+    ulint page_type = page_get_type(page);
+    ulint page_id = page_get_page_no(page);
+    
+    printf("\n-- Processing page %lu (type %lu)\n", page_id, page_type);
+    
+    if (page_type == FIL_PAGE_INDEX) {
+        ulint n_recs = page_get_n_recs(page);
+        if (page_is_leaf(page)) {
+            printf("-- Leaf index page with %lu records\n", n_recs);
+            process_index_page(page);
+            records_expected_total += n_recs;
+        } else {
+            printf("-- Non-leaf index page (skipping)\n");
+        }
+    } else {
+        switch(page_type) {
+            case FIL_PAGE_TYPE_FSP_HDR:
+                printf("-- File space header page (skipping)\n");
+                break;
+            case FIL_PAGE_IBUF_BITMAP:
+                printf("-- Insert buffer bitmap (skipping)\n");
+                break;
+            case FIL_PAGE_TYPE_ALLOCATED:
+                printf("-- Freshly allocated page (skipping)\n");
+                break;
+            case FIL_PAGE_INODE:
+                printf("-- Index node page (skipping)\n");
+                break;
+            case FIL_PAGE_TYPE_SYS:
+                printf("-- System page (skipping)\n");
+                break;
+            default:
+                printf("-- Unknown page type %lu (skipping)\n", page_type);
+        }
+    }
+}
+
+int main(int argc, char** argv) {
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <tablename.ibd> [--debug]\n", argv[0]);
         return 1;
@@ -133,32 +132,32 @@ int main(int argc, char** argv)
     if (argc > 2 && strcmp(argv[2], "--debug") == 0) {
         debug = true;
     }
-
+    
     int fd = open(ibd_path, O_RDONLY);
     if (fd < 0) {
         perror("open");
         return 1;
     }
-
+    
     struct stat st;
     if (fstat(fd, &st) != 0) {
         perror("fstat");
         close(fd);
         return 1;
     }
-
-    const size_t page_size = UNIV_PAGE_SIZE;
+    
+    const size_t page_size = 16384;  /* InnoDB page size */
     size_t page_count = (size_t)(st.st_size / page_size);
-
+    
     unsigned char *page_buf = malloc(page_size);
     if (!page_buf) {
         fprintf(stderr, "Failed to allocate page buffer\n");
         close(fd);
         return 1;
     }
-
-    printf("Processing %zu pages...\n\n", page_count);
-
+    
+    printf("Processing %zu pages...\n", page_count);
+    
     for (size_t i = 0; i < page_count; i++) {
         off_t offset = (off_t)(i * page_size);
         ssize_t ret = pread(fd, page_buf, page_size, offset);
@@ -168,14 +167,14 @@ int main(int argc, char** argv)
         }
         process_ibpage((page_t*)page_buf, false);
     }
-
+    
     free(page_buf);
     close(fd);
-
+    
     printf("\n===== Summary =====\n");
     printf("Records expected total: %lu\n", records_expected_total);
     printf("Records dumped total:   %lu\n", records_dumped_total);
     printf("Lost any records? %s\n", records_lost ? "YES" : "NO");
-
+    
     return 0;
 }
