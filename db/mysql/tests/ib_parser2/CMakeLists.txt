@@ -10,7 +10,6 @@ add_definitions(
   -DHAVE_CONFIG_H
   -DMYSQL_SERVER
   -D_GNU_SOURCE
-  -DDBUG_OFF
   -DPFS_SKIP
   -DHAVE_BOOL
   -DHAVE_PSI_INTERFACE
@@ -27,7 +26,6 @@ set(MYSQL_BUILD_DIR  "/data/percona-server-57/build")
 # Where to put parser_main.cc
 set(PARSER_SOURCES
   parser_main.cc
-  # If you have separate .cc for stubs or logic
   my_innodb_stubs.cc
 )
 
