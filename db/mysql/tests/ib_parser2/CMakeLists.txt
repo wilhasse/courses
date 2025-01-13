@@ -26,6 +26,7 @@ set(MYSQL_BUILD_DIR  "/data/percona-server-57/build")
 # Where to put parser_main.cc
 set(PARSER_SOURCES
   parser_main.cc
+  tables_dict.cc
   my_innodb_stubs.cc
 )
 

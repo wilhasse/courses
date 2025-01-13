@@ -64,7 +64,8 @@ typedef enum field_type {
 	FT_DECIMAL,		// supported
 	FT_TIMESTAMP,	// supported
 	FT_YEAR,		// supported
-	FT_BIN			// supported
+	FT_BIN,			// supported
+	FT_INTERNAL_SYS
 } field_type_t;
 
 typedef struct field_def {
