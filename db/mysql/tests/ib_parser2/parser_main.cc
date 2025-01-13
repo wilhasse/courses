@@ -13,6 +13,7 @@
 #include "rem0rec.h"
 #include "mach0data.h"
 #include "tables_dict.h"
+#include "tables_json.h"
 
 // (Optional) RapidJSON if you still want to load from JSON
 #include <rapidjson/document.h>
@@ -610,75 +611,19 @@ int main(int argc, char **argv)
     debug = true;
   }
 
-  // 1) Load table definition from JSON or your approach
-  //    (Below is an example skeleton that sets up g_table)
-  {
-    // Suppose we do a simplified build_table_def_from_json() that
-    // reads columns => fill g_table.
-    // For brevity, let’s skip the entire code. Just assume success:
-    //   g_has_table = (build_table_def_from_json(&g_table, "TESTE") == 0);
-    // In a real environment, do your real JSON loading:
+  // Load table definition from JSON or your approach
+  load_ib2sdi_table_columns(argv[2]);
 
-    g_has_table = true;
-
-// Replicate the definition from your “undrop-for-innodb”:
-    g_table.name = strdup("TESTE");
-    g_table.fields_count = 4;
-    g_table.n_nullable   = 0; // from the snippet
-
-    // Field #0: ID
-    g_table.fields[0].name             = strdup("ID");
-    g_table.fields[0].type             = FT_INT;
-    g_table.fields[0].can_be_null      = false;
-    g_table.fields[0].fixed_length     = 4;
-    g_table.fields[0].min_length       = 0;
-    g_table.fields[0].max_length       = 0;
-    g_table.fields[0].decimal_precision= 0;
-    g_table.fields[0].decimal_digits   = 0;
-    g_table.fields[0].time_precision   = 0;
-
-    // Field #1: DB_TRX_ID
-    g_table.fields[1].name             = strdup("DB_TRX_ID");
-    g_table.fields[1].type             = FT_INTERNAL; // undrop style
-    g_table.fields[1].can_be_null      = false;
-    g_table.fields[1].fixed_length     = 6;
-    g_table.fields[1].min_length       = 0;
-    g_table.fields[1].max_length       = 0;
-    g_table.fields[1].decimal_precision= 0;
-    g_table.fields[1].decimal_digits   = 0;
-    g_table.fields[1].time_precision   = 0;
-
-    // Field #2: DB_ROLL_PTR
-    g_table.fields[2].name             = strdup("DB_ROLL_PTR");
-    g_table.fields[2].type             = FT_INTERNAL;
-    g_table.fields[2].can_be_null      = false;
-    g_table.fields[2].fixed_length     = 7;
-    g_table.fields[2].min_length       = 0;
-    g_table.fields[2].max_length       = 0;
-    g_table.fields[2].decimal_precision= 0;
-    g_table.fields[2].decimal_digits   = 0;
-    g_table.fields[2].time_precision   = 0;
-
-    // Field #3: NOME
-    g_table.fields[3].name             = strdup("NOME");
-    g_table.fields[3].type             = FT_CHAR;
-    g_table.fields[3].can_be_null      = false;
-    g_table.fields[3].fixed_length     = 100;
-    g_table.fields[3].min_length       = 0;
-    g_table.fields[3].max_length       = 0;
-    g_table.fields[3].decimal_precision= 0;
-    g_table.fields[3].decimal_digits   = 0;
-    g_table.fields[3].time_precision   = 0;
-
-    // Additional meta info
-    g_table.min_rec_header_len = 5;  // typical for COMPACT
-    // You can skip or override these if you want
-    g_table.data_min_size      = 0; 
-    g_table.data_max_size      = 0; // or set them to something large if needed
-
-    table_definitions[0] = g_table;
-    table_definitions_cnt = 1;
+  // Build a table_def_t from g_columns
+  static table_def_t g_table;
+  if (build_table_def_from_json(&g_table, "TESTE") != 0) {
+    std::cerr << "Failed to build table_def_t from JSON.\n";
+    return 1;
   }
+
+  // Add table
+  table_definitions[0] = g_table;
+  table_definitions_cnt = 1;
 
   // 2) open the .ibd
   int fd = open(ibd_path, O_RDONLY);
