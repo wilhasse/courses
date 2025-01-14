@@ -1,4 +1,16 @@
-# Percona MySQL study area
+# Source code
+
+- [Source code study](./source)
+
+# InnoDB
+
+- [Diagram and each component](./docs/innodb_diagram.md)
+- [Embedded Innodb 1.0.6](./../tests/innodbtest/README.md)
+- [InnoDB File Formats Evolution](./docs/inndb_format.md)
+- [InnoDB space (parse .ibd without mysql)](./docs/innodb_space.md)
+- [Joining tables and Storage Engine](./docs/join_storage.md)
+
+# Architecture
 
 ```mermaid
 flowchart TB
@@ -34,7 +46,8 @@ flowchart TB
     subgraph D["Storage Engines"]
         style D fill:#f0f2f5,stroke:#2f4f4f,stroke-width:2px
         D1["InnoDB (Default engine)"]
-        D3["Memory/CSV"]
+        D2["Memory"]
+        D3["CSV"]
     end
 
     %% Replication
@@ -73,14 +86,3 @@ flowchart TB
     class A1,A2,B1,B2,B3,C1,C2,D1,D3,E1,E2,F1,F2,F3,G1,G2 subComponent
 ```
 
-# Source code
-
-- [Source code study](./source)
-
-# InnoDB
-
-- [Diagram and each component](./docs/innodb_diagram.md)
-- [Embedded Innodb 1.0.6](./../innodbtest/README.md)
-- [InnoDB File Formats Evolution](./docs/inndb_format.md)
-- [InnoDB space (parse .ibd without mysql)](./docs/innodb_space.md)
-- [Joining tables and Storage Engine](./docs/join_storage.md)
