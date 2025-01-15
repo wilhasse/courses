@@ -1,0 +1,3 @@
+-I/data/percona-server-57/include
+-I/data/percona-server-57/build/include
+-I/data/percona-server-57/storage/innobase/include/
