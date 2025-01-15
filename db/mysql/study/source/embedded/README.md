@@ -30,7 +30,7 @@ https://github.com/nextgres/oss-embedded-innodb
 | eval    | Provides helper routines for expression evaluation, used for evaluating conditions or internal expressions. |
 | read    | Contains logic for efficient row reading, including prefetch and read-ahead mechanisms. |
 | que     | Query execution subsystem handling internal query-like or procedural flows within the storage engine. |
-| rem     | Contains remote or "remnant" code related to row-based operations or older replication-based features. |
+| [rem](./rem.md)     | Contains remote or "remnant" code related to row-based operations or older replication-based features. |
 | ddl     | Handles Data Definition Language operations, orchestrating changes to dictionary, files, and data structures. |
 | dyn     | Contains code for dynamic memory structures and string handling, including expanding buffers and specialized memory routines. |
 | pars    | Responsible for parsing InnoDB-specific syntax or structures, especially internal SQL-like commands. |
