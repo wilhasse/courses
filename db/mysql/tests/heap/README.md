@@ -55,6 +55,8 @@ Link to MySQL headers file
 
 ```bash
 cd heap
+mkdir include
+cd include
 ln -s /data/percona-server-57/include/my_*.h .
 ln -s /data/percona-server-57/include/mysql*.h .
 ln -s /data/percona-server-57/include/*.h .
