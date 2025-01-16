@@ -23,7 +23,7 @@ mysqldump -u username --single-transaction -p database_name -t table1 --w "DATA 
 * `-h`: Host name
 * `-P`: Port number
 
-# Specific
+# Other
 
 Full with routines (store procedure):
 
