@@ -4,7 +4,7 @@ The last time Innobase Oy released an Innodb version
 
 [InnoDB Source code](https://github.com/nextgres/oss-embedded-innodb)
 
-[Source Code Analysis (o1-pro)](./../study/source/embedded/README.md)
+[Source Code Analysis (o1-pro)](./../../study/source/embedded/README.md)
 
 # Compile
 

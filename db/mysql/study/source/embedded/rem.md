@@ -189,6 +189,153 @@ Hence, the examples:
 
 All of this is crucial to how **InnoDB** manages, indexes, and compares records internally.
 
+# Differences
+
+Below is a **detailed explanation** of how **ROW_FORMAT=COMPACT** compares to **ROW_FORMAT=DYNAMIC**, what the **canonical coordinates** concept is, and how **offsets** let MySQL/InnoDB read each column from a record. We’ll **highlight** the practical differences and clarify some frequently misunderstood points.
+
+---
+
+## 1. COMPACT vs. DYNAMIC Row Formats
+
+### A. COMPACT Format (introduced in MySQL 5.0)
+
+- **Basic Idea**:  
+  All variable-length columns store their length bytes **immediately** before the actual column data, plus a bitmap of `NULL` flags, plus some other overhead in the record header. Each field can be either:
+  - **Stored inline** if short enough, or
+  - **Partially stored** (with only a small portion inline plus a pointer) if it’s a large BLOB/TEXT field.  
+
+- **Length Bytes**:  
+  For variable-length columns whose max length is \> 255, InnoDB can use **2 bytes** to store the length (with the top bits for “extern” or “NULL”). For smaller columns (\<= 255), it might use **1 byte**.
+
+- **Null Bitmap**:  
+  There is a bit for each nullable column, telling you if the field is `NULL`. If a column is `NULL`, **no length byte** is stored for that column.
+
+- **Record Header**:  
+  1. **Info bits**: 4 bits for delete-mark, min-record, etc.  
+  2. **n_owned**: 4 bits for how many subsequent records it “owns.”  
+  3. **Heap number**: 13 bits.  
+  4. **Record type**: 3 bits (000=ordinary, 010=infimum, etc.).  
+  5. **Relative pointer**: 2 bytes to the next record.
+
+- **Offsets**:  
+  In COMPACT, InnoDB does **not** store explicit offsets for each column in the record header the same way as old-style. Instead, we reconstruct them from the length bytes (for variable columns) and from known fixed lengths. For example, MySQL code will parse each field’s length byte (if needed) to figure out where one field ends and the next begins.
+
+### B. DYNAMIC Format (introduced in MySQL 5.5)
+
+- **Basic Idea**:  
+  DYNAMIC is actually **very similar** to COMPACT. It’s often described as a “refinement” of COMPACT row format to better handle off-page storage for large columns (especially BLOB/TEXT).
+
+- **Differences from COMPACT**:
+  1. **Large columns** (“overflow” columns) can be stored off-page more efficiently. In COMPACT, large columns might store a 768-byte prefix on-page and the remainder off-page. In DYNAMIC, InnoDB only keeps as much on-page as possible but can do so more flexibly.  
+  2. **Better Performance** for bigger columns: DYNAMIC tries to keep minimal overhead in-line.  
+
+- **Physical Layout**:  
+  The **on-page** structure (null bits, length bytes, etc.) is still quite close to COMPACT. The biggest difference is how large columns are stored off-page.  
+
+- **Compatibility**:  
+  DYNAMIC is often considered the “default” in modern MySQL if you use the Barracuda file format with `ROW_FORMAT=DYNAMIC`. From the perspective of reading a record’s columns, the basic steps are very similar to COMPACT.  
+
+### Practical Impact
+
+- Both COMPACT and DYNAMIC place a small prefix of a big column in-line plus a pointer to the rest of the data if the column is large. The difference is **how** that off-page storage is organized.  
+- On-page parsing of fields (for reading columns) is almost the same code path: we read the length bytes, check for `NULL` bits, interpret the data. If it’s “extern” (off-page), we read that pointer structure to retrieve the rest of the BLOB.  
+
+---
+
+## 2. Canonical Coordinates—Are They a New Layer?
+
+### A. What are “Canonical Coordinates”?
+
+- **Conceptual Only**:  
+  The “canonical coordinates” notion is **not** actually a physical on-disk format. It’s a **logical** representation for comparing or doing prefix operations on records.  
+
+- **Definition**:  
+  You imagine you take each field’s raw bytes in order. If a field is `NULL`, it contributes **no bytes** (i.e. an empty sequence). Then, you insert a special marker `<FIELD-END>` at the end of every non-null field, or `<NULL-FIELD-END>` after a null field.  
+
+- **Why It’s Useful**:
+  1. **Comparisons**: If you want to see how many initial bytes two records share (like a common prefix), the “canonical” string representation makes it easy.  
+  2. **Prefix indexes**: If MySQL only indexes the first X characters of a column, the canonical approach helps unify how we define those “first X characters.”  
+  3. **No Physical Change**: It **does not** modify how COMPACT or DYNAMIC physically store the row. It’s purely a conceptual or in-memory approach for comparisons, prefix matching, etc.  
+
+### B. Does Canonical Coordinates “Replace” COMPACT?
+
+- **No**. The “canonical string” concept is a layer **on top** of the existing physical format. It does not alter the bytes on disk. Instead, whenever InnoDB code needs to do certain comparisons or prefix truncations, it can interpret the fields in this canonical way.  
+
+### C. Example
+
+- Suppose the row is `("AA", SQL-NULL, "BB", "")`. Then the canonical string is:
+  ```
+  "AA" <FIELD-END>
+       <NULL-FIELD-END>
+  "BB" <FIELD-END>
+       <FIELD-END>
+  ```
+  The “canonical coordinates” let the code define exactly where each field ends, how to handle null fields, etc., for indexing or comparison.  
+- This is purely for logical operations; **physically** in COMPACT or DYNAMIC, we still have length bytes, a null bit, etc.
+
+---
+
+## 3. Offsets in Practice—How Do We Read Each Column?
+
+### A. Where Are the Offsets?
+
+- In MySQL’s **old row format** (Pre-COMPACT, a.k.a. “Redundant”), there was an array of field-end offsets in the record header.  
+- In **COMPACT** (and also DYNAMIC), we do **not** see a big offset array in the header. Instead, we have:
+  1. **Null bits** for nullable columns.  
+  2. **Length bytes** for each variable-length column, in reverse order.  
+  3. **Known** or **fixed** lengths for fixed-length columns (like a 4-byte INT).  
+
+**Hence**, to read column #1, #2, #3, etc., we do something like:
+
+1. Start from the **end** of the record header (which has the “info bits,” “n_owned,” “heap no.,” etc.).  
+2. Move backward to read the “null bits” array (which might be 1, 2, or more bytes, depending on how many nullable columns).  
+3. Move backward through the **length bytes** in reverse order for each variable-length column, skipping any column that’s `NULL` (no length byte is stored if `NULL`).  
+4. By summing those lengths (or ignoring if `NULL`), we find where each field **starts** and **ends** in the actual data portion that follows.  
+
+### B. One Offset per Column?
+
+- For variable-length columns, InnoDB effectively stores a “length byte” (or possibly 2 bytes) for each column that is **not null**. In that sense, you can think of it as an “offset mechanism,” but it’s not a direct offset; it’s the length that helps you compute the offset.  
+- For fixed-length columns, no length bytes are stored. You know an INT is 4 bytes, a CHAR(10) is 10 bytes, etc. You simply add that fixed length to your running total to find the next column’s location.  
+
+### C. Example
+
+Suppose a table has 3 columns:
+1. `col1` = `VARCHAR(200)`, maybe 2-byte length  
+2. `col2` = `INT NOT NULL` (4 bytes, fixed)  
+3. `col3` = `VARCHAR(20) NULLABLE`  
+
+In a COMPACT row:
+
+1. **Null bits**: we have at least 1 bit for `col3`, because it’s nullable. So 1 byte for the null bitmap if the table has a small number of nullable cols.  
+2. **Length bytes**: 
+   - For `col1` we might store 1 or 2 length bytes (depending on actual length and maximum length).  
+   - For `col3`, if it’s not null, we store 1 length byte (if <128) or 2 bytes. If `col3` **is** null, we do not store any length byte; we only set the null bit.  
+3. **Reading**: 
+   - We check if `col3` is null by reading the null bit. If not null, read `col3` length byte from the length-array portion.  
+   - We know `col2` is not null and is a fixed 4 bytes.  
+   - For `col1` we also read a length byte.  
+
+We piece it together to find each column’s data portion. Under the hood, MySQL’s function `rec_get_offsets()` constructs a small in-memory array describing exactly where each column starts and ends. That’s how the server “knows” how to read the entire row.
+
+---
+
+## Summary
+
+- **COMPACT vs. DYNAMIC**: They are very similar in on-page layout. The main difference is how large columns (BLOB/TEXT) can be moved off-page. DYNAMIC does it more flexibly. Otherwise, *reading columns from the page* is essentially the same.  
+- **Canonical Coordinates**: Not an actual on-disk format. It’s a **logical** approach for comparing or partially matching records. It doesn’t change how the COMPACT or DYNAMIC row is physically stored.  
+- **Offsets**: In COMPACT/DYNAMIC, we store the record header plus:
+  - A null-bit bitmap,  
+  - For each variable-length column, length bytes (in reverse order).  
+  This arrangement **lets InnoDB reconstruct** the offset of each column at run-time. You **do** effectively get one offset or length measure per column, but it’s not stored in a simple array at the front—it’s scattered in that “length bytes region” plus knowledge of which columns are fixed or null.
+
+Hence, in practice, MySQL (InnoDB) can read an entire row (all columns) by:
+
+1. Checking each column’s null bit.  
+2. Reading the length bytes if it’s variable-length and not null.  
+3. Accumulating the total so we know where to find the actual data for that column in the row.  
+
+That’s how the offset logic helps navigate from the record header to each field, even though physically the row is in “COMPACT” or “DYNAMIC” format on disk.
+
 # rem0rec.c
 
 Below is a **detailed, function-by-function walkthrough** of the relevant code in **`rem/rem0rec.c`**, **focusing** on how each function works internally, and **relating** it to the **physical-record concepts** (old-style vs. new-style) we already discussed. You can refer back to the previously explained record formats if you want a refresher on the structural details.
