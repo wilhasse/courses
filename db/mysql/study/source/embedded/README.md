@@ -9,7 +9,7 @@ https://github.com/nextgres/oss-embedded-innodb
 | ------- | ------------------------------------------------------------ |
 | [mach](./mach.md)    | Handles low-level, machine-dependent operations and fundamental constants. Abstracts processor architecture details, byte ordering, and basic arithmetic helpers to keep higher layers platform-agnostic. |
 | [include](./include.md) | Shared header directory providing declarations, macros, and common definitions used throughout the entire InnoDB codebase. Centralizes function prototypes and data structures. |
-| ut      | Utility directory containing general-purpose helper routines such as data structure implementations (lists, arrays, hash), error handling utilities, and frequently reused algorithms. |
+| [ut](./ut.md)      | Utility directory containing general-purpose helper routines such as data structure implementations (lists, arrays, hash), error handling utilities, and frequently reused algorithms. |
 | mem     | Manages InnoDB's specialized memory handling, including custom allocators, memory pools, and debugging mechanisms (like memory poisoning) to ensure consistent and efficient allocation patterns. |
 | sync    | Handles synchronization primitives such as mutexes, read-write locks, and condition variables. Provides concurrency control mechanisms at a low level. |
 | thr     | Focuses on thread-related abstractions, offering portable wrappers or helpers for threading functionality to abstract OS-specific threading APIs. |
