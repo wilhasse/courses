@@ -10,3 +10,4 @@ Administration Procedures
 - [Install mytop](./mytop.md)
 - [Internal Innodb Sys Tables](./sys_tables.md)
 - [Percona 8 Keyring file compoment](./keyring.md)
+- [Enabling jmalloc in Percona 8 (Debian 12)](./jmalloc.md)
