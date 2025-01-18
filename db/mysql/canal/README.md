@@ -2,6 +2,8 @@
 
 [Main concepts](./concepts.md)
 
+[Protocol](./protocol.md)
+
 # Install
 
 Get last version in Git:  
