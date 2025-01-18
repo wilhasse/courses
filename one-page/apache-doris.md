@@ -93,3 +93,27 @@ mysql -uroot -P9030 -h127.0.0.1
 
 #check Alive: true
 ```
+
+Change root password
+
+```bash
+SET PASSWORD FOR 'root' = PASSWORD('your_new_password');
+
+# or
+ALTER USER 'root'@'%' IDENTIFIED BY '';
+```
+
+# Config
+
+Front end memory config is 8G:
+
+./fe/conf/fe.conf
+
+```bash
+# For jdk 8
+JAVA_OPTS="... -Xmx8192m ..."
+# For jdk 17
+JAVA_OPTS_FOR_JDK_17="... -Xmx8192m -Xms8192m ..."
+```
+
+Depending on the server memory you can increase or decrease

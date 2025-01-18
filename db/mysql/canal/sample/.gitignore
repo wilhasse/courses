@@ -1,0 +1,16 @@
+*.bak
+*.class
+*.iml
+*.jdb
+*.lck
+*.log
+.classpath
+.idea/
+.project
+.settings/
+bdbtmp/
+git.properties
+logs
+package-info.java
+target/
+dependency-reduced-pom.xml
