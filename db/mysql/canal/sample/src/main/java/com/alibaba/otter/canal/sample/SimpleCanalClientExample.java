@@ -36,7 +36,7 @@ public class SimpleCanalClientExample {
          * - username and password: the credentials if Canal server requires authentication (left empty here).
          */
         CanalConnector connector = CanalConnectors.newSingleConnector(
-            new InetSocketAddress("10.200.15.8", 11111), 
+            new InetSocketAddress("10.200.15.21", 11111), 
             "example", 
             "", 
             ""
@@ -54,7 +54,8 @@ public class SimpleCanalClientExample {
 
             // Subscribe to all changes in all schemas: ".*\\..*"
             // This means you want to capture all events from all databases and tables.
-            connector.subscribe(".*\\..*");
+            // connector.subscribe(".*\\..*");
+			connector.subscribe("cslog_grb_prod\\.ACESSO"); 
 
             // Rollback any previous incomplete acknowledgments to start fresh.
             connector.rollback();
