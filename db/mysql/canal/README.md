@@ -108,3 +108,33 @@ Run example:
 ```bash
 mvn exec:java -Dexec.mainClass="com.alibaba.otter.canal.sample.SimpleCanalClientExample"
 ```
+
+# Automatic startup
+
+```bash
+nano /etc/systemd/system/canal.service
+
+[Unit]
+Description=Alibaba Canal Service
+After=network.target
+
+[Service]
+Type=forking
+User=cslog
+Group=cslog
+Environment="JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64"  # Adjust this path
+WorkingDirectory=/home/cslog/alibaba-canal
+ExecStart=/home/cslog/alibaba-canal/bin/startup.sh
+ExecStop=/home/cslog/alibaba-canal/bin/stop.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable canal
+sudo systemctl start canal
+sudo systemctl status canal
+```

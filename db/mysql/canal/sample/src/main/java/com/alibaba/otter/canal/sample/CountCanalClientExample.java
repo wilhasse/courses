@@ -25,60 +25,64 @@ public class CountCanalClientExample {
     private static final long PRINT_INTERVAL = 60_000;
     private static long lastPrintTime = System.currentTimeMillis();
 
-    public static void main(String[] args) {
-
-        CanalConnector connector = CanalConnectors.newSingleConnector(
-            new InetSocketAddress("10.200.15.21", 11111),
-            "example",
-            "",
-            ""
-        );
-
-        int batchSize = 1000;
-        int emptyCount = 0;
-        int totalEmptyCount = 120;
-
-        try {
-            connector.connect();
-            // Subscribe to all tables in all schemas. Or narrow as needed.
-            connector.subscribe(".*\\..*");
-            connector.rollback();
-
-            while (emptyCount < totalEmptyCount) {
-                Message message = connector.getWithoutAck(batchSize);
-                long batchId = message.getId();
-                int size = message.getEntries().size();
-
-                if (batchId == -1 || size == 0) {
-                    emptyCount++;
-                    System.out.println("empty count : " + emptyCount);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        // Handle interruption
-                    }
-                } else {
-                    emptyCount = 0;
-                    processEntries(message.getEntries());
-                }
-                connector.ack(batchId);
-
-                // Check if it's time to print the top 10.
-                long currentTime = System.currentTimeMillis();
-                if (currentTime - lastPrintTime >= PRINT_INTERVAL) {
-                    printTop10Tables();
-                    // Reset the map
-                    tableRowsAffectedMap.clear();
-                    // Reset the last print time
-                    lastPrintTime = currentTime;
-                }
-            }
-
-            System.out.println("empty too many times, exit");
-        } finally {
-            connector.disconnect();
-        }
+public static void main(String[] args) {
+    // Check if IP address is provided as command line argument
+    if (args.length < 1) {
+        System.out.println("Please provide IP address as command line argument");
+        System.out.println("Usage: java YourClassName <ip_address>");
+        return;
     }
+
+    String ipAddress = args[0];
+    CanalConnector connector = CanalConnectors.newSingleConnector(
+        new InetSocketAddress(ipAddress, 31111),
+        "percona",
+        "",
+        ""
+    );
+    
+    int batchSize = 1000;
+    int emptyCount = 0;
+    int totalEmptyCount = 120;
+    
+    try {
+        connector.connect();
+        connector.subscribe(".*\\..*");
+        connector.rollback();
+        
+        while (emptyCount < totalEmptyCount) {
+            Message message = connector.getWithoutAck(batchSize);
+            long batchId = message.getId();
+            int size = message.getEntries().size();
+            
+            if (batchId == -1 || size == 0) {
+                emptyCount++;
+                System.out.println("empty count : " + emptyCount);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    // Handle interruption
+                }
+            } else {
+                emptyCount = 0;
+                processEntries(message.getEntries());
+            }
+            
+            connector.ack(batchId);
+            
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastPrintTime >= PRINT_INTERVAL) {
+                printTop10Tables();
+                tableRowsAffectedMap.clear();
+                lastPrintTime = currentTime;
+            }
+        }
+        
+        System.out.println("empty too many times, exit");
+    } finally {
+        connector.disconnect();
+    }
+}
 
     /**
      * Process the row change entries, and update the 'tableRowsAffectedMap'
