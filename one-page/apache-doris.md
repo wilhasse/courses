@@ -35,7 +35,7 @@ sysctl -p
 # fe (frontend)
 
 ```bash
-cd /dorics
+cd /doris
 pico ./fe/conf/fe.conf
 
 JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
@@ -55,7 +55,7 @@ mysql -uroot -P9030 -h127.0.0.1 -e "show frontends;"
 # be (backend)
 
 ```bash
-cd /dorics
+cd /doris
 pico ./be/conf/be.conf
 
 JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
@@ -66,7 +66,7 @@ Configure
 
 ```bash
 # bg
-./fe/bin/start_fe.sh --daemon
+./be/bin/start_be.sh --daemon
 
 # test
 mysql -uroot -P9030 -h127.0.0.1 -e "show frontends;"
