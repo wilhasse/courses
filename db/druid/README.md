@@ -8,8 +8,8 @@ https://github.com/alibaba/druid
 
 - [Overview](./docs/overview.md)
 - [Wiki organized and translated](./docs/wiki_doc.md)
-- [Sub Query](./docs/subquery.md)
 - [Breaking down query](./docs/break_query.md)
+- [Sub Query](./docs/subquery.md)
 
 # Code
 
