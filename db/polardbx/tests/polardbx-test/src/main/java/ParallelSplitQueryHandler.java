@@ -26,8 +26,10 @@ public class ParallelSplitQueryHandler extends SimpleSplitQueryHandler {
             TimestampLogger.startTimer("fullQuery");
 
             List<String> chunks = new ArrayList<>();
-            chunks.add(buildChunkSQL(originalSelect, "< 3000000"));
-            chunks.add(buildChunkSQL(originalSelect, ">= 3000000 AND c_custkey <6000000"));
+            chunks.add(buildChunkSQL(originalSelect, "< 6000000"));
+            chunks.add(buildChunkSQL(originalSelect, ">= 6000000 AND c_custkey <12000000"));
+            //chunks.add(buildChunkSQL(originalSelect, ">= 12000000 AND c_custkey <18000000"));
+            //chunks.add(buildChunkSQL(originalSelect, ">= 18000000 AND c_custkey <24000000"));
 
             TimestampLogger.logWithTime("Created " + chunks.size() + " chunks:");
             chunks.forEach(sql -> TimestampLogger.logWithTime("Chunk SQL: " + sql));

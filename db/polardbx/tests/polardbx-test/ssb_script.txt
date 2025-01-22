@@ -27,3 +27,33 @@ mysqlimport --local --fields-terminated-by='|' --lines-terminated-by='\n' -u roo
 mysqlimport --local --fields-terminated-by='|' --lines-terminated-by='\n' -u root ssb /data2/doris/tools/ssb-tools/bin/ssb-data/lineorder.tbl.8
 mysqlimport --local --fields-terminated-by='|' --lines-terminated-by='\n' -u root ssb /data2/doris/tools/ssb-tools/bin/ssb-data/lineorder.tbl.9
 mysqlimport --local --fields-terminated-by='|' --lines-terminated-by='\n' -u root ssb /data2/doris/tools/ssb-tools/bin/ssb-data/lineorder.tbl.10
+
+
+percona-server/include/m_ctype.h
+
+where struct is defined
+
+and create the global variable myself?
+
+NNODBKey-fdd12291-78e9-11ed-ad12-506b8d77ad98-1AESB
+
+
+CREATE TABLE `VERSAO` (
+  `SISTEMA` int NOT NULL DEFAULT '0',
+  `VERSAO` int DEFAULT NULL,
+  `ULT_ATUALIZACAO` datetime DEFAULT NULL,
+  `EXPIRACAO` blob,
+  PRIMARY KEY (`SISTEMA`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPRESSED ENCRYPTION='Y';
+
+
+std::memcpy(key_info, decrypted, sizeof(key_info));
+
+0
+xtQS3EpjJjNnII7T95RzIz3SULdyFQ7Xze7x8TgM4MOZ1P7xO/6HZnmgJZICfwpQdmX+DVegE4B6zbpiAXB85Jm1TSY=
+xtQS3EpjJjNnII7T95RzIz3SULdyFQ7Xze7x8TgM4MOZ1P7xO/6HZnmgJZICfwpQdmX+DVegE4B6zbpiAXB8x5JD4wlU=
+
+
+0x2896
+
+CREATE TABLE `VERSAO` (   `SISTEMA` int NOT NULL DEFAULT '0',   `VERSAO` int DEFAULT NULL,   `ULT_ATUALIZACAO` datetime DEFAULT NULL,   `EXPIRACAO` blob,   PRIMARY KEY (`SISTEMA`) ) ENGINE=InnoDB;

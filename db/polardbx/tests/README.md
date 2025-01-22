@@ -33,6 +33,14 @@ Create a connection using XConnectionManager and manager.getConnection
 
 2) Build execution plan
 
+## [server-test](./server-test)
+
+Final server test only with splitting query logic:
+- Removed Extra Inheritance
+- Moved Inline Classes to Helper Files
+- Simplified Query Splitting Logic
+- Refactoring for a Single Purpose
+
 # Code Breakdown
 
 General
