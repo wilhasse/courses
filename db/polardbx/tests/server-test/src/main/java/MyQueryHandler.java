@@ -18,12 +18,17 @@ import com.mysql.cj.polarx.protobuf.PolarxResultset;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.TimeZone;
 
 /**
  * Demonstrates:
  * 1) Multi-server round-robin pooling via MultiServerConnectionPool
  * 2) Parallel chunk-splitting and merging
- * 3) Sending merged results
+ * 3) Sending merged results back to a MySQL-protocol client
+ * <p>
+ * This is the main query handler that receives a SQL query from the client,
+ * determines whether it can be split into parallel chunks, executes those
+ * chunks, merges results, and sends them back.
  */
 public class MyQueryHandler implements QueryHandler {
 
@@ -31,13 +36,20 @@ public class MyQueryHandler implements QueryHandler {
     private final MultiServerConnectionPool connectionPool;
     private final ExecutorService executorService;
 
+    /**
+     * Constructs a query handler and initializes the connection pool with two servers.
+     *
+     * @param frontendConnection The front-end (client) connection that uses this handler.
+     */
     public MyQueryHandler(ServerConnection frontendConnection) {
         this.frontendConnection = frontendConnection;
-        this.connectionPool = new MultiServerConnectionPool();  // now external
-        this.executorService = Executors.newFixedThreadPool(2); // example pool size
+
+        // Create our custom multi-server pool and an executor service
+        this.connectionPool = new MultiServerConnectionPool();
+        this.executorService = Executors.newFixedThreadPool(2); // example: 2 worker threads
 
         try {
-            // Example: Add some backend servers
+            // Example: Add two backend servers. Adjust as needed.
             ServerInfo mainServer = new ServerInfo(
                 "10.1.1.148", 33660, "teste", "teste", "ssb"
             );
@@ -54,6 +66,12 @@ public class MyQueryHandler implements QueryHandler {
         }
     }
 
+    /**
+     * Invoked when a query is received from the client. If the query can be chunk-split,
+     * it runs in parallel. Otherwise, it does a single normal query.
+     *
+     * @param sql The SQL statement sent by the client.
+     */
     @Override
     public void query(String sql) {
         System.out.println("Received query: " + sql);
@@ -61,7 +79,7 @@ public class MyQueryHandler implements QueryHandler {
         boolean chunkable = false;
         SQLStatement stmt = null;
         try {
-            // Use Druid parser
+            // Use Druid parser to check if it's a SELECT that we can chunk
             MySqlStatementParser parser = new MySqlStatementParser(sql);
             List<SQLStatement> list = parser.parseStatementList();
             if (!list.isEmpty() && list.get(0) instanceof SQLSelectStatement) {
@@ -87,7 +105,13 @@ public class MyQueryHandler implements QueryHandler {
         }
     }
 
-    /** Check if we can chunk-split (table "customer", ORDER BY c_name). */
+    /**
+     * Determines whether we can chunk-split the query. Here, we check if the table is "customer"
+     * and there's an ORDER BY c_name.
+     *
+     * @param selectStmt The parsed SQLSelectStatement
+     * @return true if chunk-splittable, false otherwise
+     */
     private boolean canChunk(SQLSelectStatement selectStmt) {
         if (!(selectStmt.getSelect().getQuery() instanceof SQLSelectQueryBlock)) {
             return false;
@@ -96,6 +120,7 @@ public class MyQueryHandler implements QueryHandler {
         if (qb.getFrom() == null) {
             return false;
         }
+
         String tbl = qb.getFrom().toString().replace("`", "").trim().toLowerCase();
         if (!tbl.contains("customer")) {
             return false;
@@ -107,12 +132,21 @@ public class MyQueryHandler implements QueryHandler {
         return orderCol.contains("c_name");
     }
 
-    /** Perform parallel chunking, gather results, merge, send. */
+    /**
+     * Performs a parallel chunked query:
+     * 1) Builds range-based SQL queries.
+     * 2) Submits each chunk query to an executor.
+     * 3) Collects all chunk results.
+     * 4) Merges them in ascending order by the first column.
+     * 5) Sends a merged result set to the client.
+     *
+     * @param originalSelect The parsed SELECT statement.
+     */
     private void doParallelChunkQuery(SQLSelectStatement originalSelect) {
         try {
             TimestampLogger.startTimer("fullQuery");
 
-            // Example chunk definitions
+            // Example chunk definitions. These would normally be derived from data distribution.
             List<String> chunks = new ArrayList<>();
             chunks.add(buildChunkSQL(originalSelect, "< 3000000"));
             chunks.add(buildChunkSQL(originalSelect, ">= 3000000 AND c_custkey < 6000000"));
@@ -120,20 +154,25 @@ public class MyQueryHandler implements QueryHandler {
             List<Future<ChunkResult>> futures = new ArrayList<>();
             AtomicInteger idx = new AtomicInteger(0);
 
+            // Submit each chunk to the executor pool
             for (String cSql : chunks) {
                 futures.add(executorService.submit(() -> {
                     int chunkNo = idx.getAndIncrement();
                     String chunkId = "chunk" + chunkNo;
 
                     TimestampLogger.startTimer(chunkId);
+
+                    // Acquire a connection and execute
                     XConnection conn = connectionPool.getNextConnection();
                     XResult res = conn.execQuery(cSql);
 
+                    // Read all rows into memory for merging
                     List<List<Object>> rows = readAllRows(res);
+
                     TimestampLogger.logWithDuration(chunkId,
                         "Chunk " + chunkNo + " got " + rows.size() + " rows");
 
-                    return new ChunkResult(res, rows); // <--- Moved to separate class
+                    return new ChunkResult(res, rows);
                 }));
             }
 
@@ -151,8 +190,10 @@ public class MyQueryHandler implements QueryHandler {
                 throw new RuntimeException("No successful chunk to get metadata");
             }
 
-            // Merge them
+            // Merge them all
             List<List<Object>> merged = mergeChunks(allChunks);
+
+            // Send the final merged data to the client
             sendMergedResponse(metadataResult, merged);
 
             TimestampLogger.logWithDuration("fullQuery", "Parallel chunked query finished");
@@ -162,13 +203,22 @@ public class MyQueryHandler implements QueryHandler {
         }
     }
 
-    /** Build a chunked SQL by injecting range condition. */
+    /**
+     * Injects a range condition into the original SQL for chunking.
+     *
+     * @param original     The original parsed SQL statement
+     * @param rangeCondition The condition (e.g., "c_custkey < 3000000")
+     * @return The modified SQL string with the range condition inserted
+     */
     private String buildChunkSQL(SQLSelectStatement original, String rangeCondition) {
         String originalSql = original.toString();
         int orderPos = originalSql.toLowerCase().indexOf("order by");
         if (orderPos < 0) {
+            // No ORDER BY found; just append the condition
             return originalSql + " AND c_custkey " + rangeCondition;
         }
+
+        // If there's an ORDER BY, insert the condition before it.
         String before = originalSql.substring(0, orderPos).trim();
         String after = originalSql.substring(orderPos);
         if (before.toLowerCase().contains("where")) {
@@ -179,12 +229,19 @@ public class MyQueryHandler implements QueryHandler {
         return before + after;
     }
 
-    /** Read XResult fully into a list-of-lists. */
+    /**
+     * Reads the entire XResult into a list of row objects. Each row is a List of columns.
+     *
+     * @param xres The XResult to read
+     * @return A List of rows, each row is a List of Objects
+     * @throws Exception If something goes wrong reading the result
+     */
     private List<List<Object>> readAllRows(XResult xres) throws Exception {
         List<List<Object>> rows = new ArrayList<>();
         while (xres.next() != null) {
             List<Object> oneRow = new ArrayList<>();
             for (int i = 0; i < xres.getMetaData().size(); i++) {
+                // Convert each column value to a Java Object
                 Object val = XResultUtil.resultToObject(
                     xres.getMetaData().get(i),
                     xres.current().getRow().get(i),
@@ -198,21 +255,29 @@ public class MyQueryHandler implements QueryHandler {
         return rows;
     }
 
-    /** Merge chunk-lists in ascending order by first column. */
+    /**
+     * Merges multiple chunk-lists in ascending order by the first column.
+     * This uses a PriorityQueue to do a multi-way merge.
+     *
+     * @param chunkRows A list of chunks, each chunk is a List of rows
+     * @return A merged list of rows
+     */
     private List<List<Object>> mergeChunks(List<List<List<Object>>> chunkRows) {
+        // PriorityQueue that orders rows by the first column's numeric value
         PriorityQueue<ChunkIterator> pq = new PriorityQueue<>((a, b) -> {
             long vA = Long.parseLong(String.valueOf(a.current().get(0)));
             long vB = Long.parseLong(String.valueOf(b.current().get(0)));
             return Long.compare(vA, vB);
         });
 
-        // Initialize
+        // Initialize the PQ with the first row from each chunk
         for (List<List<Object>> chunk : chunkRows) {
             if (!chunk.isEmpty()) {
                 pq.add(new ChunkIterator(chunk));
             }
         }
 
+        // Merge all rows in ascending order
         List<List<Object>> merged = new ArrayList<>();
         while (!pq.isEmpty()) {
             ChunkIterator top = pq.poll();
@@ -225,7 +290,12 @@ public class MyQueryHandler implements QueryHandler {
         return merged;
     }
 
-    /** Send merged data using metadata from one chunk. */
+    /**
+     * Sends a merged result set back to the client, using metadata from the first chunk's XResult.
+     *
+     * @param meta       An XResult that provides metadata about columns
+     * @param mergedRows All merged rows
+     */
     private void sendMergedResponse(XResult meta, List<List<Object>> mergedRows) {
         ByteBufferHolder buffer = null;
         try {
@@ -236,13 +306,13 @@ public class MyQueryHandler implements QueryHandler {
             IPacketOutputProxy proxy = PacketOutputProxyFactory.getInstance().createProxy(frontendConnection, buffer);
             proxy.packetBegin();
 
-            // Header
+            // 1) Result set header
             ResultSetHeaderPacket header = new ResultSetHeaderPacket();
             header.packetId = ++packetId;
             header.fieldCount = meta.getMetaData().size();
             header.write(proxy);
 
-            // Field definitions
+            // 2) Column definitions
             for (int i = 0; i < meta.getMetaData().size(); i++) {
                 FieldPacket field = new FieldPacket();
                 field.packetId = ++packetId;
@@ -260,14 +330,14 @@ public class MyQueryHandler implements QueryHandler {
                 field.write(proxy);
             }
 
-            // EOF
+            // 3) EOF (unless eofDeprecated is on)
             if (!frontendConnection.isEofDeprecated()) {
                 EOFPacket eof = new EOFPacket();
                 eof.packetId = ++packetId;
                 eof.write(proxy);
             }
 
-            // Rows
+            // 4) Write each row
             for (List<Object> rowData : mergedRows) {
                 RowDataPacket row = new RowDataPacket(meta.getMetaData().size());
                 for (Object val : rowData) {
@@ -277,7 +347,7 @@ public class MyQueryHandler implements QueryHandler {
                 row.write(proxy);
             }
 
-            // Final EOF
+            // 5) Final EOF
             EOFPacket lastEof = new EOFPacket();
             lastEof.packetId = ++packetId;
             lastEof.write(proxy);
@@ -291,7 +361,11 @@ public class MyQueryHandler implements QueryHandler {
         }
     }
 
-    /** Normal (non-chunk) result set. */
+    /**
+     * Sends a normal (non-chunk) query result back to the client.
+     *
+     * @param result The XResult to send
+     */
     private void sendResultSetResponse(XResult result) {
         ByteBufferHolder buffer = null;
         try {
@@ -302,13 +376,13 @@ public class MyQueryHandler implements QueryHandler {
             IPacketOutputProxy proxy = PacketOutputProxyFactory.getInstance().createProxy(frontendConnection, buffer);
             proxy.packetBegin();
 
-            // Header
+            // 1) Result set header
             ResultSetHeaderPacket header = new ResultSetHeaderPacket();
             header.packetId = ++packetId;
             header.fieldCount = result.getMetaData().size();
             header.write(proxy);
 
-            // Fields
+            // 2) Column definitions
             for (int i = 0; i < result.getMetaData().size(); i++) {
                 FieldPacket field = new FieldPacket();
                 field.packetId = ++packetId;
@@ -326,14 +400,14 @@ public class MyQueryHandler implements QueryHandler {
                 field.write(proxy);
             }
 
-            // EOF
+            // 3) EOF
             if (!frontendConnection.isEofDeprecated()) {
                 EOFPacket eof = new EOFPacket();
                 eof.packetId = ++packetId;
                 eof.write(proxy);
             }
 
-            // Rows
+            // 4) Rows
             while (result.next() != null) {
                 RowDataPacket row = new RowDataPacket(result.getMetaData().size());
                 for (int i = 0; i < result.getMetaData().size(); i++) {
@@ -349,7 +423,7 @@ public class MyQueryHandler implements QueryHandler {
                 row.write(proxy);
             }
 
-            // Final EOF
+            // 5) Final EOF
             EOFPacket lastEof = new EOFPacket();
             lastEof.packetId = ++packetId;
             lastEof.write(proxy);
@@ -363,7 +437,11 @@ public class MyQueryHandler implements QueryHandler {
         }
     }
 
-    /** Send error packet. */
+    /**
+     * Sends an error packet to the client.
+     *
+     * @param message The error message
+     */
     private void sendErrorResponse(String message) {
         ByteBufferHolder buffer = null;
         try {
@@ -388,12 +466,17 @@ public class MyQueryHandler implements QueryHandler {
         }
     }
 
-    /** Convert from PolarxResultset metadata to MySQL column type. */
+    /**
+     * Converts PolarxResultset ColumnMetaData to a MySQL type byte.
+     * In this example, we treat everything as a VARCHAR for simplicity.
+     */
     private byte convertPolarDBTypeToMySQLType(PolarxResultset.ColumnMetaData meta) {
         return (byte) Fields.FIELD_TYPE_VAR_STRING; // all as varstring
     }
 
-    /** Shutdown resources. */
+    /**
+     * Closes the executor service and the underlying connection pool.
+     */
     public void close() {
         try {
             executorService.shutdown();

@@ -11,9 +11,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 /**
- * Standalone server for handling MySQL-protocol connections.
- * Creates multiple processors, sets up the NIOAcceptor on a given port,
- * and uses a custom FrontendConnectionFactory that produces SplitConnections.
+ * Standalone server for handling MySQL-protocol connections via the polardbx-net framework.
+ * <p>
+ * This class bootstraps NIOProcessors and a single NIOAcceptor to listen on a specific port.
+ * A custom FrontendConnectionFactory (SplitConnectionFactory) is provided, which creates our
+ * ServerConnection instances using the MyQueryHandler for parallel-splitting logic.
  */
 public class Server {
 
@@ -22,21 +24,27 @@ public class Server {
     private NIOAcceptor acceptor;
 
     /**
-     * A factory that creates a SplitConnection and sets its handler to SplitQueryHandler.
+     * A factory that creates a ServerConnection and sets its handler to MyQueryHandler.
      */
     class SplitConnectionFactory extends FrontendConnectionFactory {
         @Override
         protected com.alibaba.polardbx.net.FrontendConnection getConnection(SocketChannel channel) {
             System.out.println("Accepted a new channel: " + channel);
+
+            // Build our custom ServerConnection
             ServerConnection conn = new ServerConnection(channel);
-            // Our single query handler that does parallel-splitting
+
+            // Assign the parallel-splitting query handler to it
             conn.setQueryHandler(new MyQueryHandler(conn));
+
             return conn;
         }
     }
 
     /**
      * Starts the NIO-based server, listening on SERVER_PORT.
+     *
+     * @throws IOException if server fails to bind or start
      */
     public void startup() throws IOException {
         System.out.println("Starting Server on port " + SERVER_PORT);
@@ -56,7 +64,7 @@ public class Server {
         for (int i = 0; i < cores; i++) {
             ServerThreadPool handlerPool = new ServerThreadPool(
                 "ProcessorHandler-" + i,
-                4,         // pool size
+                4,         // example thread pool size
                 5000,      // deadLockCheckPeriod ms
                 1          // bucketSize
             );
@@ -65,7 +73,7 @@ public class Server {
             System.out.println("Processor " + i + " started.");
         }
 
-        // Create the acceptor
+        // Create the acceptor, specifying our custom connection factory
         FrontendConnectionFactory factory = new SplitConnectionFactory();
         acceptor = new NIOAcceptor("SplitAcceptor", SERVER_PORT, factory, true);
         acceptor.setProcessors(processors);
@@ -75,7 +83,7 @@ public class Server {
     }
 
     /**
-     * Main entry point. Launches the server, then loops.
+     * Main entry point. Launches the server and loops forever.
      */
     public static void main(String[] args) {
         try {
@@ -83,6 +91,7 @@ public class Server {
             server.startup();
 
             System.out.println("Server started successfully. Press Ctrl+C to stop.");
+            // Prevent exit
             for (;;) {
                 Thread.sleep(1000);
             }
