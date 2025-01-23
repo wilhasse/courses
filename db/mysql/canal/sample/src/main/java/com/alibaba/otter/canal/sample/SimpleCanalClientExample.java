@@ -36,9 +36,9 @@ public class SimpleCanalClientExample {
          * - username and password: the credentials if Canal server requires authentication (left empty here).
          */
         CanalConnector connector = CanalConnectors.newSingleConnector(
-            new InetSocketAddress("10.200.15.21", 11111), 
-            "example", 
-            "", 
+            new InetSocketAddress("10.200.15.21", 31111), 
+            "percona",
+            "",
             ""
         );
 

@@ -109,6 +109,12 @@ Run example:
 mvn exec:java -Dexec.mainClass="com.alibaba.otter.canal.sample.SimpleCanalClientExample"
 ```
 
+Parameter
+
+```bash
+mvn exec:java -Dexec.mainClass="com.alibaba.otter.canal.sample.CountCanalClientExample" -Dexec.args="IP_ADDRESS"
+```
+
 # Automatic startup
 
 ```bash
