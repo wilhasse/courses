@@ -103,6 +103,13 @@ SET PASSWORD FOR 'root' = PASSWORD('your_new_password');
 ALTER USER 'root'@'%' IDENTIFIED BY '';
 ```
 
+Create new user
+
+```bash
+CREATE USER 'appl_canal'@'192.168.10.%' IDENTIFIED BY 'PASSWORD';
+GRANT ALL ON *.* TO 'appl_canal'@'192.168.10.%';
+```
+
 # Config
 
 Front end memory config is 8G:
@@ -117,3 +124,59 @@ JAVA_OPTS_FOR_JDK_17="... -Xmx8192m -Xms8192m ..."
 ```
 
 Depending on the server memory you can increase or decrease
+
+
+nano /etc/systemd/system/doris-be.service
+
+```bash
+[Unit]
+Description=Doris Backend Service
+After=network.target
+
+[Service]
+Type=forking
+User=root
+Group=root
+LimitNOFILE=655350
+Environment="JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64"
+WorkingDirectory=/doris
+ExecStart=/doris/be/bin/start_be.sh --daemon
+ExecStop=/doris/be/bin/stop_fe.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+(END)
+
+sudo systemctl daemon-reload
+sudo systemctl enable doris-be
+sudo systemctl start doris-be
+sudo systemctl status doris-be
+```
+
+nano /etc/systemd/system/doris-fe.service
+
+```bash
+[Unit]
+Description=Doris Frontend Service
+After=network.target
+
+[Service]
+Type=forking
+User=root
+Group=root
+LimitNOFILE=655350
+Environment="JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64"
+WorkingDirectory=/doris
+ExecStart=/doris/fe/bin/start_fe.sh --daemon
+ExecStop=/doris/fe/bin/stop_fe.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+sudo systemctl daemon-reload
+sudo systemctl enable doris-fe
+sudo systemctl start doris-fe
+sudo systemctl status doris-fe
+```
