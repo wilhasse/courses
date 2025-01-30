@@ -60,3 +60,39 @@ else:
 #CUDA Device: NVIDIA GeForce RTX 4090
 #CUDA Version: 12.4
 ```
+
+# Other tools
+
+Ollama  
+https://github.com/ollama/ollama  
+
+Open Webui  
+https://github.com/open-webui/open-webui  
+
+Install
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+pip install open-webui
+```
+
+Ollama run
+
+```bash
+# prompt
+ollama run qwen2.5
+
+# api
+curl http://localhost:11434/api/generate -d '{
+  "model": "qwen2.5",
+  "prompt":"Hello"
+}'
+```
+
+Run webui
+
+```bash
+open-webui serve
+```
+
+
