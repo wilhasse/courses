@@ -95,4 +95,29 @@ Run webui
 open-webui serve
 ```
 
+# Conda
 
+```bash
+# remove all
+conda deactivate
+conda remove -n qwen_sft --all
+
+# new
+conda create -n qwen_sft python=3.10 -y
+conda activate qwen_sft
+conda install cudatoolkit=11.8 -c nvidia -y
+ 
+# pip install
+pip install torch==2.1.0+cu118 -f https://download.pytorch.org/whl/torch_stable.html
+pip install numpy<2
+pip install --force-reinstall "bitsandbytes>=0.43.2"
+pip install transformers>=4.31.0 accelerate>=0.21.0 peft>=0.4.0
+pip install "numpy<2" --force-reinstall
+
+# test
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+python -c "import numpy; print(numpy.__version__)"
+python -m bitsandbytes
+
+python train-conda-test.py
+```
