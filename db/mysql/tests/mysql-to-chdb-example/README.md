@@ -1,57 +1,109 @@
-# MySQL to ClickHouse Data Transfer Example
+# MySQL to ClickHouse Data Transfer with Persistence
 
-This example demonstrates how to query a MySQL database and load the data into ClickHouse using chdb in C++.
+This project demonstrates how to extract data from MySQL and load it into ClickHouse using chdb, with data persistence between program executions.
+
+## Architecture
+
+The project is split into two separate executables:
+- **feed_data**: Connects to MySQL, extracts data, and loads it into ClickHouse
+- **query_data**: Reads the persisted ClickHouse data and runs analytical queries
+
+## Files
+
+- `common.h` - Shared structures and constants
+- `feed_data.cpp` - MySQL data extraction and ClickHouse loading
+- `query_data.cpp` - ClickHouse analytical queries
+- `chdb_persist.h` - Enhanced chdb header with persistence support (demo)
+- `setup_mysql.sql` - SQL script to create sample MySQL database
+- `Makefile` - Build configuration
 
 ## Prerequisites
 
-- MySQL server with root access (password: teste)
+- MySQL server (user: root, password: teste)
 - MySQL client libraries
 - C++ compiler with C++17 support
-- chdb library (assumed to be in ../chdb)
+- Sample database created using setup_mysql.sql
 
-## Project Structure
+## Building
 
-- `main.cpp` - Main application code
-- `setup_mysql.sql` - SQL script to create sample database and tables
-- `chdb.h` - Simplified chdb header for demonstration
-- `Makefile` - Build configuration
-- `CMakeLists.txt` - Alternative CMake build configuration
-
-## Features
-
-1. **MySQL Connection**: Connects to local MySQL database
-2. **Data Extraction**: Fetches customers and orders data from MySQL
-3. **ClickHouse Integration**: Loads data into ClickHouse using chdb
-4. **Sample Queries**: Demonstrates various analytical queries:
-   - Customer count by city
-   - Total revenue by customer
-   - Average order value by month
-   - Top selling products
-   - Customer age distribution
-
-## Building and Running
-
-### Using Make:
 ```bash
+# Build both executables
 make
-make run
+
+# Or build individually
+make feed_data
+make query_data
 ```
 
-### Using CMake:
+## Running
+
+### Step 1: Set up MySQL database
 ```bash
-mkdir build
-cd build
-cmake ..
-make
-./mysql_to_chdb
+mysql -u root -pteste < setup_mysql.sql
 ```
 
-## Sample Data
+### Step 2: Feed data from MySQL to ClickHouse
+```bash
+make run-feed
+# Or: ./feed_data
+```
 
-The project creates:
-- **customers** table: 10 sample customers with demographics
-- **orders** table: 15 sample orders with products and prices
+This will:
+- Connect to MySQL
+- Extract customers and orders data
+- Create ClickHouse database and tables
+- Load data into ClickHouse
+- Persist data to `./clickhouse_data`
 
-## Note
+### Step 3: Query the persisted data
+```bash
+make run-query
+# Or: ./query_data
+```
 
-This example includes a simplified `chdb.h` header for demonstration. In a real implementation, you would use the actual chdb library headers and link against the real chdb library.
+This will:
+- Connect to the persisted ClickHouse data
+- Verify data exists
+- Run various analytical queries
+
+### Run both steps
+```bash
+make run-all
+```
+
+## Data Persistence
+
+Data is persisted to the `./clickhouse_data` directory. This allows:
+- Running feed_data once to load data
+- Running query_data multiple times without reloading
+- Data survives program restarts
+
+## Cleaning
+
+```bash
+# Clean build artifacts
+make clean
+
+# Clean persisted data
+make clean-data
+
+# Clean everything
+make clean-all
+```
+
+## Sample Queries
+
+The query_data program demonstrates:
+1. Customer count by city
+2. Top customers by revenue
+3. Monthly order statistics
+4. Top selling products
+5. Customer age distribution
+6. Recent orders
+7. Customer lifetime value
+
+## Notes
+
+- This example uses a simplified chdb_persist.h for demonstration
+- In production, use the actual chdb library with proper persistence
+- The data path is configurable in common.h
