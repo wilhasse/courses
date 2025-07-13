@@ -1,26 +1,116 @@
 #include <iostream>
 #include <string>
-#include "chdb_persist.h"
+#include <dlfcn.h>
+#include <cstring>
 #include "common.h"
+
+// Function pointers for chdb
+typedef struct chdb_connection_* (*chdb_connect_fn)(int argc, char** argv);
+typedef void (*chdb_close_conn_fn)(struct chdb_connection_* conn);
+typedef struct chdb_result_* (*chdb_query_fn)(struct chdb_connection_* conn, const char* query, const char* format);
+typedef void (*chdb_destroy_query_result_fn)(struct chdb_result_* result);
+typedef char* (*chdb_result_buffer_fn)(struct chdb_result_* result);
+typedef size_t (*chdb_result_length_fn)(struct chdb_result_* result);
+typedef const char* (*chdb_result_error_fn)(struct chdb_result_* result);
+
+// Opaque types
+struct chdb_connection_ { void* internal_data; };
+struct chdb_result_ { void* internal_data; };
 
 class ClickHouseQuerier {
 private:
-    chdb_conn* conn;
+    void* chdb_handle;
+    struct chdb_connection_* conn;
+    
+    // chdb function pointers
+    chdb_connect_fn chdb_connect;
+    chdb_close_conn_fn chdb_close_conn;
+    chdb_query_fn chdb_query;
+    chdb_destroy_query_result_fn chdb_destroy_query_result;
+    chdb_result_buffer_fn chdb_result_buffer;
+    chdb_result_length_fn chdb_result_length;
+    chdb_result_error_fn chdb_result_error;
     
 public:
-    ClickHouseQuerier() : conn(nullptr) {}
+    ClickHouseQuerier() : chdb_handle(nullptr), conn(nullptr) {}
     
     ~ClickHouseQuerier() {
-        if (conn) {
-            chdb_disconnect(conn);
+        if (conn && chdb_close_conn) {
+            chdb_close_conn(conn);
+        }
+        if (chdb_handle) {
+            dlclose(chdb_handle);
         }
     }
     
+    bool loadChdbLibrary() {
+        // Try multiple possible locations for libchdb.so
+        const char* lib_paths[] = {
+            "/home/cslog/chdb/libchdb.so",
+            "../../../../../chdb/libchdb.so",
+            "./libchdb.so",
+            "libchdb.so"
+        };
+        
+        for (const char* path : lib_paths) {
+            chdb_handle = dlopen(path, RTLD_LAZY);
+            if (chdb_handle) {
+                std::cout << "Loaded chdb library from: " << path << std::endl;
+                break;
+            }
+        }
+        
+        if (!chdb_handle) {
+            std::cerr << "Failed to load libchdb.so: " << dlerror() << std::endl;
+            std::cerr << "Please ensure libchdb.so is built and available" << std::endl;
+            return false;
+        }
+        
+        // Load function pointers
+        chdb_connect = (chdb_connect_fn)dlsym(chdb_handle, "chdb_connect");
+        chdb_close_conn = (chdb_close_conn_fn)dlsym(chdb_handle, "chdb_close_conn");
+        chdb_query = (chdb_query_fn)dlsym(chdb_handle, "chdb_query");
+        chdb_destroy_query_result = (chdb_destroy_query_result_fn)dlsym(chdb_handle, "chdb_destroy_query_result");
+        chdb_result_buffer = (chdb_result_buffer_fn)dlsym(chdb_handle, "chdb_result_buffer");
+        chdb_result_length = (chdb_result_length_fn)dlsym(chdb_handle, "chdb_result_length");
+        chdb_result_error = (chdb_result_error_fn)dlsym(chdb_handle, "chdb_result_error");
+        
+        if (!chdb_connect || !chdb_close_conn || !chdb_query || 
+            !chdb_destroy_query_result || !chdb_result_buffer || 
+            !chdb_result_length || !chdb_result_error) {
+            std::cerr << "Failed to load chdb functions: " << dlerror() << std::endl;
+            return false;
+        }
+        
+        return true;
+    }
+    
     bool connect() {
-        conn = chdb_connect(CHDB_PATH.c_str());
+        char path_arg[256];
+        snprintf(path_arg, sizeof(path_arg), "--path=%s", CHDB_PATH.c_str());
+        
+        char* argv[] = {
+            (char*)"clickhouse",
+            path_arg
+        };
+        int argc = 2;
+        
+        conn = chdb_connect(argc, argv);
         if (!conn) {
             std::cerr << "Failed to connect to ClickHouse at: " << CHDB_PATH << std::endl;
-            return false;
+            
+            // Try with explicit path argument
+            char* argv2[] = {
+                (char*)"clickhouse",
+                (char*)"--path",
+                (char*)CHDB_PATH.c_str(),
+                nullptr
+            };
+            conn = chdb_connect(3, argv2);
+            
+            if (!conn) {
+                return false;
+            }
         }
         std::cout << "Connected to ClickHouse data at: " << CHDB_PATH << std::endl;
         return true;
@@ -30,30 +120,46 @@ public:
         std::cout << "\n=== Verifying Persisted Data ===" << std::endl;
         
         // Check if database exists
-        chdb_result* result = chdb_query(conn, "SHOW DATABASES");
+        struct chdb_result_* result = chdb_query(conn, "SHOW DATABASES", "CSV");
         if (result) {
-            std::cout << "Available databases:\n" << chdb_result_to_string(result) << std::endl;
-            chdb_free_result(result);
+            const char* error = chdb_result_error(result);
+            if (!error) {
+                char* buffer = chdb_result_buffer(result);
+                std::cout << "Available databases:\n" << buffer << std::endl;
+            }
+            chdb_destroy_query_result(result);
         }
         
         // Check tables
-        result = chdb_query(conn, "SHOW TABLES FROM mysql_import");
+        result = chdb_query(conn, "SHOW TABLES FROM mysql_import", "CSV");
         if (result) {
-            std::cout << "\nTables in mysql_import database:\n" << chdb_result_to_string(result) << std::endl;
-            chdb_free_result(result);
+            const char* error = chdb_result_error(result);
+            if (!error) {
+                char* buffer = chdb_result_buffer(result);
+                std::cout << "\nTables in mysql_import database:\n" << buffer << std::endl;
+            }
+            chdb_destroy_query_result(result);
         }
         
         // Count records
-        result = chdb_query(conn, "SELECT COUNT(*) as count FROM mysql_import.customers");
+        result = chdb_query(conn, "SELECT COUNT(*) as count FROM mysql_import.customers", "CSV");
         if (result) {
-            std::cout << "\nCustomer records: " << chdb_result_to_string(result) << std::endl;
-            chdb_free_result(result);
+            const char* error = chdb_result_error(result);
+            if (!error) {
+                char* buffer = chdb_result_buffer(result);
+                std::cout << "\nCustomer records: " << buffer << std::endl;
+            }
+            chdb_destroy_query_result(result);
         }
         
-        result = chdb_query(conn, "SELECT COUNT(*) as count FROM mysql_import.orders");
+        result = chdb_query(conn, "SELECT COUNT(*) as count FROM mysql_import.orders", "CSV");
         if (result) {
-            std::cout << "Order records: " << chdb_result_to_string(result) << std::endl;
-            chdb_free_result(result);
+            const char* error = chdb_result_error(result);
+            if (!error) {
+                char* buffer = chdb_result_buffer(result);
+                std::cout << "Order records: " << buffer << std::endl;
+            }
+            chdb_destroy_query_result(result);
         }
     }
     
@@ -62,14 +168,20 @@ public:
         
         // Query 1: Customer count by city
         std::cout << "\n1. Customer count by city:" << std::endl;
-        chdb_result* result = chdb_query(conn, 
+        struct chdb_result_* result = chdb_query(conn, 
             "SELECT city, COUNT(*) as customer_count "
             "FROM mysql_import.customers "
             "GROUP BY city "
-            "ORDER BY customer_count DESC");
+            "ORDER BY customer_count DESC", "CSV");
         if (result) {
-            std::cout << chdb_result_to_string(result) << std::endl;
-            chdb_free_result(result);
+            const char* error = chdb_result_error(result);
+            if (!error) {
+                char* buffer = chdb_result_buffer(result);
+                std::cout << buffer << std::endl;
+            } else {
+                std::cerr << "Query error: " << error << std::endl;
+            }
+            chdb_destroy_query_result(result);
         }
         
         // Query 2: Total revenue by customer
@@ -80,10 +192,16 @@ public:
             "JOIN mysql_import.orders o ON c.id = o.customer_id "
             "GROUP BY c.name "
             "ORDER BY total_revenue DESC "
-            "LIMIT 5");
+            "LIMIT 5", "CSV");
         if (result) {
-            std::cout << chdb_result_to_string(result) << std::endl;
-            chdb_free_result(result);
+            const char* error = chdb_result_error(result);
+            if (!error) {
+                char* buffer = chdb_result_buffer(result);
+                std::cout << buffer << std::endl;
+            } else {
+                std::cerr << "Query error: " << error << std::endl;
+            }
+            chdb_destroy_query_result(result);
         }
         
         // Query 3: Monthly order statistics
@@ -96,10 +214,16 @@ public:
             "  AVG(price * quantity) as avg_order_value "
             "FROM mysql_import.orders "
             "GROUP BY month "
-            "ORDER BY month");
+            "ORDER BY month", "CSV");
         if (result) {
-            std::cout << chdb_result_to_string(result) << std::endl;
-            chdb_free_result(result);
+            const char* error = chdb_result_error(result);
+            if (!error) {
+                char* buffer = chdb_result_buffer(result);
+                std::cout << buffer << std::endl;
+            } else {
+                std::cerr << "Query error: " << error << std::endl;
+            }
+            chdb_destroy_query_result(result);
         }
         
         // Query 4: Top selling products
@@ -113,10 +237,16 @@ public:
             "FROM mysql_import.orders "
             "GROUP BY product_name "
             "ORDER BY total_revenue DESC "
-            "LIMIT 5");
+            "LIMIT 5", "CSV");
         if (result) {
-            std::cout << chdb_result_to_string(result) << std::endl;
-            chdb_free_result(result);
+            const char* error = chdb_result_error(result);
+            if (!error) {
+                char* buffer = chdb_result_buffer(result);
+                std::cout << buffer << std::endl;
+            } else {
+                std::cerr << "Query error: " << error << std::endl;
+            }
+            chdb_destroy_query_result(result);
         }
         
         // Query 5: Customer age distribution
@@ -133,10 +263,16 @@ public:
             "  AVG(age) as avg_age "
             "FROM mysql_import.customers "
             "GROUP BY age_group "
-            "ORDER BY age_group");
+            "ORDER BY age_group", "CSV");
         if (result) {
-            std::cout << chdb_result_to_string(result) << std::endl;
-            chdb_free_result(result);
+            const char* error = chdb_result_error(result);
+            if (!error) {
+                char* buffer = chdb_result_buffer(result);
+                std::cout << buffer << std::endl;
+            } else {
+                std::cerr << "Query error: " << error << std::endl;
+            }
+            chdb_destroy_query_result(result);
         }
         
         // Query 6: Recent orders
@@ -153,10 +289,16 @@ public:
             "FROM mysql_import.orders o "
             "JOIN mysql_import.customers c ON o.customer_id = c.id "
             "ORDER BY o.order_date DESC, o.order_id DESC "
-            "LIMIT 5");
+            "LIMIT 5", "CSV");
         if (result) {
-            std::cout << chdb_result_to_string(result) << std::endl;
-            chdb_free_result(result);
+            const char* error = chdb_result_error(result);
+            if (!error) {
+                char* buffer = chdb_result_buffer(result);
+                std::cout << buffer << std::endl;
+            } else {
+                std::cerr << "Query error: " << error << std::endl;
+            }
+            chdb_destroy_query_result(result);
         }
         
         // Query 7: Customer lifetime value
@@ -171,16 +313,46 @@ public:
             "JOIN mysql_import.orders o ON c.id = o.customer_id "
             "GROUP BY c.id, c.name "
             "HAVING order_count >= 2 "
-            "ORDER BY lifetime_value DESC");
+            "ORDER BY lifetime_value DESC", "CSV");
         if (result) {
-            std::cout << chdb_result_to_string(result) << std::endl;
-            chdb_free_result(result);
+            const char* error = chdb_result_error(result);
+            if (!error) {
+                char* buffer = chdb_result_buffer(result);
+                std::cout << buffer << std::endl;
+            } else {
+                std::cerr << "Query error: " << error << std::endl;
+            }
+            chdb_destroy_query_result(result);
+        }
+        
+        // Query 8: Pretty formatted table example
+        std::cout << "\n8. Customer summary (Pretty format):" << std::endl;
+        result = chdb_query(conn, 
+            "SELECT id, name, email, age, city "
+            "FROM mysql_import.customers "
+            "ORDER BY id "
+            "LIMIT 5", "Pretty");
+        if (result) {
+            const char* error = chdb_result_error(result);
+            if (!error) {
+                char* buffer = chdb_result_buffer(result);
+                std::cout << buffer << std::endl;
+            } else {
+                std::cerr << "Query error: " << error << std::endl;
+            }
+            chdb_destroy_query_result(result);
         }
     }
 };
 
 int main() {
     ClickHouseQuerier querier;
+    
+    // Load chdb library
+    if (!querier.loadChdbLibrary()) {
+        std::cerr << "Note: To build libchdb.so, run 'make build' in the chdb directory" << std::endl;
+        return 1;
+    }
     
     // Connect to persisted ClickHouse data
     if (!querier.connect()) {

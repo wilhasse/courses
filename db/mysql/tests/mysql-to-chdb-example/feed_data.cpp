@@ -3,20 +3,89 @@
 #include <vector>
 #include <sstream>
 #include <mysql/mysql.h>
-#include "chdb_persist.h"
+#include <dlfcn.h>
+#include <cstring>
 #include "common.h"
+
+// Function pointers for chdb
+typedef struct chdb_connection_* (*chdb_connect_fn)(int argc, char** argv);
+typedef void (*chdb_close_conn_fn)(struct chdb_connection_* conn);
+typedef struct chdb_result_* (*chdb_query_fn)(struct chdb_connection_* conn, const char* query, const char* format);
+typedef void (*chdb_destroy_query_result_fn)(struct chdb_result_* result);
+typedef char* (*chdb_result_buffer_fn)(struct chdb_result_* result);
+typedef size_t (*chdb_result_length_fn)(struct chdb_result_* result);
+typedef const char* (*chdb_result_error_fn)(struct chdb_result_* result);
+
+// Opaque types
+struct chdb_connection_ { void* internal_data; };
+struct chdb_result_ { void* internal_data; };
 
 class MySQLToClickHouseFeeder {
 private:
     MYSQL* mysql_conn;
+    void* chdb_handle;
+    
+    // chdb function pointers
+    chdb_connect_fn chdb_connect;
+    chdb_close_conn_fn chdb_close_conn;
+    chdb_query_fn chdb_query;
+    chdb_destroy_query_result_fn chdb_destroy_query_result;
+    chdb_result_buffer_fn chdb_result_buffer;
+    chdb_result_length_fn chdb_result_length;
+    chdb_result_error_fn chdb_result_error;
     
 public:
-    MySQLToClickHouseFeeder() : mysql_conn(nullptr) {}
+    MySQLToClickHouseFeeder() : mysql_conn(nullptr), chdb_handle(nullptr) {}
     
     ~MySQLToClickHouseFeeder() {
         if (mysql_conn) {
             mysql_close(mysql_conn);
         }
+        if (chdb_handle) {
+            dlclose(chdb_handle);
+        }
+    }
+    
+    bool loadChdbLibrary() {
+        // Try multiple possible locations for libchdb.so
+        const char* lib_paths[] = {
+            "/home/cslog/chdb/libchdb.so",
+            "../../../../../chdb/libchdb.so",
+            "./libchdb.so",
+            "libchdb.so"
+        };
+        
+        for (const char* path : lib_paths) {
+            chdb_handle = dlopen(path, RTLD_LAZY);
+            if (chdb_handle) {
+                std::cout << "Loaded chdb library from: " << path << std::endl;
+                break;
+            }
+        }
+        
+        if (!chdb_handle) {
+            std::cerr << "Failed to load libchdb.so: " << dlerror() << std::endl;
+            std::cerr << "Please ensure libchdb.so is built and available" << std::endl;
+            return false;
+        }
+        
+        // Load function pointers
+        chdb_connect = (chdb_connect_fn)dlsym(chdb_handle, "chdb_connect");
+        chdb_close_conn = (chdb_close_conn_fn)dlsym(chdb_handle, "chdb_close_conn");
+        chdb_query = (chdb_query_fn)dlsym(chdb_handle, "chdb_query");
+        chdb_destroy_query_result = (chdb_destroy_query_result_fn)dlsym(chdb_handle, "chdb_destroy_query_result");
+        chdb_result_buffer = (chdb_result_buffer_fn)dlsym(chdb_handle, "chdb_result_buffer");
+        chdb_result_length = (chdb_result_length_fn)dlsym(chdb_handle, "chdb_result_length");
+        chdb_result_error = (chdb_result_error_fn)dlsym(chdb_handle, "chdb_result_error");
+        
+        if (!chdb_connect || !chdb_close_conn || !chdb_query || 
+            !chdb_destroy_query_result || !chdb_result_buffer || 
+            !chdb_result_length || !chdb_result_error) {
+            std::cerr << "Failed to load chdb functions: " << dlerror() << std::endl;
+            return false;
+        }
+        
+        return true;
     }
     
     bool connectToMySQL() {
@@ -98,17 +167,68 @@ public:
     
     void loadToClickHouse(const std::vector<Customer>& customers, const std::vector<Order>& orders) {
         // Connect to chdb with persistence
-        chdb_conn* conn = chdb_connect(CHDB_PATH.c_str());
+        char path_arg[256];
+        snprintf(path_arg, sizeof(path_arg), "--path=%s", CHDB_PATH.c_str());
+        
+        char* argv[] = {
+            (char*)"clickhouse",
+            path_arg
+        };
+        int argc = 2;
+        
+        struct chdb_connection_* conn = chdb_connect(argc, argv);
+        if (!conn) {
+            std::cerr << "Failed to connect to chdb" << std::endl;
+            std::cerr << "Trying with different arguments..." << std::endl;
+            
+            // Try with explicit path argument
+            char* argv2[] = {
+                (char*)"clickhouse",
+                (char*)"--path",
+                (char*)CHDB_PATH.c_str(),
+                nullptr
+            };
+            conn = chdb_connect(3, argv2);
+            
+            if (!conn) {
+                std::cerr << "Still failed. Trying with just path..." << std::endl;
+                // Try with just the path
+                char* argv3[] = {
+                    (char*)CHDB_PATH.c_str(),
+                    nullptr
+                };
+                conn = chdb_connect(1, argv3);
+                
+                if (!conn) {
+                    std::cerr << "Connection failed with all attempts" << std::endl;
+                    return;
+                }
+            }
+        }
+        
+        std::cout << "Connected to chdb with path: " << CHDB_PATH << std::endl;
         
         // Create database
         std::string create_db = "CREATE DATABASE IF NOT EXISTS mysql_import";
-        chdb_result* result = chdb_query(conn, create_db.c_str());
+        struct chdb_result_* result = chdb_query(conn, create_db.c_str(), "CSV");
         if (result) {
-            std::cout << "Database created/verified in ClickHouse" << std::endl;
-            chdb_free_result(result);
+            const char* error = chdb_result_error(result);
+            if (error && strlen(error) > 0) {
+                std::cerr << "Error creating database: " << error << std::endl;
+            } else {
+                std::cout << "Database created/verified in ClickHouse" << std::endl;
+                // Also print the result to see what we get
+                char* buffer = chdb_result_buffer(result);
+                if (buffer && strlen(buffer) > 0) {
+                    std::cout << "Result: " << buffer << std::endl;
+                }
+            }
+            chdb_destroy_query_result(result);
+        } else {
+            std::cerr << "Query returned NULL result" << std::endl;
         }
         
-        // Create tables in the database
+        // Create tables
         std::string create_customers_table = R"(
             CREATE TABLE IF NOT EXISTS mysql_import.customers (
                 id Int32,
@@ -120,6 +240,17 @@ public:
             ) ENGINE = MergeTree()
             ORDER BY id
         )";
+        
+        result = chdb_query(conn, create_customers_table.c_str(), "CSV");
+        if (result) {
+            const char* error = chdb_result_error(result);
+            if (error) {
+                std::cerr << "Error creating customers table: " << error << std::endl;
+            } else {
+                std::cout << "Customers table created in ClickHouse" << std::endl;
+            }
+            chdb_destroy_query_result(result);
+        }
         
         std::string create_orders_table = R"(
             CREATE TABLE IF NOT EXISTS mysql_import.orders (
@@ -133,25 +264,23 @@ public:
             ORDER BY order_id
         )";
         
-        // Execute create table statements
-        result = chdb_query(conn, create_customers_table.c_str());
+        result = chdb_query(conn, create_orders_table.c_str(), "CSV");
         if (result) {
-            std::cout << "Customers table created in ClickHouse" << std::endl;
-            chdb_free_result(result);
-        }
-        
-        result = chdb_query(conn, create_orders_table.c_str());
-        if (result) {
-            std::cout << "Orders table created in ClickHouse" << std::endl;
-            chdb_free_result(result);
+            const char* error = chdb_result_error(result);
+            if (error) {
+                std::cerr << "Error creating orders table: " << error << std::endl;
+            } else {
+                std::cout << "Orders table created in ClickHouse" << std::endl;
+            }
+            chdb_destroy_query_result(result);
         }
         
         // Clear existing data
-        result = chdb_query(conn, "TRUNCATE TABLE mysql_import.customers");
-        if (result) chdb_free_result(result);
+        result = chdb_query(conn, "TRUNCATE TABLE mysql_import.customers", "CSV");
+        if (result) chdb_destroy_query_result(result);
         
-        result = chdb_query(conn, "TRUNCATE TABLE mysql_import.orders");
-        if (result) chdb_free_result(result);
+        result = chdb_query(conn, "TRUNCATE TABLE mysql_import.orders", "CSV");
+        if (result) chdb_destroy_query_result(result);
         
         // Insert customers data
         int inserted_customers = 0;
@@ -165,10 +294,13 @@ public:
                << "'" << customer.city << "', "
                << "'" << customer.created_at << "')";
             
-            result = chdb_query(conn, ss.str().c_str());
+            result = chdb_query(conn, ss.str().c_str(), "CSV");
             if (result) {
-                chdb_free_result(result);
-                inserted_customers++;
+                const char* error = chdb_result_error(result);
+                if (!error) {
+                    inserted_customers++;
+                }
+                chdb_destroy_query_result(result);
             }
         }
         std::cout << "Loaded " << inserted_customers << " customers to ClickHouse" << std::endl;
@@ -185,34 +317,51 @@ public:
                << order.price << ", "
                << "'" << order.order_date << "')";
             
-            result = chdb_query(conn, ss.str().c_str());
+            result = chdb_query(conn, ss.str().c_str(), "CSV");
             if (result) {
-                chdb_free_result(result);
-                inserted_orders++;
+                const char* error = chdb_result_error(result);
+                if (!error) {
+                    inserted_orders++;
+                }
+                chdb_destroy_query_result(result);
             }
         }
         std::cout << "Loaded " << inserted_orders << " orders to ClickHouse" << std::endl;
         
         // Verify data was inserted
-        result = chdb_query(conn, "SELECT COUNT(*) FROM mysql_import.customers");
+        result = chdb_query(conn, "SELECT COUNT(*) FROM mysql_import.customers", "CSV");
         if (result) {
-            std::cout << "Customer count in ClickHouse: " << chdb_result_to_string(result) << std::endl;
-            chdb_free_result(result);
+            const char* error = chdb_result_error(result);
+            if (!error) {
+                char* buffer = chdb_result_buffer(result);
+                std::cout << "Customer count in ClickHouse: " << buffer << std::endl;
+            }
+            chdb_destroy_query_result(result);
         }
         
-        result = chdb_query(conn, "SELECT COUNT(*) FROM mysql_import.orders");
+        result = chdb_query(conn, "SELECT COUNT(*) FROM mysql_import.orders", "CSV");
         if (result) {
-            std::cout << "Order count in ClickHouse: " << chdb_result_to_string(result) << std::endl;
-            chdb_free_result(result);
+            const char* error = chdb_result_error(result);
+            if (!error) {
+                char* buffer = chdb_result_buffer(result);
+                std::cout << "Order count in ClickHouse: " << buffer << std::endl;
+            }
+            chdb_destroy_query_result(result);
         }
         
-        chdb_disconnect(conn);
+        chdb_close_conn(conn);
         std::cout << "\nData persisted to: " << CHDB_PATH << std::endl;
     }
 };
 
 int main() {
     MySQLToClickHouseFeeder feeder;
+    
+    // Load chdb library
+    if (!feeder.loadChdbLibrary()) {
+        std::cerr << "Note: To build libchdb.so, run 'make build' in the chdb directory" << std::endl;
+        return 1;
+    }
     
     // Connect to MySQL
     if (!feeder.connectToMySQL()) {
