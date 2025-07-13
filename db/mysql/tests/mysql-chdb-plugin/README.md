@@ -184,16 +184,34 @@ make
 # Plugin will be at: build/mysql_chdb_plugin.so
 ```
 
+## Table-Valued Function (TVF) Simulation
+
+This project also includes a demonstration of simulating table-valued functions in MySQL using multiple UDFs. See [TVF_TEST_README.md](TVF_TEST_README.md) for details.
+
+### Quick TVF Test
+
+```bash
+# Run the complete TVF test
+./scripts/run_tvf_test.sh
+```
+
 ## Uninstall
 
 ```sql
--- Remove function from MySQL
+-- Remove chDB function from MySQL
 DROP FUNCTION IF EXISTS chdb_query;
+
+-- Remove TVF simulation functions
+DROP FUNCTION IF EXISTS test2_row_count;
+DROP FUNCTION IF EXISTS test2_get_id;
+DROP FUNCTION IF EXISTS test2_get_name;
+DROP FUNCTION IF EXISTS test2_get_value;
 ```
 
 ```bash
-# Remove plugin file
+# Remove plugin files
 sudo rm /usr/lib/mysql/plugin/mysql_chdb_plugin.so
+sudo rm /usr/lib/mysql/plugin/test_tvf_plugin.so
 ```
 
 ## License

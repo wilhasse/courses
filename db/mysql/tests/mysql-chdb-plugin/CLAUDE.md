@@ -130,10 +130,78 @@ SHOW FUNCTION STATUS WHERE Name = 'chdb_query';
 - **Default Credentials**: root / teste
 - **Plugin Directory**: `/usr/lib/mysql/plugin/`
 
+## Table-Valued Function (TVF) Simulation
+
+### Overview
+The project includes a demonstration of simulating table-valued functions in MySQL using multiple UDFs. Since MySQL doesn't support true TVFs without server plugin headers, we use a creative workaround.
+
+### TVF Components
+
+#### Source Files
+- **src/test_tvf_plugin.cpp**: Implements 4 UDFs that simulate a virtual table
+
+#### Scripts
+- **scripts/build_tvf.sh**: Builds the TVF plugin
+- **scripts/install_tvf.sh**: Installs TVF functions (with DROP IF EXISTS)
+- **scripts/uninstall_tvf.sh**: Removes TVF functions
+- **scripts/run_tvf_test.sh**: Complete test automation
+
+#### Tests
+- **tests/create_test1_table.sql**: Creates TEST1 table with sample data
+- **tests/test_tvf_join.sql**: Demonstrates JOIN operations with virtual table
+
+### TVF Functions
+```sql
+-- Returns row count (5)
+test2_row_count()
+
+-- Returns data for given row number (1-5)
+test2_get_id(row_num)    -- Returns: 1-5
+test2_get_name(row_num)  -- Returns: "Row 1", "Row 2", etc.
+test2_get_value(row_num) -- Returns: row_num * 10.5
+```
+
+### How It Works
+Uses recursive CTEs to generate row numbers, then calls UDFs for each column:
+```sql
+WITH RECURSIVE numbers AS (
+    SELECT 1 AS n
+    UNION ALL
+    SELECT n + 1 FROM numbers WHERE n < test2_row_count()
+),
+test2 AS (
+    SELECT 
+        test2_get_id(n) AS id,
+        test2_get_name(n) AS name,
+        test2_get_value(n) AS value
+    FROM numbers
+)
+SELECT * FROM test2;
+```
+
+### Key Fixes Applied
+1. **my_bool → bool**: Updated for newer MySQL versions
+2. **Database context**: Added `CREATE DATABASE IF NOT EXISTS test_tvf_db`
+3. **Absolute paths**: Fixed SOURCE command paths
+4. **Function conflicts**: Added DROP IF EXISTS before CREATE FUNCTION
+
+### Running TVF Tests
+```bash
+# Complete test with build, install, and run
+./scripts/run_tvf_test.sh
+
+# Or manually
+./scripts/build_tvf.sh
+./scripts/install_tvf.sh
+mysql -u root -pteste < tests/test_tvf_join.sql
+```
+
 ## Related Files
 
-- **README.md**: User documentation
+- **README.md**: User documentation (updated with TVF info)
+- **TVF_TEST_README.md**: Detailed TVF documentation
 - **CMakeLists.txt**: Build configuration
-- **tests/test_udf.sql**: Example queries and tests
+- **tests/test_udf.sql**: chDB UDF tests
+- **tests/test_tvf_join.sql**: TVF simulation tests
 
-This is a minimal implementation focused on simplicity and reliability rather than features.
+This project demonstrates both a simple chDB integration and a creative workaround for table-valued functions in MySQL.

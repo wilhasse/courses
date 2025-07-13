@@ -48,12 +48,23 @@ set(PLUGIN_SOURCES
     src/simple_chdb_udf.cpp
 )
 
+set(TVF_PLUGIN_SOURCES
+    src/test_tvf_plugin.cpp
+)
+
 # Create the plugin shared library
 add_library(mysql_chdb_plugin SHARED ${PLUGIN_SOURCES})
+
+# Create the table-valued function plugin
+add_library(test_tvf_plugin SHARED ${TVF_PLUGIN_SOURCES})
 
 # Compile definitions
 target_compile_definitions(mysql_chdb_plugin PRIVATE
     CHDB_BINARY_PATH="${CHDB_BINARY}"
+    MYSQL_DYNAMIC_PLUGIN
+)
+
+target_compile_definitions(test_tvf_plugin PRIVATE
     MYSQL_DYNAMIC_PLUGIN
 )
 
@@ -64,6 +75,11 @@ target_link_libraries(mysql_chdb_plugin
     dl
 )
 
+target_link_libraries(test_tvf_plugin 
+    PRIVATE
+    pthread
+)
+
 # Plugin properties
 set_target_properties(mysql_chdb_plugin PROPERTIES
     PREFIX ""
@@ -72,12 +88,19 @@ set_target_properties(mysql_chdb_plugin PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
 
+set_target_properties(test_tvf_plugin PROPERTIES
+    PREFIX ""
+    SUFFIX ".so"
+    OUTPUT_NAME "test_tvf_plugin"
+    POSITION_INDEPENDENT_CODE ON
+)
+
 # Installation
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "/usr/lib/mysql/plugin" CACHE PATH "Installation directory" FORCE)
 endif()
 
-install(TARGETS mysql_chdb_plugin
+install(TARGETS mysql_chdb_plugin test_tvf_plugin
     LIBRARY DESTINATION .
 )
 
