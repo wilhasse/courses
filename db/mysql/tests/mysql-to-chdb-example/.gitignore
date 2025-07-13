@@ -1,6 +1,42 @@
+# Build artifacts
 *.o
-clickhouse_data
+*.a
+*.so
+*.dylib
+
+# Executables
 feed_data
-query_data
 feed_data_v2
+query_data
 query_data_v2
+mysql_to_chdb
+test_chdb_connection
+
+# ClickHouse data directory
+clickhouse_data/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+cleanup.sh
+
+# Old/removed files
+feed_data_simple.cpp
+query_data_simple.cpp
+test_chdb_connection.cpp
+compile_test.sh
+build_simple.sh
+chdb_persist.h
+
+# Build directories
+build/
+cmake-build-*/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
