@@ -19,6 +19,7 @@ This project evolved through multiple approaches, each documented step-by-step:
 ### ⭐ Final Solution Documentation
 - **[docs/COMPLETE_INTEGRATION_GUIDE.md](docs/COMPLETE_INTEGRATION_GUIDE.md)** - 🌟 **Start Here!** Complete guide to the API server solution
 - **[docs/API_UDF_GUIDE.md](docs/API_UDF_GUIDE.md)** - Using MySQL UDF with API server
+- **[docs/TABLE_FUNCTION_GUIDE.md](docs/TABLE_FUNCTION_GUIDE.md)** - Simulating table-valued functions for JOINs
 
 ### Core Documentation (Wrapper Approach)
 - **[WRAPPER_STRATEGY_EXPLAINED.md](WRAPPER_STRATEGY_EXPLAINED.md)** - External helper process approach
@@ -171,6 +172,22 @@ SELECT
         WHERE product_id = ', m.id
     )) AS UNSIGNED) AS total_sold
 FROM mysql_products m;
+
+-- NEW: Table-valued function simulation for joins
+WITH RECURSIVE nums AS (
+    SELECT 1 AS n UNION ALL SELECT n + 1 FROM nums 
+    WHERE n < chdb_table_row_count('mysql_import.customers')
+),
+clickhouse_customers AS (
+    SELECT 
+        chdb_customers_get_id(n) AS id,
+        chdb_customers_get_name(n) AS name,
+        chdb_customers_get_city(n) AS city
+    FROM nums
+)
+SELECT c.*, m.category 
+FROM clickhouse_customers c
+JOIN mysql_customer_categories m ON c.city = m.city;
 ```
 
 #### Direct Helper Usage
