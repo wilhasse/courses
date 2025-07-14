@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package chdb_api;
+
+// Query request
+message QueryRequest {
+    string query = 1;
+    
+    enum OutputFormat {
+        CSV = 0;
+        TSV = 1;
+        JSON = 2;
+        PRETTY = 3;
+        COMPACT = 4;
+        VALUES = 5;
+    }
+    OutputFormat format = 2;
+}
+
+// Query response  
+message QueryResponse {
+    bool success = 1;
+    string error_message = 2;
+    
+    // Query results
+    repeated Row rows = 3;
+    repeated Column columns = 4;
+    
+    // Metadata
+    int64 rows_read = 5;
+    int64 bytes_read = 6;
+    double elapsed_seconds = 7;
+}
+
+// Column metadata
+message Column {
+    string name = 1;
+    string type = 2;
+}
+
+// A single row of data
+message Row {
+    repeated Value values = 1;
+}
+
+// Value that can hold different types
+message Value {
+    oneof value {
+        int64 int_value = 1;
+        uint64 uint_value = 2;
+        double double_value = 3;
+        string string_value = 4;
+        bool bool_value = 5;
+        bytes bytes_value = 6;
+    }
+    bool is_null = 7;
+}

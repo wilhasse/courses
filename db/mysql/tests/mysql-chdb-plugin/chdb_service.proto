@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package chdb;
+
+// Request message
+message QueryRequest {
+    string query = 1;
+    enum OutputFormat {
+        TSV = 0;
+        JSON = 1;
+        BINARY = 2;
+        ARROW = 3;
+    }
+    OutputFormat format = 2;
+    int32 max_rows = 3;  // 0 = unlimited
+}
+
+// Response message
+message QueryResponse {
+    oneof result {
+        SuccessResult success = 1;
+        ErrorResult error = 2;
+    }
+    
+    message SuccessResult {
+        repeated Row rows = 1;
+        int64 total_rows = 2;
+        double elapsed_ms = 3;
+        repeated ColumnMeta columns = 4;
+    }
+    
+    message ErrorResult {
+        string message = 1;
+        int32 code = 2;
+    }
+}
+
+// Row representation - flexible for different data types
+message Row {
+    repeated Value values = 1;
+}
+
+message Value {
+    oneof value {
+        int64 int_val = 1;
+        double float_val = 2;
+        string string_val = 3;
+        bool bool_val = 4;
+        bytes bytes_val = 5;
+        // NULL is represented by not setting any value
+    }
+}
+
+message ColumnMeta {
+    string name = 1;
+    string type = 2;
+}

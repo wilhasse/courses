@@ -52,11 +52,18 @@ set(TVF_PLUGIN_SOURCES
     src/test_tvf_plugin.cpp
 )
 
+set(API_PLUGIN_SOURCES
+    src/chdb_api_udf.cpp
+)
+
 # Create the plugin shared library
 add_library(mysql_chdb_plugin SHARED ${PLUGIN_SOURCES})
 
 # Create the table-valued function plugin
 add_library(test_tvf_plugin SHARED ${TVF_PLUGIN_SOURCES})
+
+# Create the API-based plugin (connects to chDB API server)
+add_library(mysql_chdb_api_plugin SHARED ${API_PLUGIN_SOURCES})
 
 # Compile definitions
 target_compile_definitions(mysql_chdb_plugin PRIVATE
@@ -68,6 +75,10 @@ target_compile_definitions(test_tvf_plugin PRIVATE
     MYSQL_DYNAMIC_PLUGIN
 )
 
+target_compile_definitions(mysql_chdb_api_plugin PRIVATE
+    MYSQL_DYNAMIC_PLUGIN
+)
+
 # Link libraries
 target_link_libraries(mysql_chdb_plugin 
     PRIVATE
@@ -76,6 +87,11 @@ target_link_libraries(mysql_chdb_plugin
 )
 
 target_link_libraries(test_tvf_plugin 
+    PRIVATE
+    pthread
+)
+
+target_link_libraries(mysql_chdb_api_plugin 
     PRIVATE
     pthread
 )
@@ -92,6 +108,13 @@ set_target_properties(test_tvf_plugin PROPERTIES
     PREFIX ""
     SUFFIX ".so"
     OUTPUT_NAME "test_tvf_plugin"
+    POSITION_INDEPENDENT_CODE ON
+)
+
+set_target_properties(mysql_chdb_api_plugin PROPERTIES
+    PREFIX ""
+    SUFFIX ".so"
+    OUTPUT_NAME "mysql_chdb_api_plugin"
     POSITION_INDEPENDENT_CODE ON
 )
 
