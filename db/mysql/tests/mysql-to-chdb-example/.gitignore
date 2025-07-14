@@ -21,14 +21,6 @@ clickhouse_data/
 *.log
 cleanup.sh
 
-# Old/removed files
-feed_data_simple.cpp
-query_data_simple.cpp
-test_chdb_connection.cpp
-compile_test.sh
-build_simple.sh
-chdb_persist.h
-
 # Build directories
 build/
 cmake-build-*/

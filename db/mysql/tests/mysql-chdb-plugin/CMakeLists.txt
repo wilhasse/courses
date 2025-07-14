@@ -27,7 +27,7 @@ message(STATUS "Found MySQL headers: ${MYSQL_INCLUDE_DIR}")
 # chDB configuration
 set(CHDB_BUILD_DIR "/home/cslog/chdb/buildlib" CACHE PATH "Path to chDB build directory")
 set(CHDB_SOURCE_DIR "/home/cslog/chdb" CACHE PATH "Path to chDB source directory")
-set(CHDB_BINARY "${CHDB_BUILD_DIR}/programs/clickhouse" CACHE FILEPATH "Path to chDB binary")
+set(CHDB_BINARY "${CHDB_BUILD_DIR}/programs/clickhouse-local" CACHE FILEPATH "Path to chDB binary")
 
 # Verify chDB binary exists
 if(NOT EXISTS ${CHDB_BINARY})
