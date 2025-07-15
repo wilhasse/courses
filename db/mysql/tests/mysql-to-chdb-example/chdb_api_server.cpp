@@ -57,7 +57,6 @@ private:
             char delimiter = (format == chdb_api::QueryRequest::CSV) ? ',' : '\t';
             
             // First line might be headers
-            bool first_line = true;
             
             while (std::getline(stream, line)) {
                 if (line.empty()) continue;
@@ -317,7 +316,7 @@ public:
 // Global server for signal handling
 ChDBApiServer* g_server = nullptr;
 
-void signal_handler(int sig) {
+void signal_handler(int /*sig*/) {
     std::cout << "\nShutting down server..." << std::endl;
     if (g_server) {
         g_server->stop();

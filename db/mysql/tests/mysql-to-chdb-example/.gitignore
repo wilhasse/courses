@@ -4,6 +4,10 @@
 *.so
 *.dylib
 
+# Protocol Buffer generated files
+*.pb.cc
+*.pb.h
+
 # Executables
 feed_data
 feed_data_v2
@@ -11,6 +15,16 @@ query_data
 query_data_v2
 mysql_to_chdb
 test_chdb_connection
+historico_feeder
+historico_log
+historico_minimal
+convert_to_mergetree
+test_performance
+chdb_api_server
+chdb_api_server_simple
+chdb_api_client
+check_status
+test_simple_client
 
 # ClickHouse data directory
 clickhouse_data/

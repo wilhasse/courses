@@ -242,7 +242,7 @@ public:
 // Global server for signal handling
 SimpleChDBApiServer* g_server = nullptr;
 
-void signal_handler(int sig) {
+void signal_handler(int /*sig*/) {
     std::cout << "\nShutting down server..." << std::endl;
     if (g_server) {
         g_server->stop();
