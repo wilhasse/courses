@@ -210,7 +210,7 @@ public:
         
         // Load data in chunks using row-based approach
         const int ROWS_PER_CHUNK = 50000;  // Process 50k rows at a time
-        const int BATCH_SIZE = 1000;       // Insert 1000 rows per batch for MergeTree
+        const int BATCH_SIZE = 5000;       // Insert 5000 rows per batch (10 batches per chunk)
         
         long long offset = start_offset;
         long long total_historico_loaded = start_offset;  // Start from offset when resuming
@@ -218,6 +218,16 @@ public:
         auto start_time = std::chrono::steady_clock::now();
         
         int total_chunks = (total_rows + ROWS_PER_CHUNK - 1) / ROWS_PER_CHUNK;
+        
+        // Stop merges before bulk loading
+        std::cout << "[" << getCurrentTimestamp() << "] Stopping merges for bulk loading..." << std::endl;
+        auto stop_result = executeQuery("SYSTEM STOP MERGES mysql_import.historico; SYSTEM STOP MERGES mysql_import.historico_texto");
+        if (stop_result) {
+            if (stop_result->error_message) {
+                std::cerr << "Error stopping merges: " << stop_result->error_message << std::endl;
+            }
+            free_result_v2(stop_result);
+        }
         
         while (offset < total_rows) {
             chunk_number++;
@@ -271,12 +281,25 @@ public:
                 
                 // Insert in batches for better performance
                 if (batch_count == BATCH_SIZE) {
-                    auto ch_result = executeQuery(batch_insert.str());
+                    std::string query = batch_insert.str();
+                    size_t query_size = query.length();
+                    
+                    // Debug: show query size for first few batches
+                    if (total_historico_loaded < 100000) {
+                        std::cout << "    Executing batch insert: " << batch_count << " rows, query size: " 
+                                  << query_size / 1024 << " KB" << std::endl;
+                    }
+                    
+                    auto ch_result = executeQuery(query);
                     if (ch_result) {
                         if (ch_result->error_message) {
                             std::cerr << "Batch insert error: " << ch_result->error_message << std::endl;
+                            std::cerr << "Query size was: " << query_size << " bytes" << std::endl;
                         }
                         free_result_v2(ch_result);
+                    } else {
+                        std::cerr << "CRITICAL: executeQuery returned NULL for batch insert!" << std::endl;
+                        std::cerr << "Query size was: " << query_size << " bytes" << std::endl;
                     }
                     total_historico_loaded += batch_count;
                     batch_count = 0;
@@ -296,12 +319,17 @@ public:
             
             // Insert remaining rows
             if (!first && batch_count > 0) {
-                auto ch_result = executeQuery(batch_insert.str());
+                std::string final_query = batch_insert.str();
+                std::cout << "  Inserting final batch: " << batch_count << " rows" << std::endl;
+                
+                auto ch_result = executeQuery(final_query);
                 if (ch_result) {
                     if (ch_result->error_message) {
                         std::cerr << "Final batch insert error: " << ch_result->error_message << std::endl;
                     }
                     free_result_v2(ch_result);
+                } else {
+                    std::cerr << "CRITICAL: executeQuery returned NULL for final batch insert!" << std::endl;
                 }
                 total_historico_loaded += batch_count;
             }
@@ -323,6 +351,26 @@ public:
             
             offset += ROWS_PER_CHUNK;
             
+            // Periodically flush to ensure data persistence and verify counts
+            if (chunk_number % 10 == 0) {
+                std::cout << "  [" << getCurrentTimestamp() << "] Flushing data to disk..." << std::endl;
+                auto flush_result = executeQuery("SYSTEM FLUSH LOGS");
+                if (flush_result) {
+                    if (flush_result->error_message) {
+                        std::cerr << "Warning: flush error: " << flush_result->error_message << std::endl;
+                    }
+                    free_result_v2(flush_result);
+                }
+                
+                // Verify actual row count in table
+                auto count_result = executeQuery("SELECT COUNT(*) FROM mysql_import.historico");
+                if (count_result && count_result->buf) {
+                    std::cout << "  Actual rows in table: " << count_result->buf 
+                              << " (expected: " << total_historico_loaded << ")" << std::endl;
+                    free_result_v2(count_result);
+                }
+            }
+            
             // Progress estimate
             if (total_rows > 0) {
                 double progress = (double)offset / total_rows * 100;
@@ -343,6 +391,23 @@ public:
         std::cout << "Total HISTORICO rows loaded: " << total_historico_loaded << std::endl;
         std::cout << "Rows processed this session: " << rows_processed_this_session << " in " << duration << " seconds" << std::endl;
         std::cout << "Average speed: " << (duration > 0 ? rows_processed_this_session / duration : rows_processed_this_session) << " rows/second" << std::endl;
+        
+        // Re-enable merges and optimize tables
+        std::cout << "\n[" << getCurrentTimestamp() << "] Re-enabling merges and optimizing tables..." << std::endl;
+        auto merge_result = executeQuery(
+            "SYSTEM START MERGES mysql_import.historico; "
+            "SYSTEM START MERGES mysql_import.historico_texto; "
+            "OPTIMIZE TABLE mysql_import.historico FINAL; "
+            "OPTIMIZE TABLE mysql_import.historico_texto FINAL"
+        );
+        if (merge_result) {
+            if (merge_result->error_message) {
+                std::cerr << "Error re-starting merges: " << merge_result->error_message << std::endl;
+            } else {
+                std::cout << "Merges re-enabled and tables optimized successfully" << std::endl;
+            }
+            free_result_v2(merge_result);
+        }
         
         // Verify table
         std::cout << "\nVerifying loaded data:" << std::endl;
