@@ -63,11 +63,14 @@ func (l *Loader) createTables() error {
 		`CREATE TABLE IF NOT EXISTS mysql_import.historico (
 			id_contr Int32, seq UInt16, id_funcionario Int32,
 			id_tel Int32, data DateTime, codigo UInt16, modo String
-		) ENGINE = MergeTree() ORDER BY (id_contr, seq)`,
+		) ENGINE = MergeTree() 
+		PARTITION BY toYYYYMM(data)
+		ORDER BY (id_contr, seq)`,
 		`CREATE TABLE IF NOT EXISTS mysql_import.historico_texto (
 			id_contr Int32, seq UInt16, mensagem String,
 			motivo String, autorizacao String
-		) ENGINE = MergeTree() ORDER BY (id_contr, seq)`,
+		) ENGINE = MergeTree() 
+		ORDER BY (id_contr, seq)`,
 	}
 
 	for _, query := range queries {
@@ -91,6 +94,21 @@ func (l *Loader) getTotalRows() (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("failed to get row count: %w", err)
 	}
+	
+	// Check if we have the composite index for efficient keyset pagination
+	var indexCount int
+	err = l.mysqlDB.QueryRow(`
+		SELECT COUNT(*) FROM information_schema.STATISTICS 
+		WHERE TABLE_SCHEMA = DATABASE() 
+		AND TABLE_NAME = 'HISTORICO' 
+		AND INDEX_NAME = 'idx_contr_seq'
+	`).Scan(&indexCount)
+	
+	if err == nil && indexCount == 0 {
+		log.Println("IMPORTANT: Consider creating this index for optimal performance:")
+		log.Println("  CREATE INDEX idx_contr_seq ON HISTORICO (ID_CONTR, SEQ);")
+	}
+	
 	return count, nil
 }
 
@@ -98,48 +116,68 @@ func escapeString(s string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(s, "\\", "\\\\"), "'", "\\'")
 }
 
-func (l *Loader) loadData(totalRows int64, startOffset int64, noStopMerges bool) error {
-	// Optionally stop merges before bulk loading
-	if !noStopMerges {
-		log.Printf("[%s] Stopping merges for bulk loading...", time.Now().Format("2006-01-02 15:04:05"))
-		result, err := l.chdbSession.Query("SYSTEM STOP MERGES mysql_import.historico", "CSV")
+func (l *Loader) loadData(totalRows int64, startOffset int64) error {
+	log.Printf("[%s] Using keyset pagination for constant performance", time.Now().Format("2006-01-02 15:04:05"))
+	
+	// Initialize keyset values
+	var lastIDContr int32 = -1
+	var lastSeq uint16 = 0
+	
+	// If resuming from offset, get the last id_contr and seq
+	if startOffset > 0 {
+		log.Printf("Finding resume point for offset %d...", startOffset)
+		var resumeQuery string
+		if startOffset == ROWS_PER_CHUNK {
+			// For first chunk after 0, we can use simple LIMIT
+			resumeQuery = fmt.Sprintf(`
+				SELECT ID_CONTR, SEQ FROM HISTORICO 
+				ORDER BY ID_CONTR, SEQ 
+				LIMIT 1 OFFSET %d`, startOffset-1)
+		} else {
+			// For larger offsets, use LIMIT with smaller offset to avoid scanning too much
+			resumeQuery = fmt.Sprintf(`
+				SELECT ID_CONTR, SEQ FROM HISTORICO 
+				ORDER BY ID_CONTR, SEQ 
+				LIMIT 1 OFFSET %d`, startOffset-1)
+		}
+		
+		row := l.mysqlDB.QueryRow(resumeQuery)
+		err := row.Scan(&lastIDContr, &lastSeq)
 		if err != nil {
-			log.Printf("Warning: failed to stop merges: %v", err)
+			log.Printf("Warning: couldn't find resume point, starting from beginning: %v", err)
+			lastIDContr = -1
+			lastSeq = 0
+			startOffset = 0
+		} else {
+			log.Printf("Resuming from ID_CONTR=%d, SEQ=%d", lastIDContr, lastSeq)
 		}
-		if result != nil && strings.Contains(result.String(), "Code:") {
-			log.Printf("Warning: stop merges error: %s", result.String())
-		}
-	} else {
-		log.Printf("[%s] Running with merges enabled (better sustained performance, may freeze occasionally)", 
-			time.Now().Format("2006-01-02 15:04:05"))
 	}
 
-	offset := startOffset
 	l.totalLoaded = startOffset
 	chunkNumber := int(startOffset / ROWS_PER_CHUNK)
 	totalChunks := int((totalRows + ROWS_PER_CHUNK - 1) / ROWS_PER_CHUNK)
 
-	for offset < totalRows {
+	for l.totalLoaded < totalRows {
 		chunkNumber++
 		chunkStart := time.Now()
 		
-		log.Printf("\n[%s] Processing chunk %d/%d (rows %d-%d of %d)...",
+		log.Printf("\n[%s] Processing chunk %d/%d (approx rows %d-%d of %d)...",
 			time.Now().Format("2006-01-02 15:04:05"),
 			chunkNumber, totalChunks,
-			offset, min(offset+ROWS_PER_CHUNK, totalRows), totalRows)
+			l.totalLoaded, min(l.totalLoaded+ROWS_PER_CHUNK, totalRows), totalRows)
 
-		// Query MySQL data
-		query := fmt.Sprintf(`
+		// Query MySQL data using keyset pagination
+		query := `
 			SELECT ID_CONTR, SEQ, ID_FUNCIONARIO, ID_TEL, DATA, CODIGO, MODO
 			FROM HISTORICO
+			WHERE (ID_CONTR > ? OR (ID_CONTR = ? AND SEQ > ?))
 			ORDER BY ID_CONTR, SEQ
-			LIMIT %d OFFSET %d`, ROWS_PER_CHUNK, offset)
+			LIMIT ?`
 
-		rows, err := l.mysqlDB.Query(query)
+		rows, err := l.mysqlDB.Query(query, lastIDContr, lastIDContr, lastSeq, ROWS_PER_CHUNK)
 		if err != nil {
 			log.Printf("MySQL query error: %v", err)
-			offset += ROWS_PER_CHUNK
-			continue
+			break // Can't continue with keyset pagination on error
 		}
 
 		// Process rows in batches
@@ -157,6 +195,10 @@ func (l *Loader) loadData(totalRows int64, startOffset int64, noStopMerges bool)
 				log.Printf("Row scan error: %v", err)
 				continue
 			}
+			
+			// Remember the last values for next keyset query
+			lastIDContr = int32(idContr)
+			lastSeq = uint16(seq)
 
 			// Build value string
 			value := fmt.Sprintf("(%d, %d, %d, %d, '%s', %d, '%s')",
@@ -198,98 +240,33 @@ func (l *Loader) loadData(totalRows int64, startOffset int64, noStopMerges bool)
 			time.Now().Format("2006-01-02 15:04:05"),
 			chunkNumber, chunkDuration, avgSpeed)
 
-		// Periodic verification and optional merge
+		// Periodic verification
 		if chunkNumber%10 == 0 {
 			l.verifyAndFlush()
-			
-			// Periodically optimize table (every 50 chunks = 2.5M rows)
-			if chunkNumber%50 == 0 && chunkNumber > 0 {
-				if !noStopMerges {
-					// With stopped merges: start, optimize, stop
-					log.Printf("  [%s] Running periodic merge optimization...", time.Now().Format("2006-01-02 15:04:05"))
-					
-					mergeQueries := []string{
-						"SYSTEM START MERGES mysql_import.historico",
-						"OPTIMIZE TABLE mysql_import.historico", // Not FINAL, just trigger some merges
-						"SYSTEM STOP MERGES mysql_import.historico",
-					}
-					
-					for _, q := range mergeQueries {
-						result, err := l.chdbSession.Query(q, "CSV")
-						if err != nil {
-							log.Printf("Warning: %s failed: %v", q, err)
-						}
-						if result != nil && strings.Contains(result.String(), "Code:") {
-							log.Printf("Warning: %s error: %s", q, result.String())
-						}
-					}
-				} else {
-					// With merges enabled: check parts count and run appropriate optimization
-					log.Printf("  [%s] Checking table parts status...", time.Now().Format("2006-01-02 15:04:05"))
-					
-					// Check number of parts
-					partsResult, err := l.chdbSession.Query("SELECT count() FROM system.parts WHERE database='mysql_import' AND table='historico' AND active", "CSV")
-					if err == nil && partsResult != nil {
-						log.Printf("  Active parts count: %s", strings.TrimSpace(partsResult.String()))
-					}
-					
-					// Run OPTIMIZE (not FINAL, as it may block too long)
-					log.Printf("  Running periodic optimization...")
-					startOptimize := time.Now()
-					result, err := l.chdbSession.Query("OPTIMIZE TABLE mysql_import.historico", "CSV")
-					if err != nil {
-						log.Printf("Warning: optimize failed: %v", err)
-					}
-					if result != nil && strings.Contains(result.String(), "Code:") {
-						log.Printf("Warning: optimize error: %s", result.String())
-					}
-					optimizeDuration := time.Since(startOptimize).Seconds()
-					log.Printf("  Optimization took %.1f seconds", optimizeDuration)
-				}
-				
-				log.Printf("  [%s] Periodic optimization completed, continuing import...", time.Now().Format("2006-01-02 15:04:05"))
-			}
 		}
 
 		// Progress estimate
-		progress := float64(offset) / float64(totalRows) * 100
-		remainingRows := totalRows - offset
+		progress := float64(l.totalLoaded) / float64(totalRows) * 100
+		remainingRows := totalRows - l.totalLoaded
 		etaSeconds := float64(remainingRows) / avgSpeed
 		log.Printf("  Progress: %.1f%% (%d/%d rows) - ETA: %.0f minutes",
 			progress, l.totalLoaded, totalRows, etaSeconds/60)
-
-		offset += ROWS_PER_CHUNK
+		
+		// Check if we got fewer rows than expected (might be near the end)
+		if chunkRows < ROWS_PER_CHUNK {
+			log.Printf("  Reached end of table (got %d rows, expected %d)", chunkRows, ROWS_PER_CHUNK)
+			break
+		}
 	}
 
-	// Re-enable merges and optimize (only if they were stopped)
-	if !noStopMerges {
-		log.Printf("\n[%s] Re-enabling merges and optimizing table...",
-			time.Now().Format("2006-01-02 15:04:05"))
-		
-		queries := []string{
-			"SYSTEM START MERGES mysql_import.historico",
-			"OPTIMIZE TABLE mysql_import.historico FINAL",
-		}
-		
-		for _, q := range queries {
-			result, err := l.chdbSession.Query(q, "CSV")
-			if err != nil {
-				log.Printf("Error executing %s: %v", q, err)
-			}
-			if result != nil && strings.Contains(result.String(), "Code:") {
-				log.Printf("Query error for %s: %s", q, result.String())
-			}
-		}
-	} else {
-		// Just run OPTIMIZE without changing merge settings
-		log.Printf("\n[%s] Optimizing table...", time.Now().Format("2006-01-02 15:04:05"))
-		result, err := l.chdbSession.Query("OPTIMIZE TABLE mysql_import.historico FINAL", "CSV")
-		if err != nil {
-			log.Printf("Error optimizing: %v", err)
-		}
-		if result != nil && strings.Contains(result.String(), "Code:") {
-			log.Printf("Optimize error: %s", result.String())
-		}
+	// Final optimization
+	log.Printf("\n[%s] Running final table optimization...", time.Now().Format("2006-01-02 15:04:05"))
+	result, err := l.chdbSession.Query("OPTIMIZE TABLE mysql_import.historico FINAL", "CSV")
+	if err != nil {
+		log.Printf("Error optimizing: %v", err)
+	}
+	if result != nil && strings.Contains(result.String(), "Code:") {
+		log.Printf("Optimize error: %s", result.String())
 	}
 
 	return nil
@@ -375,7 +352,6 @@ func main() {
 		offset     = flag.Int64("offset", 0, "Start from this offset")
 		skipTexto  = flag.Bool("skip-texto", false, "Skip HISTORICO_TEXTO table")
 		chdbPath   = flag.String("chdb-path", "/tmp/chdb", "Path for chdb data storage")
-		noStopMerges = flag.Bool("no-stop-merges", false, "Don't stop merges (may cause freezing but better sustained performance)")
 	)
 	flag.Parse()
 	
@@ -439,7 +415,7 @@ func main() {
 
 	// Load data
 	startTime := time.Now()
-	if err := loader.loadData(totalRows, *offset, *noStopMerges); err != nil {
+	if err := loader.loadData(totalRows, *offset); err != nil {
 		log.Fatal(err)
 	}
 
