@@ -5,7 +5,7 @@ LIBS = $(shell mysql_config --libs) -ldl
 PROTOBUF_LIBS = -lprotobuf -pthread
 
 # Define targets
-TARGETS = feed_data query_data feed_data_v2 query_data_v2 chdb_api_server chdb_api_client chdb_api_server_simple
+TARGETS = feed_data query_data feed_data_v2 query_data_v2 chdb_api_server chdb_api_client chdb_api_server_simple historico_feeder
 COMMON_DEPS = common.h
 PROTO_DEPS = chdb_api.pb.h chdb_api.pb.cc
 
@@ -29,6 +29,10 @@ feed_data_v2: feed_data_v2.o
 query_data_v2: query_data_v2.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
 
+# Build historico_feeder executable
+historico_feeder: historico_feeder.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
+
 # Build object files
 %.o: %.cpp $(COMMON_DEPS)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
@@ -50,6 +54,10 @@ run-query-v2: query_data_v2
 	./query_data_v2
 
 run-all-v2: run-feed-v2 run-query-v2
+
+# Run historico feeder
+run-historico: historico_feeder
+	./historico_feeder
 
 # Protobuf API Server and Client
 chdb_api.pb.cc chdb_api.pb.h: chdb_api.proto
