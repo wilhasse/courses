@@ -2,6 +2,8 @@
 
 This project demonstrates how to extract data from MySQL and load it into ClickHouse using the chDB library, with multiple approaches for different use cases. The project now includes a high-performance Go implementation that solves common freezing issues encountered with large datasets.
 
+> **⚠️ CRITICAL PERFORMANCE NOTE**: We discovered that inserting data in PRIMARY KEY order can improve performance by **5x** and reduce storage by **100x**. See [CLICKHOUSE_OPTIMIZATION_INSIGHTS.md](CLICKHOUSE_OPTIMIZATION_INSIGHTS.md) for details that can save you hours of import time and hundreds of GB of storage.
+
 ## Overview
 
 This project provides various tools to:
@@ -9,6 +11,30 @@ This project provides various tools to:
 - Convert between different ClickHouse storage engines for optimal query performance
 - Serve ClickHouse queries via API servers
 - Test and benchmark performance
+
+## Quick Start Guide
+
+```bash
+# 1. Build the Go loader
+go build -o historico_loader_go historico_loader.go
+
+# 2. Import data (example with 10k rows for testing)
+./historico_loader_go \
+    -host your_mysql_host \
+    -user your_user \
+    -password 'your_password' \
+    -database your_database \
+    -row-count 10000 \
+    -chdb-path /chdb/data
+
+# 3. CRITICAL: Verify data exists!
+./execute_sql -d /chdb/data "SELECT COUNT(*) FROM mysql_import.historico"
+
+# 4. If count is 0, your data was deleted! Use the fixed loader and re-import.
+
+# 5. Query your data
+./execute_sql -d /chdb/data "SELECT * FROM mysql_import.historico LIMIT 10"
+```
 
 ## Installing libchdb (Required for All Tools)
 
@@ -98,6 +124,14 @@ go mod download
 # Build
 go build -o historico_loader_go historico_loader.go
 ```
+
+**⚠️ CRITICAL WARNING**: The chdb-go library's `Cleanup()` method DELETES ALL DATA! We've patched our loader to prevent this, but be aware that the session remains open. The data is safely persisted to disk.
+
+**🚀 Performance Breakthrough**: The Go version uses keyset pagination which naturally maintains ORDER BY consistency. When data is inserted in the same order as the table's PRIMARY KEY, we observed:
+- **5x faster imports** (99k vs 19k rows/sec)
+- **100x smaller storage** (100MB vs 10GB for 16M rows)
+- **No partitioning errors**
+- **See [CLICKHOUSE_OPTIMIZATION_INSIGHTS.md](CLICKHOUSE_OPTIMIZATION_INSIGHTS.md) for details**
 
 #### 2. **historico_log** (C++ Version - Log Engine)
 The original C++ tool for importing MySQL tables into chDB using the Log engine. Works well but slower than MergeTree.
@@ -221,17 +255,22 @@ Options:
   - CSV: Comma-separated values
   - JSON: JSON format
   - Vertical: One value per line
+- `-d, --data <path>`: ClickHouse data path (default: ./clickhouse_data)
+- `-h, --help`: Show help message
 
 Examples:
 ```bash
 # Simple count
 ./execute_sql "SELECT COUNT(*) FROM mysql_import.historico"
 
+# Query from custom data path
+./execute_sql -d /chdb/data "SELECT COUNT(*) FROM mysql_import.historico"
+
 # Export to CSV
 ./execute_sql -f CSV "SELECT * FROM mysql_import.historico LIMIT 1000" > export.csv
 
 # Complex analytics with pretty output
-./execute_sql "SELECT codigo, COUNT(*) as cnt FROM mysql_import.historico GROUP BY codigo ORDER BY cnt DESC LIMIT 10"
+./execute_sql -d /chdb/data "SELECT codigo, COUNT(*) as cnt FROM mysql_import.historico GROUP BY codigo ORDER BY cnt DESC LIMIT 10"
 
 # Pipe to other tools
 ./execute_sql -f TSV "SELECT id_contr, seq FROM mysql_import.historico WHERE codigo = 51" | awk '{print $1}'
@@ -246,7 +285,24 @@ Query tools for the sample customer/order data.
 Lightweight HTTP API server for ClickHouse queries.
 
 ```bash
-./chdb_api_server_simple  # Listens on port 8125
+./chdb_api_server_simple [options]
+```
+
+Options:
+- `-p, --port <port>`: Port to listen on (default: 8125)
+- `-d, --data <path>`: ClickHouse data path (default: ./clickhouse_data)
+- `-h, --help`: Show help message
+
+Examples:
+```bash
+# Use default settings
+./chdb_api_server_simple
+
+# Custom port and data path
+./chdb_api_server_simple -p 8126 -d /data/chdb
+
+# Use SSD for better performance
+./chdb_api_server_simple --data /mnt/ssd/chdb
 ```
 
 Usage:
@@ -258,6 +314,27 @@ curl -X POST http://localhost:8125/query \
 
 #### 2. **chdb_api_server** / **chdb_api_client**
 Protocol Buffer-based API for high-performance applications.
+
+```bash
+./chdb_api_server [options]
+```
+
+Options:
+- `-p, --port <port>`: Port to listen on (default: 8125)
+- `-d, --data <path>`: ClickHouse data path (default: ./clickhouse_data)
+- `-h, --help`: Show help message
+
+Examples:
+```bash
+# Use default settings
+./chdb_api_server
+
+# Custom data path for imported data
+./chdb_api_server -d /data/mysql_import
+
+# Run on different port with custom path
+./chdb_api_server -p 8200 -d /mnt/nvme/chdb
+```
 
 ## Prerequisites
 
@@ -337,6 +414,9 @@ g++ -o historico_feeder historico_feeder.cpp \
 
 # Resume after interruption at row 10,000,000
 ./historico_loader_go ... -offset 10000000 -row-count 300266692
+
+# CRITICAL: Verify data immediately after import completes!
+./execute_sql -d /data/chdb "SELECT COUNT(*) FROM mysql_import.historico"
 ```
 
 Performance with Go version:
@@ -344,6 +424,8 @@ Performance with Go version:
 - 30,000-50,000 rows/second sustained
 - Direct MergeTree engine (no conversion needed)
 - Memory usage: 1-2GB constant
+
+**⚠️ ALWAYS verify your data exists after import - see step 3 below!**
 
 #### Using C++ Log Version (Alternative)
 ```bash
@@ -368,24 +450,74 @@ Memory Usage: Stays constant at ~200-300MB regardless of table size!
 This creates MergeTree versions of your tables with "_mt" suffix for much faster queries.
 **Note**: The Go version already uses MergeTree engine, so conversion is not needed.
 
-### 3. Test Performance
+### 3. CRITICAL: Verify Your Data After Import
+
+**Before proceeding, ALWAYS verify your data survived the import process:**
+
+```bash
+# Check if data directory exists and has content
+ls -la /chdb/data/
+du -sh /chdb/data/
+
+# Verify row count matches what was imported
+./execute_sql -d /chdb/data "SELECT COUNT(*) as total_rows FROM mysql_import.historico"
+
+# Check table structure
+./execute_sql -d /chdb/data "DESCRIBE TABLE mysql_import.historico"
+
+# Sample some data to ensure it's readable
+./execute_sql -d /chdb/data "SELECT * FROM mysql_import.historico LIMIT 10"
+
+# Check system tables for storage info
+./execute_sql -d /chdb/data "
+SELECT 
+    database,
+    table,
+    formatReadableSize(sum(bytes_on_disk)) as disk_size,
+    sum(rows) as total_rows,
+    count() as parts_count
+FROM system.parts 
+WHERE database = 'mysql_import' AND active
+GROUP BY database, table"
+```
+
+**If data is missing**: The import process may have called `Cleanup()` which deletes all data. You'll need to re-import using the fixed version of the loader.
+
+### 4. Test Performance (Optional)
 ```bash
 ./test_performance
 ```
 
 Compare query performance between Log and MergeTree engines.
 
-### 4. Query Your Data
+### 5. Query Your Data
 
 #### Quick Status Check
+
+**⚠️ IMPORTANT**: Always verify your data after import! The chdb-go library's `Cleanup()` method can delete all data if not handled properly.
+
 ```bash
-# Check row counts
-./execute_sql "SELECT 'historico' as table, COUNT(*) as rows FROM mysql_import.historico 
+# CRITICAL: First verify your data exists
+./execute_sql -d /chdb/data "SELECT COUNT(*) FROM mysql_import.historico"
+
+# If using default path
+./execute_sql "SELECT COUNT(*) FROM mysql_import.historico"
+
+# Check both tables if you imported both
+./execute_sql -d /chdb/data "SELECT 'historico' as table, COUNT(*) as rows FROM mysql_import.historico 
 UNION ALL 
 SELECT 'historico_texto', COUNT(*) FROM mysql_import.historico_texto"
 
+# Verify data integrity - check first and last records
+./execute_sql -d /chdb/data "SELECT 'First Row' as type, * FROM mysql_import.historico ORDER BY id_contr, seq LIMIT 1
+UNION ALL
+SELECT 'Last Row', * FROM mysql_import.historico ORDER BY id_contr DESC, seq DESC LIMIT 1"
+
 # Check data range
-./execute_sql "SELECT MIN(data) as earliest, MAX(data) as latest FROM mysql_import.historico"
+./execute_sql -d /chdb/data "SELECT MIN(data) as earliest, MAX(data) as latest FROM mysql_import.historico"
+
+# Verify storage location and size
+du -sh /chdb/data/
 ```
 
 #### Run Analytics
@@ -397,23 +529,47 @@ SELECT 'historico_texto', COUNT(*) FROM mysql_import.historico_texto"
 ./execute_sql -f CSV "SELECT * FROM mysql_import.historico WHERE codigo = 51 AND data >= '2024-01-01'" > codigo_51_2024.csv
 ```
 
-### 5. Start API Server (Optional)
+### 6. Start API Server (Optional)
 ```bash
+# Start with default data path
 ./chdb_api_server_simple
+
+# Or start with custom data path (must match where you imported data)
+./chdb_api_server_simple -d /data/chdb
+
+# Run on different port if 8125 is in use
+./chdb_api_server_simple -p 8126 -d /data/chdb
 ```
 
 Now you can query via HTTP:
 ```bash
 curl -X POST http://localhost:8125/query \
   -d '{"query": "SELECT COUNT(*) FROM mysql_import.historico_mt"}'
+
+# Query specific columns
+curl -X POST http://localhost:8125/query \
+  -d '{"query": "SELECT id_contr, seq, data FROM mysql_import.historico LIMIT 10"}'
 ```
 
 ## Data Storage
 
-- **Location**: `./clickhouse_data/`
+- **Default Location**: `./clickhouse_data/`
+- **Configurable**: Use `-chdb-path` for loaders or `-d/--data` for API servers
 - **Engines**:
   - **Log**: Simple, fast writes, slower queries
   - **MergeTree**: Indexed, slower writes, much faster queries
+
+**Important**: When using custom data paths, ensure all tools point to the same directory:
+```bash
+# Import data to custom location
+./historico_loader_go ... -chdb-path /data/chdb
+
+# Query from the same location
+./chdb_api_server_simple -d /data/chdb
+
+# Use execute_sql with same data path
+./execute_sql -d /data/chdb "SELECT COUNT(*) FROM mysql_import.historico"
+```
 
 ## Performance Tips
 
@@ -434,7 +590,9 @@ CREATE TABLE historico (
     data DateTime,
     codigo UInt16,
     modo String
-) ENGINE = Log  -- or MergeTree() ORDER BY (id_contr, seq)
+) ENGINE = MergeTree() 
+ORDER BY (id_contr, seq)  -- Critical: INSERT data in this order for 100x better performance!
+-- Avoid PARTITION BY unless needed for data lifecycle management
 ```
 
 ### HISTORICO_TEXTO
@@ -475,6 +633,96 @@ export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 - Use the Go version which implements proper STOP/START MERGES
 - Avoid the C++ MergeTree version with very large datasets
 - The freezing is caused by background merge operations blocking INSERTs
+
+### Partitioning Issues
+If you get "Too many partitions for single INSERT block" error:
+- Your data spans many months/years
+- Remove `PARTITION BY toYYYYMM(data)` from table creation
+- Or use coarser partitioning like `PARTITION BY toYear(data)`
+
+### Resuming Interrupted Loads
+The Go version supports smart resuming:
+
+1. **Automatic Resume** (recommended):
+   ```bash
+   # Just run without -offset, it will auto-detect where to continue
+   ./historico_loader_go -host ... -database ... -row-count 300266692
+   ```
+
+2. **Manual Resume with Offset**:
+   ```bash
+   # If you know approximately where you stopped
+   ./historico_loader_go ... -offset 17250000 -row-count 300266692
+   ```
+
+**How Resume Works:**
+- First tries to find last row from ClickHouse (instant)
+- Falls back to MySQL OFFSET if needed (slow for first query only)
+- Continues with keyset pagination at full speed
+
+**Important:** Always specify `-row-count` when resuming to avoid slow COUNT(*) query
+
+### Storage Management During Import
+
+**Expected Storage Growth:**
+- **During import**: 3-6x final size due to unmerged parts
+- **Example**: 300M rows → ~200GB during import → ~10-20GB after optimization
+- **Reason**: Each INSERT creates a separate part with metadata overhead
+
+**Storage Optimization:**
+- Automatic: `OPTIMIZE TABLE ... FINAL` runs at completion
+- Manual: Run `OPTIMIZE TABLE mysql_import.historico FINAL` after import
+- Timeline: 10-30 minutes for 300M rows optimization
+
+**Monitoring Storage:**
+```bash
+# Check current storage usage
+du -sh /chdb/data/mysql_import/historico
+
+# Check parts and compression in chdb
+./execute_sql -d /chdb/data "
+SELECT 
+    count() as parts,
+    formatReadableSize(sum(bytes_on_disk)) as size,
+    formatReadableSize(sum(data_compressed_bytes)) as compressed,
+    round(sum(data_compressed_bytes) / sum(data_uncompressed_bytes), 2) as ratio
+FROM system.parts 
+WHERE database='mysql_import' AND table='historico' AND active"
+```
+
+### Data Loss Prevention and Recovery
+
+**⚠️ CRITICAL ISSUE**: The chdb-go library's `Cleanup()` method DELETES ALL DATA!
+
+**Prevention:**
+1. **Use the fixed loader**: We've patched `historico_loader_go` to use `Close()` instead of `Cleanup()`
+2. **Always verify after import**: Run count queries immediately after import completes
+3. **Monitor the import output**: Look for "Session closed. Data preserved." message
+
+**If Your Data Disappeared:**
+```bash
+# Check if any data remains
+ls -la /chdb/data/
+find /chdb -name "*.bin" -o -name "*.idx" 2>/dev/null | head -20
+
+# Data is likely gone if directory is empty
+# You'll need to re-import with the fixed loader
+```
+
+**Safe Import Process:**
+```bash
+# 1. Use the fixed loader
+./historico_loader_go -host ... -database ... -chdb-path /chdb/data
+
+# 2. Watch for the final message
+# Should see: "Session closed. Data preserved."
+
+# 3. IMMEDIATELY verify data
+./execute_sql -d /chdb/data "SELECT COUNT(*) FROM mysql_import.historico"
+
+# 4. Check storage
+du -sh /chdb/data/
+```
 
 ## Clean Up
 

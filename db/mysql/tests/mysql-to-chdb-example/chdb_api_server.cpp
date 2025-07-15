@@ -34,6 +34,7 @@ private:
     free_result_v2_fn free_result_v2;
     int server_fd;
     bool running;
+    std::string chdb_path;
     
     // Convert format enum to string
     std::string getFormatString(chdb_api::QueryRequest::OutputFormat format) {
@@ -98,7 +99,7 @@ private:
     }
     
 public:
-    ChDBApiServer() : chdb_handle(nullptr), server_fd(-1), running(false) {}
+    ChDBApiServer(const std::string& path = CHDB_PATH) : chdb_handle(nullptr), server_fd(-1), running(false), chdb_path(path) {}
     
     ~ChDBApiServer() {
         stop();
@@ -156,7 +157,7 @@ public:
         args_storage.push_back("clickhouse");
         args_storage.push_back("--multiquery");
         args_storage.push_back("--output-format=" + getFormatString(format));
-        args_storage.push_back("--path=" + CHDB_PATH);
+        args_storage.push_back("--path=" + chdb_path);
         args_storage.push_back("--query=" + query);
         
         for (auto& arg : args_storage) {
@@ -278,7 +279,7 @@ public:
         running = true;
         std::cout << "\nchDB API Server running on port " << port << std::endl;
         std::cout << "Protocol: Length-prefixed Protocol Buffers" << std::endl;
-        std::cout << "Data path: " << CHDB_PATH << std::endl;
+        std::cout << "Data path: " << chdb_path << std::endl;
         std::cout << "\nWaiting for connections..." << std::endl;
         
         // Accept loop
@@ -326,15 +327,33 @@ void signal_handler(int /*sig*/) {
 
 int main(int argc, char* argv[]) {
     int port = 8125;
-    if (argc > 1) {
-        port = std::atoi(argv[1]);
+    std::string chdb_path = CHDB_PATH;
+    
+    // Parse command line arguments
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "-h" || arg == "--help") {
+            std::cout << "Usage: " << argv[0] << " [options]" << std::endl;
+            std::cout << "Options:" << std::endl;
+            std::cout << "  -p, --port <port>       Port to listen on (default: 8125)" << std::endl;
+            std::cout << "  -d, --data <path>       ClickHouse data path (default: " << CHDB_PATH << ")" << std::endl;
+            std::cout << "  -h, --help              Show this help message" << std::endl;
+            return 0;
+        } else if ((arg == "-p" || arg == "--port") && i + 1 < argc) {
+            port = std::atoi(argv[++i]);
+        } else if ((arg == "-d" || arg == "--data") && i + 1 < argc) {
+            chdb_path = argv[++i];
+        } else if (std::isdigit(arg[0])) {
+            // Backward compatibility: first numeric argument is port
+            port = std::atoi(argv[i]);
+        }
     }
     
     // Setup signal handler
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
     
-    g_server = new ChDBApiServer();
+    g_server = new ChDBApiServer(chdb_path);
     
     if (!g_server->init()) {
         std::cerr << "Failed to initialize chDB" << std::endl;

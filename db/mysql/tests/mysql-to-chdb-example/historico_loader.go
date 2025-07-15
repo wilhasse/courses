@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"strconv"
 	"time"
 
 	"github.com/chdb-io/chdb-go/chdb"
@@ -64,7 +65,6 @@ func (l *Loader) createTables() error {
 			id_contr Int32, seq UInt16, id_funcionario Int32,
 			id_tel Int32, data DateTime, codigo UInt16, modo String
 		) ENGINE = MergeTree() 
-		PARTITION BY toYYYYMM(data)
 		ORDER BY (id_contr, seq)`,
 		`CREATE TABLE IF NOT EXISTS mysql_import.historico_texto (
 			id_contr Int32, seq UInt16, mensagem String,
@@ -88,9 +88,10 @@ func (l *Loader) createTables() error {
 	return nil
 }
 
-func (l *Loader) getTotalRows() (int64, error) {
+func (l *Loader) getTotalRows(tableName string) (int64, error) {
 	var count int64
-	err := l.mysqlDB.QueryRow("SELECT COUNT(*) FROM HISTORICO").Scan(&count)
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", tableName)
+	err := l.mysqlDB.QueryRow(query).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get row count: %w", err)
 	}
@@ -100,13 +101,13 @@ func (l *Loader) getTotalRows() (int64, error) {
 	err = l.mysqlDB.QueryRow(`
 		SELECT COUNT(*) FROM information_schema.STATISTICS 
 		WHERE TABLE_SCHEMA = DATABASE() 
-		AND TABLE_NAME = 'HISTORICO' 
+		AND TABLE_NAME = ? 
 		AND INDEX_NAME = 'idx_contr_seq'
-	`).Scan(&indexCount)
+	`, tableName).Scan(&indexCount)
 	
 	if err == nil && indexCount == 0 {
-		log.Println("IMPORTANT: Consider creating this index for optimal performance:")
-		log.Println("  CREATE INDEX idx_contr_seq ON HISTORICO (ID_CONTR, SEQ);")
+		log.Printf("IMPORTANT: Consider creating this index for optimal performance:")
+		log.Printf("  CREATE INDEX idx_contr_seq ON %s (ID_CONTR, SEQ);", tableName)
 	}
 	
 	return count, nil
@@ -116,45 +117,105 @@ func escapeString(s string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(s, "\\", "\\\\"), "'", "\\'")
 }
 
-func (l *Loader) loadData(totalRows int64, startOffset int64) error {
-	log.Printf("[%s] Using keyset pagination for constant performance", time.Now().Format("2006-01-02 15:04:05"))
+func (l *Loader) loadData(totalRows int64, startOffset int64, skipTexto, onlyTexto bool) error {
+	if onlyTexto {
+		return l.loadHistoricoTexto(totalRows, startOffset)
+	}
+	
+	// Load HISTORICO first
+	if !onlyTexto {
+		if err := l.loadHistorico(totalRows, startOffset); err != nil {
+			return err
+		}
+	}
+	
+	// Then load HISTORICO_TEXTO if not skipped
+	if !skipTexto && !onlyTexto {
+		// Reset for HISTORICO_TEXTO
+		l.totalLoaded = 0
+		log.Printf("\n[%s] Starting HISTORICO_TEXTO load...", time.Now().Format("2006-01-02 15:04:05"))
+		
+		// Get row count for HISTORICO_TEXTO
+		textoRows, err := l.getTotalRows("HISTORICO_TEXTO")
+		if err != nil {
+			log.Printf("Warning: failed to get HISTORICO_TEXTO row count: %v", err)
+			textoRows = totalRows // Assume same as HISTORICO
+		}
+		
+		if err := l.loadHistoricoTexto(textoRows, 0); err != nil {
+			return err
+		}
+	}
+	
+	return nil
+}
+
+func (l *Loader) loadHistorico(totalRows int64, startOffset int64) error {
+	log.Printf("[%s] Loading HISTORICO table using keyset pagination", time.Now().Format("2006-01-02 15:04:05"))
 	
 	// Initialize keyset values
 	var lastIDContr int32 = -1
 	var lastSeq uint16 = 0
 	
-	// If resuming from offset, get the last id_contr and seq
+	// If resuming from offset, try to get from ClickHouse first
 	if startOffset > 0 {
 		log.Printf("Finding resume point for offset %d...", startOffset)
-		var resumeQuery string
-		if startOffset == ROWS_PER_CHUNK {
-			// For first chunk after 0, we can use simple LIMIT
-			resumeQuery = fmt.Sprintf(`
-				SELECT ID_CONTR, SEQ FROM HISTORICO 
-				ORDER BY ID_CONTR, SEQ 
-				LIMIT 1 OFFSET %d`, startOffset-1)
-		} else {
-			// For larger offsets, use LIMIT with smaller offset to avoid scanning too much
-			resumeQuery = fmt.Sprintf(`
-				SELECT ID_CONTR, SEQ FROM HISTORICO 
-				ORDER BY ID_CONTR, SEQ 
-				LIMIT 1 OFFSET %d`, startOffset-1)
-		}
 		
-		row := l.mysqlDB.QueryRow(resumeQuery)
-		err := row.Scan(&lastIDContr, &lastSeq)
-		if err != nil {
-			log.Printf("Warning: couldn't find resume point, starting from beginning: %v", err)
-			lastIDContr = -1
-			lastSeq = 0
-			startOffset = 0
+		// First try to get the last row from ClickHouse (much faster!)
+		chResult, err := l.chdbSession.Query(`
+			SELECT id_contr, seq 
+			FROM mysql_import.historico 
+			ORDER BY id_contr DESC, seq DESC 
+			LIMIT 1
+		`, "TSV")
+		
+		if err == nil && chResult != nil && chResult.Len() > 0 {
+			// Parse the result
+			fields := strings.Fields(chResult.String())
+			if len(fields) >= 2 {
+				if id, err := strconv.Atoi(fields[0]); err == nil {
+					lastIDContr = int32(id)
+				}
+				if s, err := strconv.Atoi(fields[1]); err == nil {
+					lastSeq = uint16(s)
+				}
+				log.Printf("Resuming from last ClickHouse row: ID_CONTR=%d, SEQ=%d", lastIDContr, lastSeq)
+				
+				// Get actual count from ClickHouse
+				countResult, _ := l.chdbSession.Query("SELECT COUNT(*) FROM mysql_import.historico", "CSV")
+				if countResult != nil {
+					if count, err := strconv.ParseInt(strings.TrimSpace(countResult.String()), 10, 64); err == nil {
+						l.totalLoaded = count
+						log.Printf("Actual rows already loaded: %d", l.totalLoaded)
+					}
+				}
+			}
 		} else {
-			log.Printf("Resuming from ID_CONTR=%d, SEQ=%d", lastIDContr, lastSeq)
+			// Fallback to MySQL (slow but works)
+			log.Printf("ClickHouse query failed, falling back to MySQL (this will be slow)...")
+			resumeQuery := fmt.Sprintf(`
+				SELECT ID_CONTR, SEQ FROM HISTORICO 
+				ORDER BY ID_CONTR, SEQ 
+				LIMIT 1 OFFSET %d`, startOffset-1)
+			
+			row := l.mysqlDB.QueryRow(resumeQuery)
+			err := row.Scan(&lastIDContr, &lastSeq)
+			if err != nil {
+				log.Printf("Warning: couldn't find resume point, starting from beginning: %v", err)
+				lastIDContr = -1
+				lastSeq = 0
+				startOffset = 0
+			} else {
+				log.Printf("Resuming from ID_CONTR=%d, SEQ=%d", lastIDContr, lastSeq)
+			}
 		}
 	}
 
-	l.totalLoaded = startOffset
-	chunkNumber := int(startOffset / ROWS_PER_CHUNK)
+	// Don't overwrite totalLoaded if we got it from ClickHouse
+	if l.totalLoaded == 0 {
+		l.totalLoaded = startOffset
+	}
+	chunkNumber := int(l.totalLoaded / ROWS_PER_CHUNK)
 	totalChunks := int((totalRows + ROWS_PER_CHUNK - 1) / ROWS_PER_CHUNK)
 
 	for l.totalLoaded < totalRows {
@@ -260,7 +321,7 @@ func (l *Loader) loadData(totalRows int64, startOffset int64) error {
 	}
 
 	// Final optimization
-	log.Printf("\n[%s] Running final table optimization...", time.Now().Format("2006-01-02 15:04:05"))
+	log.Printf("\n[%s] Running final HISTORICO table optimization...", time.Now().Format("2006-01-02 15:04:05"))
 	result, err := l.chdbSession.Query("OPTIMIZE TABLE mysql_import.historico FINAL", "CSV")
 	if err != nil {
 		log.Printf("Error optimizing: %v", err)
@@ -270,6 +331,233 @@ func (l *Loader) loadData(totalRows int64, startOffset int64) error {
 	}
 
 	return nil
+}
+
+func (l *Loader) loadHistoricoTexto(totalRows int64, startOffset int64) error {
+	log.Printf("[%s] Loading HISTORICO_TEXTO table using keyset pagination", time.Now().Format("2006-01-02 15:04:05"))
+	
+	// Initialize keyset values
+	var lastIDContr int32 = -1
+	var lastSeq uint16 = 0
+	
+	// If resuming from offset, try to get from ClickHouse first
+	if startOffset > 0 {
+		log.Printf("Finding resume point for offset %d...", startOffset)
+		
+		// First try to get the last row from ClickHouse (much faster!)
+		chResult, err := l.chdbSession.Query(`
+			SELECT id_contr, seq 
+			FROM mysql_import.historico_texto 
+			ORDER BY id_contr DESC, seq DESC 
+			LIMIT 1
+		`, "TSV")
+		
+		if err == nil && chResult != nil && chResult.Len() > 0 {
+			// Parse the result
+			fields := strings.Fields(chResult.String())
+			if len(fields) >= 2 {
+				if id, err := strconv.Atoi(fields[0]); err == nil {
+					lastIDContr = int32(id)
+				}
+				if s, err := strconv.Atoi(fields[1]); err == nil {
+					lastSeq = uint16(s)
+				}
+				log.Printf("Resuming from last ClickHouse row: ID_CONTR=%d, SEQ=%d", lastIDContr, lastSeq)
+				
+				// Get actual count from ClickHouse
+				countResult, _ := l.chdbSession.Query("SELECT COUNT(*) FROM mysql_import.historico_texto", "CSV")
+				if countResult != nil {
+					if count, err := strconv.ParseInt(strings.TrimSpace(countResult.String()), 10, 64); err == nil {
+						l.totalLoaded = count
+						log.Printf("Actual rows already loaded: %d", l.totalLoaded)
+					}
+				}
+			}
+		} else {
+			// Fallback to MySQL
+			log.Printf("ClickHouse query failed, falling back to MySQL...")
+			resumeQuery := fmt.Sprintf(`
+				SELECT ID_CONTR, SEQ FROM HISTORICO_TEXTO 
+				ORDER BY ID_CONTR, SEQ 
+				LIMIT 1 OFFSET %d`, startOffset-1)
+			
+			row := l.mysqlDB.QueryRow(resumeQuery)
+			err := row.Scan(&lastIDContr, &lastSeq)
+			if err != nil {
+				log.Printf("Warning: couldn't find resume point, starting from beginning: %v", err)
+				lastIDContr = -1
+				lastSeq = 0
+				startOffset = 0
+			} else {
+				log.Printf("Resuming from ID_CONTR=%d, SEQ=%d", lastIDContr, lastSeq)
+			}
+		}
+	}
+
+	// Don't overwrite totalLoaded if we got it from ClickHouse
+	if l.totalLoaded == 0 {
+		l.totalLoaded = startOffset
+	}
+	chunkNumber := int(l.totalLoaded / ROWS_PER_CHUNK)
+	totalChunks := int((totalRows + ROWS_PER_CHUNK - 1) / ROWS_PER_CHUNK)
+
+	for l.totalLoaded < totalRows {
+		chunkNumber++
+		chunkStart := time.Now()
+		
+		log.Printf("\n[%s] Processing HISTORICO_TEXTO chunk %d/%d (approx rows %d-%d of %d)...",
+			time.Now().Format("2006-01-02 15:04:05"),
+			chunkNumber, totalChunks,
+			l.totalLoaded, min(l.totalLoaded+ROWS_PER_CHUNK, totalRows), totalRows)
+
+		// Query MySQL data using keyset pagination
+		query := `
+			SELECT ID_CONTR, SEQ, MENSAGEM, MOTIVO, AUTORIZACAO
+			FROM HISTORICO_TEXTO
+			WHERE (ID_CONTR > ? OR (ID_CONTR = ? AND SEQ > ?))
+			ORDER BY ID_CONTR, SEQ
+			LIMIT ?`
+
+		rows, err := l.mysqlDB.Query(query, lastIDContr, lastIDContr, lastSeq, ROWS_PER_CHUNK)
+		if err != nil {
+			log.Printf("MySQL query error: %v", err)
+			break
+		}
+
+		// Process rows in batches
+		var batch []string
+		batchCount := 0
+		chunkRows := 0
+
+		for rows.Next() {
+			var idContr int
+			var seq int
+			var mensagem, motivo, autorizacao sql.NullString
+
+			err := rows.Scan(&idContr, &seq, &mensagem, &motivo, &autorizacao)
+			if err != nil {
+				log.Printf("Row scan error: %v", err)
+				continue
+			}
+			
+			// Remember the last values for next keyset query
+			lastIDContr = int32(idContr)
+			lastSeq = uint16(seq)
+
+			// Build value string
+			value := fmt.Sprintf("(%d, %d, '%s', '%s', '%s')",
+				idContr, seq, 
+				escapeString(mensagem.String),
+				escapeString(motivo.String),
+				escapeString(autorizacao.String))
+			
+			batch = append(batch, value)
+			batchCount++
+			chunkRows++
+
+			// Insert when batch is full
+			if batchCount == BATCH_SIZE {
+				if err := l.insertTextoBatch(batch); err != nil {
+					log.Printf("Batch insert error: %v", err)
+				}
+				l.totalLoaded += int64(batchCount)
+				batch = nil
+				batchCount = 0
+			}
+		}
+		rows.Close()
+
+		// Insert remaining rows
+		if batchCount > 0 {
+			if err := l.insertTextoBatch(batch); err != nil {
+				log.Printf("Final batch insert error: %v", err)
+			}
+			l.totalLoaded += int64(batchCount)
+		}
+
+		// Chunk completion stats
+		chunkDuration := time.Since(chunkStart).Seconds()
+		elapsed := time.Since(l.startTime).Seconds()
+		avgSpeed := float64(l.totalLoaded-startOffset) / elapsed
+		
+		log.Printf("  HISTORICO_TEXTO: %d rows loaded for this chunk", chunkRows)
+		log.Printf("  [%s] Chunk %d completed in %.0f seconds (avg: %.0f rows/sec)",
+			time.Now().Format("2006-01-02 15:04:05"),
+			chunkNumber, chunkDuration, avgSpeed)
+
+		// Periodic verification
+		if chunkNumber%10 == 0 {
+			l.verifyAndFlushTexto()
+		}
+
+		// Progress estimate
+		progress := float64(l.totalLoaded) / float64(totalRows) * 100
+		remainingRows := totalRows - l.totalLoaded
+		etaSeconds := float64(remainingRows) / avgSpeed
+		log.Printf("  Progress: %.1f%% (%d/%d rows) - ETA: %.0f minutes",
+			progress, l.totalLoaded, totalRows, etaSeconds/60)
+		
+		// Check if we got fewer rows than expected (might be near the end)
+		if chunkRows < ROWS_PER_CHUNK {
+			log.Printf("  Reached end of table (got %d rows, expected %d)", chunkRows, ROWS_PER_CHUNK)
+			break
+		}
+	}
+
+	// Final optimization
+	log.Printf("\n[%s] Running final HISTORICO_TEXTO table optimization...", time.Now().Format("2006-01-02 15:04:05"))
+	result, err := l.chdbSession.Query("OPTIMIZE TABLE mysql_import.historico_texto FINAL", "CSV")
+	if err != nil {
+		log.Printf("Error optimizing: %v", err)
+	}
+	if result != nil && strings.Contains(result.String(), "Code:") {
+		log.Printf("Optimize error: %s", result.String())
+	}
+
+	return nil
+}
+
+func (l *Loader) insertTextoBatch(batch []string) error {
+	if len(batch) == 0 {
+		return nil
+	}
+
+	query := fmt.Sprintf("INSERT INTO mysql_import.historico_texto VALUES %s",
+		strings.Join(batch, ", "))
+	
+	result, err := l.chdbSession.Query(query, "CSV")
+	if err != nil {
+		return fmt.Errorf("batch insert failed: %w", err)
+	}
+	if result != nil && strings.Contains(result.String(), "Code:") {
+		return fmt.Errorf("batch insert error: %s", result.String())
+	}
+
+	return nil
+}
+
+func (l *Loader) verifyAndFlushTexto() {
+	log.Printf("  [%s] Flushing HISTORICO_TEXTO data to disk...", time.Now().Format("2006-01-02 15:04:05"))
+	
+	// Flush logs
+	result, err := l.chdbSession.Query("SYSTEM FLUSH LOGS", "CSV")
+	if err != nil {
+		log.Printf("Warning: flush error: %v", err)
+	}
+	if result != nil && strings.Contains(result.String(), "Code:") {
+		log.Printf("Warning: flush error: %s", result.String())
+	}
+
+	// Verify count
+	result, err = l.chdbSession.Query("SELECT COUNT(*) FROM mysql_import.historico_texto", "CSV")
+	if err != nil {
+		log.Printf("Count query error: %v", err)
+		return
+	}
+	if result != nil && !strings.Contains(result.String(), "Code:") && result.Len() > 0 {
+		log.Printf("  Actual rows in table: %s (expected: %d)", 
+			strings.TrimSpace(result.String()), l.totalLoaded)
+	}
 }
 
 func (l *Loader) insertBatch(batch []string) error {
@@ -319,6 +607,30 @@ func (l *Loader) verifyAndFlush() {
 		log.Printf("  Actual rows in table: %s (expected: %d)", 
 			strings.TrimSpace(result.String()), l.totalLoaded)
 	}
+	
+	// Check storage and parts every 50 chunks (2.5M rows)
+	if l.totalLoaded % 2500000 == 0 {
+		l.checkStorageStatus()
+	}
+}
+
+func (l *Loader) checkStorageStatus() {
+	log.Printf("  [%s] Storage and compression status:", time.Now().Format("2006-01-02 15:04:05"))
+	
+	// Check parts and size
+	result, err := l.chdbSession.Query(`
+		SELECT 
+			count() as parts,
+			formatReadableSize(sum(bytes_on_disk)) as size,
+			formatReadableSize(sum(data_uncompressed_bytes)) as uncompressed,
+			round(sum(data_compressed_bytes) / sum(data_uncompressed_bytes), 2) as ratio
+		FROM system.parts 
+		WHERE database='mysql_import' AND table='historico' AND active
+	`, "TSV")
+	
+	if err == nil && result != nil && !strings.Contains(result.String(), "Code:") {
+		log.Printf("  Storage: %s", strings.TrimSpace(result.String()))
+	}
 }
 
 func (l *Loader) cleanup() {
@@ -331,7 +643,11 @@ func (l *Loader) cleanup() {
 		if err == nil && result != nil && !strings.Contains(result.String(), "Code:") {
 			log.Printf("\nFinal HISTORICO count: %s", strings.TrimSpace(result.String()))
 		}
-		l.chdbSession.Cleanup()
+		// DO NOT call Cleanup() - it deletes all data!
+		// Use Close() instead - it only removes temp directories
+		l.chdbSession.Close()
+		log.Printf("\nIMPORTANT: Data stored at: %s", l.chdbSession.Path())
+		log.Printf("Session closed. Data preserved.")
 	}
 }
 
@@ -351,6 +667,7 @@ func main() {
 		rowCount   = flag.Int64("row-count", 0, "Total row count (skip COUNT query)")
 		offset     = flag.Int64("offset", 0, "Start from this offset")
 		skipTexto  = flag.Bool("skip-texto", false, "Skip HISTORICO_TEXTO table")
+		onlyTexto  = flag.Bool("only-texto", false, "Process only HISTORICO_TEXTO table")
 		chdbPath   = flag.String("chdb-path", "/tmp/chdb", "Path for chdb data storage")
 	)
 	flag.Parse()
@@ -393,15 +710,28 @@ func main() {
 		log.Fatal(err)
 	}
 	
+	// Validate flags
+	if *skipTexto && *onlyTexto {
+		log.Fatal("Cannot use both -skip-texto and -only-texto flags")
+	}
+	
 	if *skipTexto {
 		log.Println("Skipping HISTORICO_TEXTO table as requested")
+	}
+	if *onlyTexto {
+		log.Println("Processing only HISTORICO_TEXTO table as requested")
 	}
 
 	// Get total rows
 	totalRows := *rowCount
+	tableName := "HISTORICO"
+	if *onlyTexto {
+		tableName = "HISTORICO_TEXTO"
+	}
+	
 	if totalRows == 0 {
-		log.Println("Getting row count from HISTORICO table...")
-		count, err := loader.getTotalRows()
+		log.Printf("Getting row count from %s table...", tableName)
+		count, err := loader.getTotalRows(tableName)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -415,7 +745,7 @@ func main() {
 
 	// Load data
 	startTime := time.Now()
-	if err := loader.loadData(totalRows, *offset); err != nil {
+	if err := loader.loadData(totalRows, *offset, *skipTexto, *onlyTexto); err != nil {
 		log.Fatal(err)
 	}
 

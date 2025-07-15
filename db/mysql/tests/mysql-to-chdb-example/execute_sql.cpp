@@ -25,9 +25,10 @@ private:
     void* chdb_handle;
     query_stable_v2_fn query_stable_v2;
     free_result_v2_fn free_result_v2;
+    std::string chdb_path;
     
 public:
-    SqlExecutor() : chdb_handle(nullptr) {}
+    SqlExecutor(const std::string& path = CHDB_PATH) : chdb_handle(nullptr), chdb_path(path) {}
     
     ~SqlExecutor() {
         if (chdb_handle) {
@@ -71,7 +72,7 @@ public:
         
         args_storage.push_back("clickhouse");
         args_storage.push_back("--multiquery");
-        args_storage.push_back("--path=" + CHDB_PATH);
+        args_storage.push_back("--path=" + chdb_path);
         args_storage.push_back("--output-format=" + format);
         args_storage.push_back("--query=" + query);
         
@@ -138,7 +139,8 @@ public:
         std::cout << "Usage: " << program << " [options] <query>" << std::endl;
         std::cout << "\nOptions:" << std::endl;
         std::cout << "  -f, --format <format>  Output format (default: Pretty)" << std::endl;
-        std::cout << "  -h, --help            Show this help message" << std::endl;
+        std::cout << "  -d, --data <path>      ClickHouse data path (default: " << CHDB_PATH << ")" << std::endl;
+        std::cout << "  -h, --help             Show this help message" << std::endl;
         std::cout << "\nAvailable formats:" << std::endl;
         std::cout << "  Pretty              Human-readable table format (default)" << std::endl;
         std::cout << "  TabSeparated, TSV   Tab-separated values" << std::endl;
@@ -151,6 +153,7 @@ public:
         std::cout << "  " << program << " \"SELECT COUNT(*) FROM mysql_import.historico\"" << std::endl;
         std::cout << "  " << program << " -f TSV \"SELECT * FROM mysql_import.historico LIMIT 10\"" << std::endl;
         std::cout << "  " << program << " --format JSON \"SELECT codigo, COUNT(*) as cnt FROM mysql_import.historico GROUP BY codigo ORDER BY cnt DESC LIMIT 5\"" << std::endl;
+        std::cout << "  " << program << " -d /chdb/data \"SELECT * FROM mysql_import.historico LIMIT 5\"" << std::endl;
         std::cout << "\nTips:" << std::endl;
         std::cout << "  - Use quotes around your SQL query" << std::endl;
         std::cout << "  - Use semicolon for multiple queries" << std::endl;
@@ -160,24 +163,27 @@ public:
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        SqlExecutor executor;
+        SqlExecutor executor(CHDB_PATH);
         executor.showHelp(argv[0]);
         return 1;
     }
     
     std::string query;
     std::string format = "Pretty";
+    std::string chdb_path = CHDB_PATH;
     
     // Parse arguments
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];
         
         if (arg == "-h" || arg == "--help") {
-            SqlExecutor executor;
+            SqlExecutor executor(chdb_path);
             executor.showHelp(argv[0]);
             return 0;
         } else if ((arg == "-f" || arg == "--format") && i + 1 < argc) {
             format = argv[++i];
+        } else if ((arg == "-d" || arg == "--data") && i + 1 < argc) {
+            chdb_path = argv[++i];
         } else if (arg[0] != '-') {
             // This is the query
             query = arg;
@@ -198,7 +204,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
-    SqlExecutor executor;
+    SqlExecutor executor(chdb_path);
     
     if (!executor.loadChdbLibrary()) {
         return 1;
