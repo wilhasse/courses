@@ -109,25 +109,16 @@ public:
     }
     
     bool init() {
-        // Load chDB library (same as query_data_v2.cpp)
-        const char* lib_paths[] = {
-            "/home/cslog/chdb/libchdb.so",
-            "./libchdb.so",
-            "libchdb.so"
-        };
-        
-        for (const char* path : lib_paths) {
-            chdb_handle = dlopen(path, RTLD_LAZY);
-            if (chdb_handle) {
-                std::cout << "Loaded chdb library from: " << path << std::endl;
-                break;
-            }
-        }
+        // Load chDB library from system path (configured via ldconfig)
+        chdb_handle = dlopen("libchdb.so", RTLD_LAZY);
         
         if (!chdb_handle) {
             std::cerr << "Failed to load libchdb.so: " << dlerror() << std::endl;
+            std::cerr << "Make sure libchdb.so is installed and ldconfig has been run." << std::endl;
             return false;
         }
+        
+        std::cout << "Loaded chdb library successfully" << std::endl;
         
         query_stable_v2 = (query_stable_v2_fn)dlsym(chdb_handle, "query_stable_v2");
         free_result_v2 = (free_result_v2_fn)dlsym(chdb_handle, "free_result_v2");

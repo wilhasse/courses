@@ -59,6 +59,20 @@ This installs:
 
 ## Main Components
 
+### API Server/Client Pairs
+
+1. **Simple Binary Protocol** (Recommended)
+   - `chdb_api_server_simple` + `chdb_api_client_simple`
+   - Lightweight, no dependencies
+   - Perfect for scripts and simple integrations
+
+2. **Protocol Buffer API** (Advanced)
+   - `chdb_api_server` + `chdb_api_client`
+   - Structured communication with protobuf
+   - Multiple output formats and better error handling
+
+**⚠️ WARNING**: Clients and servers from different protocols are NOT compatible!
+
 ### Data Import Tools
 
 #### 1. **historico_loader_go** (Go Version - RECOMMENDED)
@@ -281,8 +295,14 @@ Query tools for the sample customer/order data.
 
 ### API Server Components
 
-#### 1. **chdb_api_server_simple** (Recommended)
-Lightweight HTTP API server for ClickHouse queries.
+**⚠️ IMPORTANT**: There are two different API implementations with incompatible protocols:
+1. **Simple Binary Protocol** (lightweight, no dependencies)
+2. **Protocol Buffers** (structured, requires protobuf library)
+
+#### Simple Binary Protocol (Recommended for Most Use Cases)
+
+##### **chdb_api_server_simple** - Simple Binary Server
+Lightweight server using a simple binary protocol. No Protocol Buffers required.
 
 ```bash
 ./chdb_api_server_simple [options]
@@ -295,25 +315,48 @@ Options:
 
 Examples:
 ```bash
-# Use default settings
+# Start server with default settings
 ./chdb_api_server_simple
 
 # Custom port and data path
-./chdb_api_server_simple -p 8126 -d /data/chdb
+./chdb_api_server_simple -p 8126 -d /chdb/data
 
 # Use SSD for better performance
 ./chdb_api_server_simple --data /mnt/ssd/chdb
 ```
 
-Usage:
+##### **chdb_api_client_simple** - Simple Binary Client
+Matching client for the simple server. Uses the same binary protocol.
+
 ```bash
-curl -X POST http://localhost:8125/query \
-  -H "Content-Type: application/json" \
-  -d '{"query": "SELECT COUNT(*) FROM mysql_import.historico"}'
+./chdb_api_client_simple [options] "SQL query"
 ```
 
-#### 2. **chdb_api_server** / **chdb_api_client**
-Protocol Buffer-based API for high-performance applications.
+Options:
+- `-h, --host <host>`: Server host (default: 127.0.0.1)
+- `-p, --port <port>`: Server port (default: 8125)
+- `--help`: Show help message
+
+Examples:
+```bash
+# Query local server
+./chdb_api_client_simple "SELECT COUNT(*) FROM mysql_import.historico"
+
+# Query remote server
+./chdb_api_client_simple -h 192.168.1.10 "SELECT * FROM mysql_import.historico LIMIT 5"
+
+# Custom port
+./chdb_api_client_simple -p 8126 "SELECT version()"
+```
+
+**Simple Protocol Format:**
+- Request: 4-byte size (network order) + query string
+- Response: 4-byte size (network order) + result string (TSV format)
+
+#### Protocol Buffer API (Advanced Use Cases)
+
+##### **chdb_api_server** - Protocol Buffer Server
+Advanced server using Google Protocol Buffers for structured communication.
 
 ```bash
 ./chdb_api_server [options]
@@ -326,14 +369,66 @@ Options:
 
 Examples:
 ```bash
-# Use default settings
+# Start protobuf server
 ./chdb_api_server
 
-# Custom data path for imported data
+# Custom data path
 ./chdb_api_server -d /data/mysql_import
 
-# Run on different port with custom path
+# Different port to avoid conflicts
 ./chdb_api_server -p 8200 -d /mnt/nvme/chdb
+```
+
+##### **chdb_api_client** - Protocol Buffer Client
+Matching client for the protobuf server. Supports multiple output formats.
+
+```bash
+./chdb_api_client [options] "SQL query"
+```
+
+Features:
+- Structured request/response format
+- Multiple output formats (CSV, TSV, JSON, Pretty, etc.)
+- Query statistics (rows read, bytes processed, elapsed time)
+- Better error handling
+
+Examples:
+```bash
+# Query protobuf server (must be running chdb_api_server, NOT simple)
+./chdb_api_client "SELECT COUNT(*) FROM mysql_import.historico"
+
+# Different output formats
+./chdb_api_client -f JSON "SELECT * FROM mysql_import.historico LIMIT 5"
+```
+
+#### Choosing Between Simple and Protocol Buffer APIs
+
+| Feature | Simple Binary | Protocol Buffers |
+|---------|--------------|------------------|
+| **Dependencies** | None | Requires protobuf library |
+| **Protocol** | Simple 4-byte length prefix | Structured protobuf messages |
+| **Output Formats** | TSV only | CSV, TSV, JSON, Pretty, etc. |
+| **Performance** | Slightly faster | Slightly slower (serialization) |
+| **Error Handling** | Basic | Advanced with error codes |
+| **Use When** | Quick queries, scripts | Production apps, complex needs |
+
+**⚠️ Protocol Compatibility:**
+- `chdb_api_server_simple` ↔ `chdb_api_client_simple` ✅
+- `chdb_api_server` ↔ `chdb_api_client` ✅
+- `chdb_api_server_simple` ↔ `chdb_api_client` ❌ (Protocol mismatch!)
+- `chdb_api_server` ↔ `chdb_api_client_simple` ❌ (Protocol mismatch!)
+
+#### Quick Test
+
+```bash
+# Terminal 1: Start simple server
+./chdb_api_server_simple -d /chdb/data
+
+# Terminal 2: Query with simple client
+./chdb_api_client_simple "SELECT COUNT(*) FROM mysql_import.historico"
+
+# Or use curl for simple HTTP-like testing
+echo -n -e "\x00\x00\x00\x2FSELECT COUNT(*) FROM mysql_import.historico" | nc localhost 8125
 ```
 
 ## Prerequisites
@@ -379,6 +474,11 @@ make historico_log
 make historico_feeder
 make convert_to_mergetree
 make test_performance
+make execute_sql
+
+# Build API servers and clients
+make chdb_api_server_simple chdb_api_client_simple  # Simple binary protocol
+make chdb_api_server chdb_api_client                # Protocol Buffers
 
 # For Percona Server users
 g++ -o historico_feeder historico_feeder.cpp \
@@ -633,6 +733,40 @@ export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 - Use the Go version which implements proper STOP/START MERGES
 - Avoid the C++ MergeTree version with very large datasets
 - The freezing is caused by background merge operations blocking INSERTs
+
+### API Connection Issues
+If you get "Failed to execute query" when using API clients:
+
+1. **Check Protocol Compatibility**:
+   ```bash
+   # Wrong - mixing protocols
+   ./chdb_api_server_simple    # Simple protocol
+   ./chdb_api_client           # Protobuf client - WON'T WORK!
+   
+   # Correct - matching protocols
+   ./chdb_api_server_simple    # Simple protocol
+   ./chdb_api_client_simple    # Simple client - WORKS!
+   ```
+
+2. **Verify Server is Running**:
+   ```bash
+   # Check if server is listening
+   netstat -an | grep 8125
+   telnet localhost 8125
+   ```
+
+3. **Test with Simple Client First**:
+   ```bash
+   # Simple client has better error messages
+   ./chdb_api_client_simple "SELECT 1"
+   ```
+
+4. **Check Data Path**:
+   ```bash
+   # Make sure client queries match server's data path
+   ./chdb_api_server_simple -d /chdb/data    # Server uses /chdb/data
+   ./chdb_api_client_simple "SELECT COUNT(*) FROM mysql_import.historico"
+   ```
 
 ### Partitioning Issues
 If you get "Too many partitions for single INSERT block" error:

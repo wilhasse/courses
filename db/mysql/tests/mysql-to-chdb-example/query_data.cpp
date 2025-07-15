@@ -46,7 +46,7 @@ public:
     bool loadChdbLibrary() {
         // Try multiple possible locations for libchdb.so
         const char* lib_paths[] = {
-            "/home/cslog/chdb/libchdb.so",
+            "/usr/local/lib/libchdb.so",
             "../../../../../chdb/libchdb.so",
             "./libchdb.so",
             "libchdb.so"

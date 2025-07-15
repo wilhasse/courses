@@ -114,6 +114,31 @@ MySQL → UDF Functions → Socket → API Server (with 722MB libchdb.so loaded 
               [4 bytes][data]
 ```
 
+### 📦 Available Plugins
+
+This project includes multiple MySQL UDF plugins for different approaches:
+
+1. **`chdb_api_udf.cpp`** ⭐ - **Connects to the API server on port 8125**
+   - Lightweight plugin that sends queries to the running API server
+   - No heavy libchdb.so loading in MySQL
+   - Functions: `chdb_api_query()`
+   
+2. **`simple_chdb_udf.cpp`** - Executes chDB binary via subprocess
+   - Simple approach but spawns new process for each query
+   - Functions: `chdb_query()`
+   
+3. **`chdb_tvf_wrapper.cpp`** - Wrapper approach with external helper
+   - Uses external process to load libchdb.so
+   - Functions: various TVF functions
+   
+4. **`chdb_api_functions.cpp`** - Extended API functions
+   - Multiple convenience functions for API server
+   - Functions: `chdb_query()`, `chdb_count()`, etc.
+
+5. **`chdb_json_table_functions.cpp`** - JSON table functions for MySQL 8.0.19+
+   - True table-valued functions using JSON_TABLE
+   - Functions: `chdb_customers_json()`, etc.
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -127,16 +152,48 @@ MySQL → UDF Functions → Socket → API Server (with 722MB libchdb.so loaded 
 ```bash
 # 1. Start the API server (in mysql-to-chdb-example directory)
 cd ../mysql-to-chdb-example
-./chdb_api_server_simple
+./chdb_api_server_simple -d /chdb/data/
+# Server will start on port 8125
 
-# 2. Build and install MySQL UDF (in another terminal)
+# 2. Install MySQL UDF plugin (in another terminal)
 cd ../mysql-chdb-plugin
-./scripts/build_api_udf.sh
-sudo cp build/chdb_api_functions.so /usr/lib/mysql/plugin/
-mysql -u root -pteste < scripts/install_api_udf.sql
+./scripts/install_chdb_api.sh
+# This will build and install the chdb_api_query function
 
 # 3. Test from MySQL
-mysql -u root -pteste -e "SELECT CAST(chdb_query('SELECT COUNT(*) FROM mysql_import.customers') AS CHAR)"
+mysql -u root -e "SELECT CAST(chdb_api_query('SELECT COUNT(*) FROM mysql_import.historico') AS CHAR)"
+```
+
+#### Key Points About chdb_api_udf Plugin
+
+- **Plugin**: `chdb_api_udf.cpp` - Lightweight plugin that connects to API server
+- **Function**: `chdb_api_query(sql)` - Executes ClickHouse SQL via API
+- **Port**: Connects to localhost:8125
+- **Protocol**: Simple binary protocol (no protobuf needed)
+- **Important**: Always use `CAST(... AS CHAR)` to convert binary output
+
+#### Usage Examples
+
+```sql
+-- Basic queries
+SELECT CAST(chdb_api_query('SELECT version()') AS CHAR);
+SELECT CAST(chdb_api_query('SELECT 1 + 1') AS CHAR);
+SELECT CAST(chdb_api_query('SELECT today()') AS CHAR);
+
+-- Query your data
+SELECT CAST(chdb_api_query('SELECT COUNT(*) FROM mysql_import.historico') AS CHAR);
+
+-- Complex analytics
+SELECT CAST(chdb_api_query('
+    SELECT 
+        toYYYYMM(data) as month,
+        COUNT(*) as records,
+        AVG(valor) as avg_value
+    FROM mysql_import.historico
+    GROUP BY month
+    ORDER BY month DESC
+    LIMIT 10
+') AS CHAR);
 ```
 
 ### Option 2: Direct Helper Program

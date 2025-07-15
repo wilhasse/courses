@@ -4,7 +4,7 @@
 #include <string>
 
 int main() {
-    void* handle = dlopen("/home/cslog/chdb/libchdb.so", RTLD_LAZY);
+    void* handle = dlopen("libchdb.so", RTLD_LAZY);
     if (!handle) {
         std::cerr << "Failed to load library: " << dlerror() << std::endl;
         return 1;

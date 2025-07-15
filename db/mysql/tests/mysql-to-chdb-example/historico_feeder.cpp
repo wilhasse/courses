@@ -56,7 +56,7 @@ public:
     }
     
     bool loadChdbLibrary() {
-        chdb_handle = dlopen("/home/cslog/chdb/libchdb.so", RTLD_LAZY);
+        chdb_handle = dlopen("libchdb.so", RTLD_LAZY);
         if (!chdb_handle) {
             std::cerr << "Failed to load libchdb.so: " << dlerror() << std::endl;
             return false;

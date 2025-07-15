@@ -37,21 +37,12 @@ public:
     }
     
     bool loadChdbLibrary() {
-        const char* lib_paths[] = {
-            "/home/cslog/chdb/libchdb.so",
-            "./libchdb.so",
-            "libchdb.so"
-        };
-        
-        for (const char* path : lib_paths) {
-            chdb_handle = dlopen(path, RTLD_LAZY);
-            if (chdb_handle) {
-                break;
-            }
-        }
+        // Load libchdb.so from system library path (configured via ldconfig)
+        chdb_handle = dlopen("libchdb.so", RTLD_LAZY);
         
         if (!chdb_handle) {
             std::cerr << "Error: Failed to load libchdb.so: " << dlerror() << std::endl;
+            std::cerr << "Make sure libchdb.so is installed and ldconfig has been run." << std::endl;
             return false;
         }
         

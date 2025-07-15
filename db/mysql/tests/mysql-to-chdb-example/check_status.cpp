@@ -18,7 +18,7 @@ typedef struct local_result_v2* (*query_stable_v2_fn)(int argc, char** argv);
 typedef void (*free_result_v2_fn)(struct local_result_v2* result);
 
 int main() {
-    void* handle = dlopen("/home/cslog/chdb/libchdb.so", RTLD_LAZY);
+    void* handle = dlopen("libchdb.so", RTLD_LAZY);
     if (!handle) {
         std::cerr << "Failed to load library: " << dlerror() << std::endl;
         return 1;

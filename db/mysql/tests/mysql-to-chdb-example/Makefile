@@ -5,7 +5,7 @@ LIBS = $(shell mysql_config --libs) -ldl
 PROTOBUF_LIBS = -lprotobuf -pthread
 
 # Define targets
-TARGETS = feed_data query_data feed_data_v2 query_data_v2 chdb_api_server chdb_api_client chdb_api_server_simple historico_feeder historico_log convert_to_mergetree test_performance execute_sql
+TARGETS = feed_data query_data feed_data_v2 query_data_v2 chdb_api_server chdb_api_client chdb_api_server_simple chdb_api_client_simple historico_feeder historico_log convert_to_mergetree test_performance execute_sql
 COMMON_DEPS = common.h
 PROTO_DEPS = chdb_api.pb.h chdb_api.pb.cc
 
@@ -100,6 +100,13 @@ chdb_api_server_simple: chdb_api_server_simple.o
 
 chdb_api_server_simple.o: chdb_api_server_simple.cpp $(COMMON_DEPS)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+# Simple API Client (no protobuf required)
+chdb_api_client_simple: chdb_api_client_simple.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ -pthread
+
+chdb_api_client_simple.o: chdb_api_client_simple.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Run API server
 run-server: chdb_api_server
