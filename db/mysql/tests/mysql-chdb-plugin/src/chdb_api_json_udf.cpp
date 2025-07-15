@@ -1,6 +1,6 @@
 /**
- * MySQL UDF that connects to chDB API Server
- * This avoids loading the 722MB libchdb.so into MySQL process
+ * MySQL UDF that connects to chDB API Server and returns JSON format
+ * This is a variant of chdb_api_udf that automatically appends FORMAT JSON
  */
 
 #include <mysql.h>
@@ -13,6 +13,8 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <algorithm>
+#include <cctype>
 
 // Configuration
 #define CHDB_API_HOST "127.0.0.1"
@@ -20,10 +22,10 @@
 #define MAX_RESULT_SIZE 10485760  // 10MB max result
 
 extern "C" {
-    bool chdb_api_query_init(UDF_INIT *initid, UDF_ARGS *args, char *message);
-    void chdb_api_query_deinit(UDF_INIT *initid);
-    char* chdb_api_query(UDF_INIT *initid, UDF_ARGS *args, char *result,
-                         unsigned long *length, char *is_null, char *error);
+    bool chdb_api_query_json_init(UDF_INIT *initid, UDF_ARGS *args, char *message);
+    void chdb_api_query_json_deinit(UDF_INIT *initid);
+    char* chdb_api_query_json(UDF_INIT *initid, UDF_ARGS *args, char *result,
+                              unsigned long *length, char *is_null, char *error);
 }
 
 // Simple binary protocol without protobuf dependency
@@ -55,16 +57,52 @@ std::string receive_response(int sock) {
     return std::string(buffer.data(), size);
 }
 
-bool chdb_api_query_init(UDF_INIT *initid, UDF_ARGS *args, char *message) {
+// Helper function to check if query already has FORMAT clause
+bool hasFormatClause(const std::string& query) {
+    std::string upper = query;
+    std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
+    
+    // Look for FORMAT keyword
+    size_t pos = upper.rfind("FORMAT");
+    if (pos != std::string::npos) {
+        // Check if it's actually a FORMAT clause (not part of a string or identifier)
+        size_t semicolon = upper.find(';', pos);
+        if (semicolon == std::string::npos || semicolon > pos) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Helper function to add FORMAT JSON to query
+std::string addJsonFormat(const std::string& query) {
+    if (hasFormatClause(query)) {
+        return query;  // Already has FORMAT clause
+    }
+    
+    // Find the end of the query (before any trailing semicolon)
+    std::string trimmed = query;
+    size_t end = trimmed.find_last_not_of(" \t\n\r;");
+    if (end != std::string::npos) {
+        trimmed = trimmed.substr(0, end + 1);
+    }
+    
+    return trimmed + " FORMAT JSON";
+}
+
+bool chdb_api_query_json_init(UDF_INIT *initid, UDF_ARGS *args, char *message) {
     if (args->arg_count != 1) {
-        strcpy(message, "chdb_api_query() requires exactly one argument: the SQL query");
+        strcpy(message, "chdb_api_query_json() requires exactly one argument: the SQL query");
         return 1;
     }
     
     if (args->arg_type[0] != STRING_RESULT) {
-        strcpy(message, "chdb_api_query() requires a string argument");
+        strcpy(message, "chdb_api_query_json() requires a string argument");
         return 1;
     }
+    
+    // Force string argument to be treated as UTF-8
+    args->arg_type[0] = STRING_RESULT;
     
     // Allocate buffer for results
     initid->ptr = (char*)malloc(MAX_RESULT_SIZE);
@@ -80,15 +118,15 @@ bool chdb_api_query_init(UDF_INIT *initid, UDF_ARGS *args, char *message) {
     return 0;
 }
 
-void chdb_api_query_deinit(UDF_INIT *initid) {
+void chdb_api_query_json_deinit(UDF_INIT *initid) {
     if (initid->ptr) {
         free(initid->ptr);
         initid->ptr = NULL;
     }
 }
 
-char* chdb_api_query(UDF_INIT *initid, UDF_ARGS *args, char *result,
-                     unsigned long *length, char *is_null, char *error) {
+char* chdb_api_query_json(UDF_INIT *initid, UDF_ARGS *args, char *result,
+                          unsigned long *length, char *is_null, char *error) {
     *is_null = 0;
     *error = 0;
     
@@ -98,6 +136,9 @@ char* chdb_api_query(UDF_INIT *initid, UDF_ARGS *args, char *result,
     }
     
     std::string query(args->args[0], args->lengths[0]);
+    
+    // Add FORMAT JSON to the query
+    query = addJsonFormat(query);
     
     // Create socket
     int sock = socket(AF_INET, SOCK_STREAM, 0);

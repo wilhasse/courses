@@ -123,19 +123,32 @@ This project includes multiple MySQL UDF plugins for different approaches:
    - No heavy libchdb.so loading in MySQL
    - Functions: `chdb_api_query()`
    
-2. **`simple_chdb_udf.cpp`** - Executes chDB binary via subprocess
+2. **`chdb_api_json_udf.cpp`** ⭐ - **JSON format for table-like results**
+   - Automatically adds FORMAT JSON to queries
+   - Use with JSON_TABLE for proper columnar output
+   - Functions: `chdb_api_query_json()`
+
+3. **`chdb_api_ip_udf.cpp`** ⭐ - **IP-configurable server address**
+   - Connect to any chDB API server, not just localhost
+   - Functions: `chdb_api_query_remote(host:port, sql)`, `chdb_api_query_local(sql)`
+
+4. **`chdb_api_ip_json_udf.cpp`** ⭐ - **IP-configurable + JSON format**
+   - Combine configurable server with JSON output
+   - Functions: `chdb_api_query_json_remote(host:port, sql)`, `chdb_api_query_json_local(sql)`
+   
+5. **`simple_chdb_udf.cpp`** - Executes chDB binary via subprocess
    - Simple approach but spawns new process for each query
    - Functions: `chdb_query()`
    
-3. **`chdb_tvf_wrapper.cpp`** - Wrapper approach with external helper
+6. **`chdb_tvf_wrapper.cpp`** - Wrapper approach with external helper
    - Uses external process to load libchdb.so
    - Functions: various TVF functions
    
-4. **`chdb_api_functions.cpp`** - Extended API functions
+7. **`chdb_api_functions.cpp`** - Extended API functions
    - Multiple convenience functions for API server
    - Functions: `chdb_query()`, `chdb_count()`, etc.
 
-5. **`chdb_json_table_functions.cpp`** - JSON table functions for MySQL 8.0.19+
+8. **`chdb_json_table_functions.cpp`** - JSON table functions for MySQL 8.0.19+
    - True table-valued functions using JSON_TABLE
    - Functions: `chdb_customers_json()`, etc.
 
@@ -194,6 +207,34 @@ SELECT CAST(chdb_api_query('
     ORDER BY month DESC
     LIMIT 10
 ') AS CHAR);
+
+-- NEW: Get results as a proper table using JSON format
+SELECT jt.*
+FROM JSON_TABLE(
+    CONVERT(chdb_api_query_json('
+        SELECT id_contr, seq, codigo 
+        FROM mysql_import.historico 
+        LIMIT 10
+    ') USING utf8mb4),
+    '$.data[*]' COLUMNS (
+        id_contr INT PATH '$.id_contr',
+        seq INT PATH '$.seq',
+        codigo INT PATH '$.codigo'
+    )
+) AS jt;
+
+-- With the 10MB default limit, you can now query larger datasets
+SELECT jt.*
+FROM JSON_TABLE(
+    CONVERT(chdb_api_query_json('
+        SELECT DISTINCT id_contr 
+        FROM mysql_import.historico 
+        WHERE codigo = 22
+    ') USING utf8mb4),
+    '$.data[*]' COLUMNS (
+        id_contr INT PATH '$.id_contr'
+    )
+) AS jt;
 ```
 
 ### Option 2: Direct Helper Program
@@ -328,6 +369,30 @@ sudo systemctl restart mysql
 mysql -u root -p < clean_mysql_functions.sql
 ```
 
+### If you get "ERROR: Response too large"
+This means your query result exceeds the current limit. Solutions:
+```bash
+# Option 1: Add LIMIT to your query
+SELECT chdb_api_query_json('SELECT * FROM table LIMIT 1000');
+
+# Option 2: Increase the result size limit
+./scripts/rebuild_with_limit.sh 50  # Increase to 50MB
+
+# Option 3: Use aggregation to reduce data
+SELECT chdb_api_query_json('SELECT COUNT(*) FROM table GROUP BY column');
+```
+
+### If you get "Invalid JSON text" with JSON_TABLE
+```sql
+-- Check the raw output first
+SELECT CAST(chdb_api_query_json('YOUR QUERY LIMIT 10') AS CHAR)\G
+
+-- Common issues:
+-- 1. Result too large (see above)
+-- 2. Column names are case-sensitive (use lowercase)
+-- 3. Empty result set
+```
+
 ### If helper returns empty results
 ```bash
 # Check if ClickHouse data exists
@@ -355,6 +420,73 @@ make buildlib
 - Serves unlimited queries with millisecond latency
 - No MySQL crashes or memory issues
 - Can handle concurrent connections
+
+## ⚙️ Configuration
+
+### Adjusting Result Size Limit
+
+By default, the UDF functions have a 10MB result size limit (increased from the original 1MB). You can adjust this limit based on your needs:
+
+```bash
+# Set to 20MB
+./scripts/rebuild_with_limit.sh 20
+
+# Set to 50MB  
+./scripts/rebuild_with_limit.sh 50
+
+# Set to 100MB (use with caution)
+./scripts/rebuild_with_limit.sh 100
+```
+
+**Recommendations:**
+- **10MB** (default): Suitable for most queries
+- **20-50MB**: For large analytical queries
+- **100MB+**: Maximum recommended, may impact MySQL performance
+
+**Note:** After changing the limit, all UDF functions will be rebuilt and reinstalled automatically.
+
+### Connecting to Remote chDB API Servers
+
+The IP-configurable UDF functions allow you to connect to chDB API servers on different machines:
+
+```bash
+# Install IP-configurable functions
+./scripts/install_ip_udf.sh
+```
+
+**Available Functions:**
+- `chdb_api_query_remote(host:port, sql)` - Query any server
+- `chdb_api_query_local(sql)` - Query localhost:8125  
+- `chdb_api_query_json_remote(host:port, sql)` - JSON format
+- `chdb_api_query_json_local(sql)` - JSON format on localhost
+
+**Usage Examples:**
+```sql
+-- Query remote server
+SELECT CAST(chdb_api_query_remote('192.168.1.100:8125', 'SELECT COUNT(*) FROM table') AS CHAR);
+
+-- Query with different port
+SELECT CAST(chdb_api_query_remote('dbserver.local:9000', 'SELECT version()') AS CHAR);
+
+-- Use JSON format for table results
+SELECT jt.*
+FROM JSON_TABLE(
+    CONVERT(chdb_api_query_json_remote('192.168.1.100:8125', 
+        'SELECT * FROM mysql_import.historico LIMIT 10'
+    ) USING utf8mb4),
+    '$.data[*]' COLUMNS (
+        id_contr INT PATH '$.id_contr',
+        seq INT PATH '$.seq',
+        codigo INT PATH '$.codigo'
+    )
+) AS jt;
+```
+
+**Benefits:**
+- Same .so file works with any server
+- No need to rebuild for different environments
+- Can query multiple servers from one MySQL instance
+- Supports hostnames and IP addresses
 
 ## 🎓 Lessons Learned
 
