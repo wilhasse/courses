@@ -5,7 +5,7 @@ LIBS = $(shell mysql_config --libs) -ldl
 PROTOBUF_LIBS = -lprotobuf -pthread
 
 # Define targets
-TARGETS = feed_data query_data feed_data_v2 query_data_v2 chdb_api_server chdb_api_client chdb_api_server_simple historico_feeder historico_log convert_to_mergetree test_performance
+TARGETS = feed_data query_data feed_data_v2 query_data_v2 chdb_api_server chdb_api_client chdb_api_server_simple historico_feeder historico_log historico_log_optimized convert_to_mergetree test_performance execute_sql
 COMMON_DEPS = common.h
 PROTO_DEPS = chdb_api.pb.h chdb_api.pb.cc
 
@@ -37,12 +37,20 @@ historico_feeder: historico_feeder.o
 historico_log: historico_log.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
 
+# Build historico_log_optimized executable
+historico_log_optimized: historico_log_optimized.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
+
 # Build convert_to_mergetree executable
 convert_to_mergetree: convert_to_mergetree.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
 
 # Build test_performance executable
 test_performance: test_performance.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
+
+# Build execute_sql executable
+execute_sql: execute_sql.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
 
 # Build object files

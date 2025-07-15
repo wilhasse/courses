@@ -25,6 +25,8 @@ chdb_api_server_simple
 chdb_api_client
 check_status
 test_simple_client
+execute_sql
+historico_log_optimized
 
 # ClickHouse data directory
 clickhouse_data/

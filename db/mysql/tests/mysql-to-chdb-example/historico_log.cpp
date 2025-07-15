@@ -7,6 +7,8 @@
 #include <cstring>
 #include <chrono>
 #include <algorithm>
+#include <iomanip>
+#include <ctime>
 #include "common.h"
 
 struct local_result_v2 {
@@ -30,6 +32,13 @@ private:
     free_result_v2_fn free_result_v2;
     
 public:
+    std::string getCurrentTimestamp() {
+        auto now = std::chrono::system_clock::now();
+        auto time_t = std::chrono::system_clock::to_time_t(now);
+        std::stringstream ss;
+        ss << std::put_time(std::localtime(&time_t), "%Y-%m-%d %H:%M:%S");
+        return ss.str();
+    }
     LogTableLoader() : mysql_conn(nullptr), chdb_handle(nullptr) {}
     
     ~LogTableLoader() {
@@ -74,7 +83,7 @@ public:
             return false;
         }
         
-        std::cout << "Connected to MySQL successfully!" << std::endl;
+        std::cout << "[" << getCurrentTimestamp() << "] Connected to MySQL successfully!" << std::endl;
         return true;
     }
     
@@ -172,8 +181,8 @@ public:
         return escaped;
     }
 
-    void createTables() {
-        std::cout << "\nCreating tables with Log engine..." << std::endl;
+    void createTables(bool skip_texto = false) {
+        std::cout << "\n[" << getCurrentTimestamp() << "] Creating tables with Log engine..." << std::endl;
         
         auto result = executeQuery("CREATE DATABASE IF NOT EXISTS mysql_import");
         if (result) {
@@ -198,22 +207,24 @@ public:
             free_result_v2(result);
         }
         
-        // Create HISTORICO_TEXTO table
-        result = executeQuery(
-            "CREATE TABLE IF NOT EXISTS mysql_import.historico_texto ("
-            "id_contr Int32, seq UInt16, mensagem String, "
-            "motivo String, autorizacao String"
-            ") ENGINE = Log"
-        );
-        
-        if (result) {
-            if (result->error_message) {
-                std::cout << "Create HISTORICO_TEXTO table error: " << result->error_message << std::endl;
+        // Create HISTORICO_TEXTO table only if not skipping
+        if (!skip_texto) {
+            result = executeQuery(
+                "CREATE TABLE IF NOT EXISTS mysql_import.historico_texto ("
+                "id_contr Int32, seq UInt16, mensagem String, "
+                "motivo String, autorizacao String"
+                ") ENGINE = Log"
+            );
+            
+            if (result) {
+                if (result->error_message) {
+                    std::cout << "Create HISTORICO_TEXTO table error: " << result->error_message << std::endl;
+                    free_result_v2(result);
+                    return;
+                }
+                std::cout << "HISTORICO_TEXTO table created successfully" << std::endl;
                 free_result_v2(result);
-                return;
             }
-            std::cout << "HISTORICO_TEXTO table created successfully" << std::endl;
-            free_result_v2(result);
         }
     }
     
@@ -287,71 +298,83 @@ public:
         return texto_rows;
     }
 
-    void loadHistoricoLog() {
-        createTables();
+    void loadHistoricoLog(bool skip_texto = false, long long provided_row_count = 0, long long start_offset = 0) {
+        createTables(skip_texto);
         
-        // Get min and max ID_CONTR values to process all data
-        std::cout << "\nGetting ID range from HISTORICO table..." << std::endl;
-        int min_id = 0, max_id = 0;
+        // Get total row count if not provided
+        long long total_rows = provided_row_count;
         
-        if (mysql_query(mysql_conn, "SELECT MIN(ID_CONTR), MAX(ID_CONTR) FROM HISTORICO")) {
-            std::cerr << "Failed to get ID range: " << mysql_error(mysql_conn) << std::endl;
-            return;
-        }
-        
-        MYSQL_RES* range_result = mysql_store_result(mysql_conn);
-        if (range_result) {
-            MYSQL_ROW row = mysql_fetch_row(range_result);
-            if (row && row[0] && row[1]) {
-                min_id = std::stoi(row[0]);
-                max_id = std::stoi(row[1]) + 1; // +1 to include the last ID
+        if (total_rows == 0) {
+            std::cout << "\n[" << getCurrentTimestamp() << "] Getting row count from HISTORICO table..." << std::endl;
+            
+            if (mysql_query(mysql_conn, "SELECT COUNT(*) FROM HISTORICO")) {
+                std::cerr << "Failed to get row count: " << mysql_error(mysql_conn) << std::endl;
+                return;
             }
-            mysql_free_result(range_result);
+            
+            MYSQL_RES* count_result = mysql_store_result(mysql_conn);
+            if (!count_result) {
+                std::cerr << "Failed to store count result: " << mysql_error(mysql_conn) << std::endl;
+                return;
+            }
+            
+            MYSQL_ROW row = mysql_fetch_row(count_result);
+            if (row && row[0]) {
+                total_rows = std::stoll(row[0]);
+            }
+            mysql_free_result(count_result);
+        } else {
+            std::cout << "\n[" << getCurrentTimestamp() << "] Using provided row count: " << total_rows << std::endl;
         }
         
-        if (min_id == 0 && max_id == 0) {
+        if (total_rows == 0) {
             std::cout << "No data found in HISTORICO table" << std::endl;
             return;
         }
         
-        std::cout << "ID_CONTR range: [" << min_id << ", " << max_id << ")" << std::endl;
+        std::cout << "Total rows to process: " << total_rows << std::endl;
+        if (start_offset > 0) {
+            std::cout << "Starting from offset: " << start_offset << std::endl;
+        }
         
-        // Load data in chunks
-        const int CHUNK_SIZE = 10000;
-        int total_historico_loaded = 0;
-        int total_texto_loaded = 0;
-        int chunk_number = 0;
+        // Load data in chunks using row-based approach
+        const int ROWS_PER_CHUNK = 50000;  // Process 50k rows at a time
+        const int BATCH_SIZE = 500;         // Insert 500 rows per batch
+        
+        long long offset = start_offset;
+        long long total_historico_loaded = start_offset;  // Start from offset when resuming
+        int chunk_number = start_offset / ROWS_PER_CHUNK;  // Calculate starting chunk number
         auto start_time = std::chrono::steady_clock::now();
         
-        int total_chunks = (max_id - min_id + CHUNK_SIZE - 1) / CHUNK_SIZE;
+        int total_chunks = (total_rows + ROWS_PER_CHUNK - 1) / ROWS_PER_CHUNK;  // Total chunks for entire dataset
         
-        for (int current_id = min_id; current_id < max_id; current_id += CHUNK_SIZE) {
-            int chunk_end = std::min(current_id + CHUNK_SIZE, max_id);
+        while (offset < total_rows) {
             chunk_number++;
+            auto chunk_start_time = std::chrono::steady_clock::now();
             
-            std::cout << "\nProcessing chunk " << chunk_number << "/" << total_chunks 
-                      << " (ID range: " << current_id << "-" << chunk_end << ")..." << std::endl;
+            std::cout << "\n[" << getCurrentTimestamp() << "] Processing chunk " << chunk_number << "/" << total_chunks 
+                      << " (rows " << offset << "-" << std::min(offset + ROWS_PER_CHUNK, total_rows) << " of " << total_rows << ")..." << std::endl;
             std::cout.flush();
             
             std::stringstream query;
             query << "SELECT ID_CONTR, SEQ, ID_FUNCIONARIO, ID_TEL, DATA, CODIGO, MODO "
-                  << "FROM HISTORICO WHERE ID_CONTR >= " << current_id 
-                  << " AND ID_CONTR < " << chunk_end
-                  << " ORDER BY ID_CONTR, SEQ";
+                  << "FROM HISTORICO "
+                  << "ORDER BY ID_CONTR, SEQ "
+                  << "LIMIT " << ROWS_PER_CHUNK << " OFFSET " << offset;
             
-            std::cout << "  Executing MySQL query..." << std::endl;
             if (mysql_query(mysql_conn, query.str().c_str())) {
                 std::cerr << "MySQL query failed: " << mysql_error(mysql_conn) << std::endl;
+                offset += ROWS_PER_CHUNK;
                 continue;
             }
             
-            std::cout << "  Storing result..." << std::endl;
-            MYSQL_RES* mysql_result = mysql_store_result(mysql_conn);
+            // Use mysql_use_result for streaming to reduce memory usage
+            MYSQL_RES* mysql_result = mysql_use_result(mysql_conn);
             if (!mysql_result) {
-                std::cerr << "MySQL store result failed: " << mysql_error(mysql_conn) << std::endl;
+                std::cerr << "MySQL use result failed: " << mysql_error(mysql_conn) << std::endl;
+                offset += ROWS_PER_CHUNK;
                 continue;
             }
-            std::cout << "  Processing rows..." << std::endl;
             
             MYSQL_ROW row;
             int batch_count = 0;
@@ -375,8 +398,8 @@ public:
                 batch_count++;
                 chunk_rows++;
                 
-                // Insert in batches of 500 rows for better stability
-                if (batch_count == 500) {
+                // Insert in batches for better performance
+                if (batch_count == BATCH_SIZE) {
                     auto ch_result = executeQuery(batch_insert.str());
                     if (ch_result) {
                         if (ch_result->error_message) {
@@ -401,7 +424,6 @@ public:
             
             // Insert remaining rows
             if (!first && batch_count > 0) {
-                std::cout << "  Inserting final " << batch_count << " rows of chunk..." << std::endl;
                 auto ch_result = executeQuery(batch_insert.str());
                 if (ch_result) {
                     if (ch_result->error_message) {
@@ -415,17 +437,48 @@ public:
             mysql_free_result(mysql_result);
             std::cout << "  HISTORICO: " << chunk_rows << " rows loaded for this chunk" << std::endl;
             
-            // Now load corresponding HISTORICO_TEXTO rows for this chunk
-            std::cout << "  Loading HISTORICO_TEXTO for this chunk..." << std::endl;
-            int texto_count = loadHistoricoTextoChunk(current_id, chunk_end);
-            total_texto_loaded += texto_count;
+            // Skip HISTORICO_TEXTO for now with row-based chunking
+            // TODO: Implement HISTORICO_TEXTO loading with row-based approach
+            if (!skip_texto) {
+                // Note: With row-based chunking, we'd need to collect unique ID_CONTRs
+                // from the chunk and then query HISTORICO_TEXTO separately
+                std::cout << "  Note: HISTORICO_TEXTO loading not yet implemented for row-based chunking" << std::endl;
+            }
+            
+            // Calculate and display chunk processing time
+            auto chunk_end_time = std::chrono::steady_clock::now();
+            auto chunk_duration = std::chrono::duration_cast<std::chrono::seconds>(chunk_end_time - chunk_start_time).count();
+            
+            auto elapsed_total = std::chrono::duration_cast<std::chrono::seconds>(chunk_end_time - start_time).count();
+            long long rows_processed_this_session = total_historico_loaded - start_offset;
+            long long rows_per_sec = elapsed_total > 0 ? rows_processed_this_session / elapsed_total : 0;
+            
+            std::cout << "  [" << getCurrentTimestamp() << "] Chunk " << chunk_number 
+                      << " completed in " << chunk_duration << " seconds"
+                      << " (avg: " << rows_per_sec << " rows/sec)" << std::endl;
+            
+            offset += ROWS_PER_CHUNK;
+            
+            // Progress estimate
+            if (total_rows > 0) {
+                double progress = (double)offset / total_rows * 100;
+                long long remaining_rows = total_rows - offset;
+                long long eta_seconds = rows_per_sec > 0 ? remaining_rows / rows_per_sec : 0;
+                
+                std::cout << "  Progress: " << std::fixed << std::setprecision(1) << progress << "% "
+                          << "(" << total_historico_loaded << "/" << total_rows << " rows) "
+                          << "- ETA: " << (eta_seconds / 60) << " minutes" << std::endl;
+            }
         }
         
         auto end_time = std::chrono::steady_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
         
-        std::cout << "\nTotal HISTORICO rows loaded: " << total_historico_loaded << " in " << duration << " seconds" << std::endl;
-        std::cout << "Average speed: " << (duration > 0 ? total_historico_loaded / duration : total_historico_loaded) << " rows/second" << std::endl;
+        std::cout << "\n[" << getCurrentTimestamp() << "] Loading completed!" << std::endl;
+        long long rows_processed_this_session = total_historico_loaded - start_offset;
+        std::cout << "Total HISTORICO rows loaded: " << total_historico_loaded << std::endl;
+        std::cout << "Rows processed this session: " << rows_processed_this_session << " in " << duration << " seconds" << std::endl;
+        std::cout << "Average speed: " << (duration > 0 ? rows_processed_this_session / duration : rows_processed_this_session) << " rows/second" << std::endl;
         
         // Verify both tables
         std::cout << "\nVerifying loaded data:" << std::endl;
@@ -435,23 +488,53 @@ public:
             free_result_v2(result);
         }
         
-        result = executeQuery("SELECT COUNT(*) FROM mysql_import.historico_texto");
-        if (result && result->buf) {
-            std::cout << "HISTORICO_TEXTO count: " << result->buf << std::endl;
-            free_result_v2(result);
+        if (!skip_texto) {
+            result = executeQuery("SELECT COUNT(*) FROM mysql_import.historico_texto");
+            if (result && result->buf) {
+                std::cout << "HISTORICO_TEXTO count: " << result->buf << std::endl;
+                free_result_v2(result);
+            }
         }
     }
 };
 
 int main(int argc, char* argv[]) {
     if (argc < 5) {
-        std::cout << "Usage: " << argv[0] << " <host> <user> <password> <database>" << std::endl;
+        std::cout << "Usage: " << argv[0] << " <host> <user> <password> <database> [options]" << std::endl;
         std::cout << "\nThis version uses Log engine for better compatibility with chdb" << std::endl;
-        std::cout << "After loading, use convert_to_mergetree for better query performance" << std::endl;
+        std::cout << "Options:" << std::endl;
+        std::cout << "  --skip-texto           Skip loading HISTORICO_TEXTO table" << std::endl;
+        std::cout << "  --row-count <count>    Provide row count to skip COUNT(*) query" << std::endl;
+        std::cout << "  --offset <offset>      Start from this row offset (default: 0)" << std::endl;
+        std::cout << "\nExamples:" << std::endl;
+        std::cout << "  " << argv[0] << " host user pass db --skip-texto" << std::endl;
+        std::cout << "  " << argv[0] << " host user pass db --row-count 32424049" << std::endl;
+        std::cout << "  " << argv[0] << " host user pass db --row-count 32424049 --offset 1000000" << std::endl;
+        std::cout << "\nAfter loading, use convert_to_mergetree for better query performance" << std::endl;
         return 1;
     }
     
+    bool skip_texto = false;
+    long long provided_row_count = 0;
+    long long start_offset = 0;
+    
+    // Parse command line options
+    for (int i = 5; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "--skip-texto") {
+            skip_texto = true;
+        } else if (arg == "--row-count" && i + 1 < argc) {
+            provided_row_count = std::stoll(argv[++i]);
+        } else if (arg == "--offset" && i + 1 < argc) {
+            start_offset = std::stoll(argv[++i]);
+        }
+    }
+    
     LogTableLoader loader;
+    std::cout << "[" << loader.getCurrentTimestamp() << "] Starting historico_log..." << std::endl;
+    if (skip_texto) {
+        std::cout << "[" << loader.getCurrentTimestamp() << "] Skipping HISTORICO_TEXTO table" << std::endl;
+    }
     
     if (!loader.loadChdbLibrary()) {
         return 1;
@@ -466,7 +549,7 @@ int main(int argc, char* argv[]) {
     }
     
     // Load data using Log engine
-    loader.loadHistoricoLog();
+    loader.loadHistoricoLog(skip_texto, provided_row_count, start_offset);
     
     std::cout << "\nDone!" << std::endl;
     return 0;
