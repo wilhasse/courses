@@ -10,8 +10,10 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <signal.h>
+#include <algorithm>
 #include "common.h"
 #include "chdb_api.pb.h"
+#include "logger.h"
 
 // Use the same v2 API structure from query_data_v2.cpp
 struct local_result_v2 {
@@ -36,6 +38,7 @@ private:
     bool running;
     std::string chdb_path;
     bool read_only;
+    Logger* logger;
     
     // Convert format enum to string
     std::string getFormatString(chdb_api::QueryRequest::OutputFormat format) {
@@ -100,13 +103,20 @@ private:
     }
     
 public:
+public:
+    Logger* getLogger() { return logger; }
     ChDBApiServer(const std::string& path = CHDB_PATH, bool readonly = false) : 
-        chdb_handle(nullptr), server_fd(-1), running(false), chdb_path(path), read_only(readonly) {}
+        chdb_handle(nullptr), server_fd(-1), running(false), chdb_path(path), read_only(readonly) {
+        logger = new Logger("chdb_api_server.log", true);
+    }
     
     ~ChDBApiServer() {
         stop();
         if (chdb_handle) {
             dlclose(chdb_handle);
+        }
+        if (logger) {
+            delete logger;
         }
     }
     
@@ -115,26 +125,26 @@ public:
         chdb_handle = dlopen("libchdb.so", RTLD_LAZY);
         
         if (!chdb_handle) {
-            std::cerr << "Failed to load libchdb.so: " << dlerror() << std::endl;
-            std::cerr << "Make sure libchdb.so is installed and ldconfig has been run." << std::endl;
+            logger->logError("Failed to load libchdb.so: " + std::string(dlerror()));
+            logger->logError("Make sure libchdb.so is installed and ldconfig has been run.");
             return false;
         }
         
-        std::cout << "Loaded chdb library successfully" << std::endl;
+        logger->logInfo("Loaded chdb library successfully");
         
         query_stable_v2 = (query_stable_v2_fn)dlsym(chdb_handle, "query_stable_v2");
         free_result_v2 = (free_result_v2_fn)dlsym(chdb_handle, "free_result_v2");
         
         if (!query_stable_v2 || !free_result_v2) {
-            std::cerr << "Failed to load functions: " << dlerror() << std::endl;
+            logger->logError("Failed to load functions: " + std::string(dlerror()));
             return false;
         }
         
-        std::cout << "chDB loaded successfully! (722MB in memory)" << std::endl;
+        logger->logInfo("chDB loaded successfully! (722MB in memory)");
         
         // Warm up
         executeQuery("SELECT 1", chdb_api::QueryRequest::CSV);
-        std::cout << "Server warmed up and ready!" << std::endl;
+        logger->logInfo("Server warmed up and ready!");
         
         return true;
     }
@@ -196,10 +206,21 @@ public:
         executeQuery(query, format, &response);
         
         if (response.success()) {
-            std::cout << "Query succeeded. Rows: " << response.rows_size() 
-                     << ", Time: " << response.elapsed_seconds() * 1000 << "ms" << std::endl;
+            // Calculate result size
+            size_t resultBytes = 0;
+            for (const auto& row : response.rows()) {
+                for (const auto& val : row.values()) {
+                    if (val.has_string_value()) {
+                        resultBytes += val.string_value().size();
+                    } else {
+                        resultBytes += 8; // Approximate size for numeric values
+                    }
+                }
+            }
+            logger->logQuery(query, response.elapsed_seconds() * 1000, response.rows_size(), 
+                           resultBytes, getFormatString(format));
         } else {
-            std::cout << "Query failed: " << response.error_message() << std::endl;
+            logger->logError("Query failed: " + response.error_message());
         }
     }
     
@@ -222,12 +243,12 @@ public:
         // Parse protobuf request
         chdb_api::QueryRequest request;
         if (!request.ParseFromArray(buffer.data(), request_size)) {
-            std::cerr << "Failed to parse request" << std::endl;
+            logger->logError("Failed to parse request");
             close(client_socket);
             return;
         }
         
-        std::cout << "Query: " << request.query() << " (format: " << request.format() << ")" << std::endl;
+        // Log query info - will be replaced with detailed logging after execution
         
         // Execute query
         chdb_api::QueryResponse response;
@@ -236,6 +257,15 @@ public:
         // Serialize response
         std::string serialized;
         response.SerializeToString(&serialized);
+        
+        // Log detailed query information
+        if (response.success()) {
+            size_t resultBytes = serialized.size();
+            logger->logQuery(request.query(), response.elapsed_seconds() * 1000, 
+                           response.rows_size(), resultBytes, getFormatString(request.format()));
+        } else {
+            logger->logError("Query failed: " + response.error_message() + " Query: " + request.query());
+        }
         
         // Send response size (4 bytes) + response
         uint32_t response_size = htonl(serialized.size());
@@ -249,7 +279,7 @@ public:
         // Create socket
         server_fd = socket(AF_INET, SOCK_STREAM, 0);
         if (server_fd == 0) {
-            std::cerr << "Socket creation failed" << std::endl;
+            logger->logError("Socket creation failed");
             return false;
         }
         
@@ -263,21 +293,21 @@ public:
         address.sin_port = htons(port);
         
         if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
-            std::cerr << "Bind failed" << std::endl;
+            logger->logError("Bind failed");
             return false;
         }
         
         if (listen(server_fd, 10) < 0) {
-            std::cerr << "Listen failed" << std::endl;
+            logger->logError("Listen failed");
             return false;
         }
         
         running = true;
-        std::cout << "\nchDB API Server running on port " << port << std::endl;
-        std::cout << "Protocol: Length-prefixed Protocol Buffers" << std::endl;
-        std::cout << "Data path: " << chdb_path << std::endl;
-        std::cout << "Mode: " << (read_only ? "READ-ONLY" : "READ-WRITE") << std::endl;
-        std::cout << "\nWaiting for connections..." << std::endl;
+        logger->logInfo("\nchDB API Server running on port " + std::to_string(port));
+        logger->logInfo("Protocol: Length-prefixed Protocol Buffers");
+        logger->logInfo("Data path: " + chdb_path);
+        logger->logInfo("Mode: " + std::string(read_only ? "READ-ONLY" : "READ-WRITE"));
+        logger->logInfo("\nWaiting for connections...");
         
         // Accept loop
         while (running) {
@@ -287,7 +317,7 @@ public:
             
             if (client_socket < 0) {
                 if (running) {
-                    std::cerr << "Accept failed" << std::endl;
+                    logger->logError("Accept failed");
                 }
                 continue;
             }
@@ -315,7 +345,11 @@ public:
 ChDBApiServer* g_server = nullptr;
 
 void signal_handler(int /*sig*/) {
-    std::cout << "\nShutting down server..." << std::endl;
+    if (g_server && g_server->getLogger()) {
+        g_server->getLogger()->logInfo("\nShutting down server...");
+    } else {
+        std::cout << "\nShutting down server..." << std::endl;
+    }
     if (g_server) {
         g_server->stop();
     }

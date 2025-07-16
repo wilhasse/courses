@@ -16,12 +16,16 @@
 #include <string>
 #include <algorithm>
 #include <cctype>
+#include <fstream>
+#include <ctime>
+#include <errno.h>
 
 // Configuration
 #define DEFAULT_PORT 8125
 #define INITIAL_BUFFER_SIZE 1048576    // 1MB initial buffer
 #define MAX_ALLOWED_SIZE 1073741824    // 1GB maximum allowed
 #define GROWTH_FACTOR 2                // Double buffer when needed
+#define DEBUG_LOG "/tmp/mysql_chdb_api_debug.log"
 
 // Structure to hold dynamic buffer
 struct DynamicBuffer {
@@ -53,6 +57,38 @@ struct DynamicBuffer {
         return true;
     }
 };
+
+// Helper function to format bytes to human readable string
+std::string format_bytes(size_t bytes) {
+    const char* units[] = {"B", "KB", "MB", "GB"};
+    int unit_index = 0;
+    double size = bytes;
+    
+    while (size >= 1024 && unit_index < 3) {
+        size /= 1024;
+        unit_index++;
+    }
+    
+    char buffer[64];
+    if (unit_index == 0) {
+        snprintf(buffer, sizeof(buffer), "%zu %s", bytes, units[unit_index]);
+    } else {
+        snprintf(buffer, sizeof(buffer), "%.2f %s", size, units[unit_index]);
+    }
+    return std::string(buffer);
+}
+
+// Helper function to log debug messages
+void debug_log(const std::string& message) {
+    std::ofstream log_file(DEBUG_LOG, std::ios::app);
+    if (log_file.is_open()) {
+        time_t now = time(nullptr);
+        char timestamp[100];
+        strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&now));
+        log_file << "[" << timestamp << "] [chdb_api_ip_json_udf] " << message << std::endl;
+        log_file.close();
+    }
+}
 
 extern "C" {
     // Main configurable function - accepts host:port as first parameter
@@ -118,31 +154,55 @@ bool parse_host_port(const std::string& host_port, std::string& host, int& port)
 // Simple binary protocol
 bool send_query(int sock, const std::string& query) {
     uint32_t size = htonl(query.size());
-    if (write(sock, &size, 4) != 4) return false;
-    if (write(sock, query.c_str(), query.size()) != (ssize_t)query.size()) return false;
+    debug_log("Sending query size: " + format_bytes(query.size()));
+    
+    ssize_t written = write(sock, &size, 4);
+    if (written != 4) {
+        debug_log("Failed to send query size, wrote " + std::to_string(written) + " bytes: " + std::string(strerror(errno)));
+        return false;
+    }
+    
+    written = write(sock, query.c_str(), query.size());
+    if (written != (ssize_t)query.size()) {
+        debug_log("Failed to send query, wrote " + format_bytes(written) + " of " + format_bytes(query.size()) + ": " + std::string(strerror(errno)));
+        return false;
+    }
+    
+    debug_log("Query sent successfully");
     return true;
 }
 
 bool receive_response(int sock, DynamicBuffer& buffer, size_t& response_size) {
     uint32_t size;
-    if (read(sock, &size, 4) != 4) {
+    debug_log("Reading response size...");
+    
+    ssize_t bytes_read = read(sock, &size, 4);
+    if (bytes_read != 4) {
+        debug_log("Failed to read response size, got " + std::to_string(bytes_read) + " bytes: " + std::string(strerror(errno)));
         response_size = 0;
         return false;
     }
     size = ntohl(size);
     response_size = size;
+    debug_log("Response size: " + format_bytes(size));
     
     // Ensure buffer can hold the response
     if (!buffer.ensure_capacity(size + 1)) {
+        debug_log("Failed to allocate buffer for " + format_bytes(size + 1));
         return false;
     }
+    debug_log("Buffer allocated, capacity: " + format_bytes(buffer.capacity));
     
     size_t total_read = 0;
     while (total_read < size) {
         ssize_t n = read(sock, buffer.data + total_read, size - total_read);
-        if (n <= 0) return false;
+        if (n <= 0) {
+            debug_log("Failed to read response data at offset " + std::to_string(total_read) + ": " + std::string(strerror(errno)));
+            return false;
+        }
         total_read += n;
     }
+    debug_log("Response received successfully, " + format_bytes(total_read));
     
     buffer.data[size] = '\0';
     return true;
@@ -151,12 +211,16 @@ bool receive_response(int sock, DynamicBuffer& buffer, size_t& response_size) {
 // Connect to server and execute query with JSON format
 bool execute_remote_query_json(const std::string& host, int port, const std::string& query,
                               DynamicBuffer& buffer, size_t& response_size, std::string& error_msg) {
+    debug_log("execute_remote_query_json called with host=" + host + ", port=" + std::to_string(port) + ", query=" + query);
+    
     // Create socket
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
-        error_msg = "ERROR: Failed to create socket";
+        error_msg = "ERROR: Failed to create socket: " + std::string(strerror(errno));
+        debug_log(error_msg);
         return false;
     }
+    debug_log("Socket created: " + std::to_string(sock));
     
     // Set timeout
     struct timeval tv;
@@ -166,12 +230,15 @@ bool execute_remote_query_json(const std::string& host, int port, const std::str
     setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
     
     // Resolve hostname
+    debug_log("Resolving hostname: " + host);
     struct hostent *server = gethostbyname(host.c_str());
     if (server == NULL) {
         close(sock);
-        error_msg = "ERROR: Cannot resolve hostname: " + host;
+        error_msg = "ERROR: Cannot resolve hostname: " + host + ": " + std::string(hstrerror(h_errno));
+        debug_log(error_msg);
         return false;
     }
+    debug_log("Hostname resolved successfully");
     
     // Connect to server
     struct sockaddr_in server_addr;
@@ -180,17 +247,24 @@ bool execute_remote_query_json(const std::string& host, int port, const std::str
     server_addr.sin_port = htons(port);
     memcpy(&server_addr.sin_addr.s_addr, server->h_addr, server->h_length);
     
+    debug_log("Connecting to " + host + ":" + std::to_string(port));
+    
     if (connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
         close(sock);
-        error_msg = "ERROR: Cannot connect to " + host + ":" + std::to_string(port);
+        error_msg = "ERROR: Cannot connect to " + host + ":" + std::to_string(port) + ": " + std::string(strerror(errno));
+        debug_log(error_msg);
         return false;
     }
+    debug_log("Connected successfully");
     
     // Send query with JSON format
     std::string json_query = addJsonFormat(query);
+    debug_log("Query after adding JSON format: " + json_query);
+    
     if (!send_query(sock, json_query)) {
         close(sock);
         error_msg = "ERROR: Failed to send query";
+        debug_log(error_msg);
         return false;
     }
     
@@ -201,17 +275,22 @@ bool execute_remote_query_json(const std::string& host, int port, const std::str
     if (!success) {
         error_msg = response_size > MAX_ALLOWED_SIZE ? 
             "ERROR: Response too large (>1GB)" : "ERROR: Failed to receive response";
+        debug_log(error_msg);
         return false;
     }
     
+    debug_log("Query completed successfully, received " + format_bytes(response_size));
     return true;
 }
 
 // ========== chdb_api_query_json_remote functions ==========
 
 bool chdb_api_query_json_remote_init(UDF_INIT *initid, UDF_ARGS *args, char *message) {
+    debug_log("chdb_api_query_json_remote_init called with " + std::to_string(args->arg_count) + " arguments");
+    
     if (args->arg_count != 2) {
         strcpy(message, "chdb_api_query_json_remote() requires exactly two arguments: host:port and SQL query");
+        debug_log("Error: Invalid argument count");
         return 1;
     }
     
@@ -245,6 +324,7 @@ char* chdb_api_query_json_remote(UDF_INIT *initid, UDF_ARGS *args, char *result,
     *error = 0;
     
     if (!args->args[0] || !args->args[1]) {
+        debug_log("chdb_api_query_json_remote called with NULL argument(s)");
         *is_null = 1;
         return NULL;
     }
@@ -252,6 +332,7 @@ char* chdb_api_query_json_remote(UDF_INIT *initid, UDF_ARGS *args, char *result,
     DynamicBuffer* buffer = (DynamicBuffer*)initid->ptr;
     std::string host_port(args->args[0], args->lengths[0]);
     std::string query(args->args[1], args->lengths[1]);
+    debug_log("chdb_api_query_json_remote called with host_port=" + host_port + ", query=" + query);
     
     // Parse host:port
     std::string host;
@@ -285,8 +366,11 @@ char* chdb_api_query_json_remote(UDF_INIT *initid, UDF_ARGS *args, char *result,
 // ========== chdb_api_query_json_local functions ==========
 
 bool chdb_api_query_json_local_init(UDF_INIT *initid, UDF_ARGS *args, char *message) {
+    debug_log("chdb_api_query_json_local_init called with " + std::to_string(args->arg_count) + " arguments");
+    
     if (args->arg_count != 1) {
         strcpy(message, "chdb_api_query_json_local() requires exactly one argument: the SQL query");
+        debug_log("Error: Invalid argument count");
         return 1;
     }
     
@@ -320,12 +404,14 @@ char* chdb_api_query_json_local(UDF_INIT *initid, UDF_ARGS *args, char *result,
     *error = 0;
     
     if (!args->args[0]) {
+        debug_log("chdb_api_query_json_local called with NULL argument");
         *is_null = 1;
         return NULL;
     }
     
     DynamicBuffer* buffer = (DynamicBuffer*)initid->ptr;
     std::string query(args->args[0], args->lengths[0]);
+    debug_log("chdb_api_query_json_local called with query=" + query);
     
     // Execute query on localhost:8125 with JSON format
     size_t response_size;
