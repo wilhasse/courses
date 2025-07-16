@@ -100,7 +100,9 @@ Options:
 - `-row-count`: Total row count to skip COUNT(*) query
 - `-offset`: Start from this row offset
 - `-skip-texto`: Skip HISTORICO_TEXTO table
+- `-only-texto`: Process only HISTORICO_TEXTO table
 - `-chdb-path`: Path for chdb data storage (default: /tmp/chdb)
+- `-append`: Append mode - only import records newer than last imported date
 
 Examples:
 ```bash
@@ -122,7 +124,23 @@ Examples:
 
 # Use SSD for better performance
 ./historico_loader_go ... -chdb-path /mnt/ssd/chdb
+
+# Incremental updates (append mode)
+./historico_loader_go \
+    -host 172.16.120.10 \
+    -user appl_cslog \
+    -password 'D981x@a' \
+    -database cslog_siscom_prod \
+    -chdb-path /data/chdb \
+    -append
 ```
+
+**Append Mode Details**:
+- Automatically detects the last imported date from ClickHouse
+- Only imports HISTORICO records with `DATA > last_date`
+- Also imports corresponding HISTORICO_TEXTO records (using JOIN on ID_CONTR, SEQ)
+- Perfect for daily/hourly incremental updates
+- Cannot be used with `-offset` flag
 
 Performance:
 - Initial speed: 100,000+ rows/second
@@ -629,7 +647,51 @@ du -sh /chdb/data/
 ./execute_sql -f CSV "SELECT * FROM mysql_import.historico WHERE codigo = 51 AND data >= '2024-01-01'" > codigo_51_2024.csv
 ```
 
-### 6. Start API Server (Optional)
+### 6. Schedule Incremental Updates (Optional)
+
+For production use, you can schedule incremental updates using cron:
+
+```bash
+# Create a script for incremental updates
+cat > /opt/scripts/update_historico.sh << 'EOF'
+#!/bin/bash
+LOG_FILE="/var/log/historico_update.log"
+LOCK_FILE="/var/run/historico_update.lock"
+
+# Check if another instance is running
+if [ -f "$LOCK_FILE" ]; then
+    echo "$(date): Update already running" >> "$LOG_FILE"
+    exit 0
+fi
+
+# Create lock file
+echo $$ > "$LOCK_FILE"
+
+# Run incremental update
+echo "$(date): Starting incremental update" >> "$LOG_FILE"
+/path/to/historico_loader_go \
+    -host your_mysql_host \
+    -user your_user \
+    -password 'your_password' \
+    -database your_database \
+    -chdb-path /chdb/data \
+    -append >> "$LOG_FILE" 2>&1
+
+# Remove lock file
+rm -f "$LOCK_FILE"
+echo "$(date): Update completed" >> "$LOG_FILE"
+EOF
+
+chmod +x /opt/scripts/update_historico.sh
+
+# Add to crontab (run every hour)
+(crontab -l 2>/dev/null; echo "0 * * * * /opt/scripts/update_historico.sh") | crontab -
+
+# Or run every 30 minutes
+(crontab -l 2>/dev/null; echo "*/30 * * * * /opt/scripts/update_historico.sh") | crontab -
+```
+
+### 7. Start API Server (Optional)
 ```bash
 # Start with default data path
 ./chdb_api_server_simple

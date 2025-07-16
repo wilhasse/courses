@@ -1,0 +1,249 @@
+# Example configuration for append mode incremental updates
+# This file documents best practices for using historico_loader_go in append mode
+
+# =============================================================================
+# BASIC CONFIGURATION
+# =============================================================================
+
+# MySQL connection settings
+MYSQL_HOST="172.16.120.10"
+MYSQL_USER="appl_cslog"
+MYSQL_PASSWORD="your_password"
+MYSQL_DATABASE="cslog_siscom_prod"
+
+# ClickHouse data storage path
+CHDB_PATH="/data/chdb"
+
+# =============================================================================
+# INITIAL FULL LOAD
+# =============================================================================
+
+# First time setup - full data import
+# This will import all existing data from MySQL to ClickHouse
+
+./historico_loader_go \
+    -host "$MYSQL_HOST" \
+    -user "$MYSQL_USER" \
+    -password "$MYSQL_PASSWORD" \
+    -database "$MYSQL_DATABASE" \
+    -chdb-path "$CHDB_PATH"
+
+# For very large datasets (300M+ rows), provide row count to skip COUNT(*):
+./historico_loader_go \
+    -host "$MYSQL_HOST" \
+    -user "$MYSQL_USER" \
+    -password "$MYSQL_PASSWORD" \
+    -database "$MYSQL_DATABASE" \
+    -chdb-path "$CHDB_PATH" \
+    -row-count 300266692
+
+# =============================================================================
+# INCREMENTAL UPDATES (APPEND MODE)
+# =============================================================================
+
+# After initial load, use append mode for incremental updates
+# This only imports records newer than the last imported date
+
+./historico_loader_go \
+    -host "$MYSQL_HOST" \
+    -user "$MYSQL_USER" \
+    -password "$MYSQL_PASSWORD" \
+    -database "$MYSQL_DATABASE" \
+    -chdb-path "$CHDB_PATH" \
+    -append
+
+# =============================================================================
+# AUTOMATED SYNC SCRIPT
+# =============================================================================
+
+# Create this script at /opt/scripts/sync_historico.sh
+
+#!/bin/bash
+LOG_DIR="/var/log/historico_sync"
+LOG_FILE="$LOG_DIR/sync_$(date +%Y%m%d).log"
+LOCK_FILE="/var/run/historico_sync.lock"
+ERROR_COUNT_FILE="$LOG_DIR/error_count"
+
+# Create log directory if it doesn't exist
+mkdir -p "$LOG_DIR"
+
+# Function to log messages
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+# Function to send alert (customize as needed)
+send_alert() {
+    local subject="$1"
+    local message="$2"
+    # Example: send email, Slack notification, etc.
+    # echo "$message" | mail -s "$subject" admin@example.com
+    log "ALERT: $subject - $message"
+}
+
+# Check lock file
+if [ -f "$LOCK_FILE" ]; then
+    pid=$(cat "$LOCK_FILE")
+    if ps -p "$pid" > /dev/null 2>&1; then
+        log "Another sync process is running (PID: $pid)"
+        exit 0
+    else
+        log "Removing stale lock file"
+        rm -f "$LOCK_FILE"
+    fi
+fi
+
+# Create lock file
+echo $$ > "$LOCK_FILE"
+
+# Reset error count if new day
+if [ ! -f "$ERROR_COUNT_FILE" ] || [ "$(date -r "$ERROR_COUNT_FILE" +%Y%m%d)" != "$(date +%Y%m%d)" ]; then
+    echo 0 > "$ERROR_COUNT_FILE"
+fi
+
+log "Starting incremental sync"
+
+# Run the sync
+if ./historico_loader_go \
+    -host "$MYSQL_HOST" \
+    -user "$MYSQL_USER" \
+    -password "$MYSQL_PASSWORD" \
+    -database "$MYSQL_DATABASE" \
+    -chdb-path "$CHDB_PATH" \
+    -append >> "$LOG_FILE" 2>&1; then
+    
+    log "Sync completed successfully"
+    
+    # Reset error count on success
+    echo 0 > "$ERROR_COUNT_FILE"
+    
+    # Log statistics
+    rows_synced=$(grep "rows loaded" "$LOG_FILE" | tail -1 | grep -oE '[0-9]+' | head -1)
+    if [ -n "$rows_synced" ]; then
+        log "Rows synced: $rows_synced"
+    fi
+else
+    error_count=$(($(cat "$ERROR_COUNT_FILE") + 1))
+    echo "$error_count" > "$ERROR_COUNT_FILE"
+    
+    log "Sync failed (error count: $error_count)"
+    
+    # Send alert after 3 consecutive failures
+    if [ "$error_count" -ge 3 ]; then
+        send_alert "Historico Sync Failed" "Sync has failed $error_count times today. Check $LOG_FILE"
+    fi
+fi
+
+# Cleanup old logs (keep 30 days)
+find "$LOG_DIR" -name "sync_*.log" -mtime +30 -delete
+
+# Remove lock file
+rm -f "$LOCK_FILE"
+
+log "Sync process completed"
+
+# =============================================================================
+# CRONTAB CONFIGURATION
+# =============================================================================
+
+# Run every hour
+0 * * * * /opt/scripts/sync_historico.sh
+
+# Run every 30 minutes during business hours
+*/30 8-18 * * 1-5 /opt/scripts/sync_historico.sh
+
+# Run every 15 minutes for near real-time sync
+*/15 * * * * /opt/scripts/sync_historico.sh
+
+# =============================================================================
+# MONITORING
+# =============================================================================
+
+# Use the monitoring script to check sync status
+MYSQL_DB="$MYSQL_DATABASE" \
+CHDB_PATH="$CHDB_PATH" \
+./monitor_append_sync.sh
+
+# =============================================================================
+# PERFORMANCE TUNING
+# =============================================================================
+
+# 1. Ensure MySQL has proper indexes:
+#    CREATE INDEX idx_contr_seq ON HISTORICO (ID_CONTR, SEQ);
+#    CREATE INDEX idx_data ON HISTORICO (DATA);
+
+# 2. For better performance, use SSD for chDB storage
+
+# 3. Monitor disk space - chDB uses compression but still needs space:
+#    - Initial import: 3-6x the final size during import
+#    - After optimization: ~10-20GB for 300M rows
+
+# 4. Expected performance:
+#    - Initial load: 30,000-50,000 rows/second
+#    - Append mode: Similar speeds for new data
+#    - No freezing issues with proper keyset pagination
+
+# =============================================================================
+# TROUBLESHOOTING
+# =============================================================================
+
+# 1. Check if data exists after sync:
+./execute_sql -d "$CHDB_PATH" "SELECT COUNT(*) FROM mysql_import.historico"
+
+# 2. Verify last imported date:
+./execute_sql -d "$CHDB_PATH" "SELECT MAX(data) FROM mysql_import.historico"
+
+# 3. Compare with MySQL:
+mysql -h "$MYSQL_HOST" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" \
+    -e "SELECT COUNT(*), MAX(DATA) FROM HISTORICO"
+
+# 4. Check for gaps in data:
+./execute_sql -d "$CHDB_PATH" "
+    SELECT 
+        toYYYYMM(data) as month,
+        count() as rows
+    FROM mysql_import.historico
+    GROUP BY month
+    ORDER BY month DESC
+    LIMIT 12"
+
+# 5. If sync is stuck:
+#    - Check disk space: df -h
+#    - Check MySQL connectivity
+#    - Review logs in /var/log/historico_sync/
+#    - Remove lock file if stale: rm -f /var/run/historico_sync.lock
+
+# =============================================================================
+# BEST PRACTICES
+# =============================================================================
+
+# 1. Always verify data after initial import
+# 2. Set up monitoring before going to production
+# 3. Test append mode with small dataset first
+# 4. Keep logs for troubleshooting
+# 5. Set up alerts for sync failures
+# 6. Regular backups of chDB data directory
+# 7. Monitor storage growth over time
+# 8. Run OPTIMIZE TABLE periodically for best performance
+
+# =============================================================================
+# RECOVERY PROCEDURES
+# =============================================================================
+
+# If data is corrupted or lost:
+
+# 1. Stop all sync processes
+# 2. Backup current state (if salvageable)
+# 3. Remove chDB data directory
+# 4. Re-run initial full import
+# 5. Resume normal append mode operations
+
+# Emergency re-import:
+rm -rf "$CHDB_PATH"
+./historico_loader_go \
+    -host "$MYSQL_HOST" \
+    -user "$MYSQL_USER" \
+    -password "$MYSQL_PASSWORD" \
+    -database "$MYSQL_DATABASE" \
+    -chdb-path "$CHDB_PATH" \
+    -row-count 300266692  # Use known count to save time

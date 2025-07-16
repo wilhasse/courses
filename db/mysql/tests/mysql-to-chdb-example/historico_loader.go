@@ -23,6 +23,8 @@ type Loader struct {
 	chdbSession *chdb.Session
 	startTime   time.Time
 	totalLoaded int64
+	appendMode  bool
+	lastDate    *time.Time
 }
 
 func NewLoader() *Loader {
@@ -90,7 +92,28 @@ func (l *Loader) createTables() error {
 
 func (l *Loader) getTotalRows(tableName string) (int64, error) {
 	var count int64
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", tableName)
+	var query string
+	
+	// In append mode, only count rows newer than last date
+	if l.appendMode && l.lastDate != nil {
+		if tableName == "HISTORICO_TEXTO" {
+			// For HISTORICO_TEXTO, join with HISTORICO to filter by date
+			query = fmt.Sprintf(`
+				SELECT COUNT(*) 
+				FROM %s t
+				INNER JOIN HISTORICO h ON t.ID_CONTR = h.ID_CONTR AND t.SEQ = h.SEQ
+				WHERE h.DATA > '%s'`, 
+				tableName, l.lastDate.Format("2006-01-02 15:04:05"))
+		} else {
+			// For HISTORICO table
+			query = fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE DATA > '%s'", 
+				tableName, l.lastDate.Format("2006-01-02 15:04:05"))
+		}
+	} else {
+		// Normal mode - just count all rows
+		query = fmt.Sprintf("SELECT COUNT(*) FROM %s", tableName)
+	}
+	
 	err := l.mysqlDB.QueryRow(query).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get row count: %w", err)
@@ -111,6 +134,41 @@ func (l *Loader) getTotalRows(tableName string) (int64, error) {
 	}
 	
 	return count, nil
+}
+
+func (l *Loader) getLastDate() error {
+	if !l.appendMode {
+		return nil
+	}
+	
+	log.Printf("Checking last imported date in ClickHouse...")
+	
+	// Query the latest date from HISTORICO table
+	result, err := l.chdbSession.Query(
+		"SELECT MAX(data) FROM mysql_import.historico", "TSV")
+	
+	if err != nil || result == nil {
+		log.Printf("No existing data found, will import all records")
+		return nil
+	}
+	
+	dateStr := strings.TrimSpace(result.String())
+	if dateStr == "" || dateStr == "\\N" {
+		log.Printf("No existing data found, will import all records")
+		return nil
+	}
+	
+	// Parse the date
+	lastDate, err := time.Parse("2006-01-02 15:04:05", dateStr)
+	if err != nil {
+		return fmt.Errorf("failed to parse last date %s: %w", dateStr, err)
+	}
+	
+	l.lastDate = &lastDate
+	log.Printf("Last imported date: %s", lastDate.Format("2006-01-02 15:04:05"))
+	log.Printf("Will import records with DATA > %s", lastDate.Format("2006-01-02 15:04:05"))
+	
+	return nil
 }
 
 func escapeString(s string) string {
@@ -157,8 +215,8 @@ func (l *Loader) loadHistorico(totalRows int64, startOffset int64) error {
 	var lastIDContr int32 = -1
 	var lastSeq uint16 = 0
 	
-	// If resuming from offset, try to get from ClickHouse first
-	if startOffset > 0 {
+	// If resuming from offset or append mode, try to get from ClickHouse first
+	if startOffset > 0 && !l.appendMode {
 		log.Printf("Finding resume point for offset %d...", startOffset)
 		
 		// First try to get the last row from ClickHouse (much faster!)
@@ -228,14 +286,31 @@ func (l *Loader) loadHistorico(totalRows int64, startOffset int64) error {
 			l.totalLoaded, min(l.totalLoaded+ROWS_PER_CHUNK, totalRows), totalRows)
 
 		// Query MySQL data using keyset pagination
-		query := `
-			SELECT ID_CONTR, SEQ, ID_FUNCIONARIO, ID_TEL, DATA, CODIGO, MODO
-			FROM HISTORICO
-			WHERE (ID_CONTR > ? OR (ID_CONTR = ? AND SEQ > ?))
-			ORDER BY ID_CONTR, SEQ
-			LIMIT ?`
+		var query string
+		var queryArgs []interface{}
+		
+		if l.appendMode && l.lastDate != nil {
+			// In append mode, also filter by date
+			query = `
+				SELECT ID_CONTR, SEQ, ID_FUNCIONARIO, ID_TEL, DATA, CODIGO, MODO
+				FROM HISTORICO
+				WHERE DATA > ? AND (ID_CONTR > ? OR (ID_CONTR = ? AND SEQ > ?))
+				ORDER BY ID_CONTR, SEQ
+				LIMIT ?`
+			queryArgs = []interface{}{l.lastDate.Format("2006-01-02 15:04:05"), 
+				lastIDContr, lastIDContr, lastSeq, ROWS_PER_CHUNK}
+		} else {
+			// Normal mode
+			query = `
+				SELECT ID_CONTR, SEQ, ID_FUNCIONARIO, ID_TEL, DATA, CODIGO, MODO
+				FROM HISTORICO
+				WHERE (ID_CONTR > ? OR (ID_CONTR = ? AND SEQ > ?))
+				ORDER BY ID_CONTR, SEQ
+				LIMIT ?`
+			queryArgs = []interface{}{lastIDContr, lastIDContr, lastSeq, ROWS_PER_CHUNK}
+		}
 
-		rows, err := l.mysqlDB.Query(query, lastIDContr, lastIDContr, lastSeq, ROWS_PER_CHUNK)
+		rows, err := l.mysqlDB.Query(query, queryArgs...)
 		if err != nil {
 			log.Printf("MySQL query error: %v", err)
 			break // Can't continue with keyset pagination on error
@@ -320,14 +395,13 @@ func (l *Loader) loadHistorico(totalRows int64, startOffset int64) error {
 		}
 	}
 
-	// Final optimization
-	log.Printf("\n[%s] Running final HISTORICO table optimization...", time.Now().Format("2006-01-02 15:04:05"))
-	result, err := l.chdbSession.Query("OPTIMIZE TABLE mysql_import.historico FINAL", "CSV")
-	if err != nil {
-		log.Printf("Error optimizing: %v", err)
-	}
-	if result != nil && strings.Contains(result.String(), "Code:") {
-		log.Printf("Optimize error: %s", result.String())
+	// Final optimization - only if we actually inserted data
+	if chunkNumber > 0 {
+		if err := l.optimizeTable("historico", l.totalLoaded-startOffset); err != nil {
+			log.Printf("Warning: optimization failed: %v", err)
+		}
+	} else {
+		log.Printf("\n[%s] No new HISTORICO data to import", time.Now().Format("2006-01-02 15:04:05"))
 	}
 
 	return nil
@@ -411,14 +485,32 @@ func (l *Loader) loadHistoricoTexto(totalRows int64, startOffset int64) error {
 			l.totalLoaded, min(l.totalLoaded+ROWS_PER_CHUNK, totalRows), totalRows)
 
 		// Query MySQL data using keyset pagination
-		query := `
-			SELECT ID_CONTR, SEQ, MENSAGEM, MOTIVO, AUTORIZACAO
-			FROM HISTORICO_TEXTO
-			WHERE (ID_CONTR > ? OR (ID_CONTR = ? AND SEQ > ?))
-			ORDER BY ID_CONTR, SEQ
-			LIMIT ?`
+		var query string
+		var queryArgs []interface{}
+		
+		if l.appendMode && l.lastDate != nil {
+			// In append mode, join with HISTORICO to filter by date
+			query = `
+				SELECT t.ID_CONTR, t.SEQ, t.MENSAGEM, t.MOTIVO, t.AUTORIZACAO
+				FROM HISTORICO_TEXTO t
+				INNER JOIN HISTORICO h ON t.ID_CONTR = h.ID_CONTR AND t.SEQ = h.SEQ
+				WHERE h.DATA > ? AND (t.ID_CONTR > ? OR (t.ID_CONTR = ? AND t.SEQ > ?))
+				ORDER BY t.ID_CONTR, t.SEQ
+				LIMIT ?`
+			queryArgs = []interface{}{l.lastDate.Format("2006-01-02 15:04:05"), 
+				lastIDContr, lastIDContr, lastSeq, ROWS_PER_CHUNK}
+		} else {
+			// Normal mode
+			query = `
+				SELECT ID_CONTR, SEQ, MENSAGEM, MOTIVO, AUTORIZACAO
+				FROM HISTORICO_TEXTO
+				WHERE (ID_CONTR > ? OR (ID_CONTR = ? AND SEQ > ?))
+				ORDER BY ID_CONTR, SEQ
+				LIMIT ?`
+			queryArgs = []interface{}{lastIDContr, lastIDContr, lastSeq, ROWS_PER_CHUNK}
+		}
 
-		rows, err := l.mysqlDB.Query(query, lastIDContr, lastIDContr, lastSeq, ROWS_PER_CHUNK)
+		rows, err := l.mysqlDB.Query(query, queryArgs...)
 		if err != nil {
 			log.Printf("MySQL query error: %v", err)
 			break
@@ -504,14 +596,13 @@ func (l *Loader) loadHistoricoTexto(totalRows int64, startOffset int64) error {
 		}
 	}
 
-	// Final optimization
-	log.Printf("\n[%s] Running final HISTORICO_TEXTO table optimization...", time.Now().Format("2006-01-02 15:04:05"))
-	result, err := l.chdbSession.Query("OPTIMIZE TABLE mysql_import.historico_texto FINAL", "CSV")
-	if err != nil {
-		log.Printf("Error optimizing: %v", err)
-	}
-	if result != nil && strings.Contains(result.String(), "Code:") {
-		log.Printf("Optimize error: %s", result.String())
+	// Final optimization - only if we actually inserted data
+	if chunkNumber > 0 {
+		if err := l.optimizeTable("historico_texto", l.totalLoaded-startOffset); err != nil {
+			log.Printf("Warning: optimization failed: %v", err)
+		}
+	} else {
+		log.Printf("\n[%s] No new HISTORICO_TEXTO data to import", time.Now().Format("2006-01-02 15:04:05"))
 	}
 
 	return nil
@@ -633,6 +724,112 @@ func (l *Loader) checkStorageStatus() {
 	}
 }
 
+func (l *Loader) optimizeTable(tableName string, rowsInserted int64) error {
+	// Skip optimization if no rows were inserted
+	if rowsInserted == 0 {
+		return nil
+	}
+	
+	// Check current table state
+	result, err := l.chdbSession.Query(fmt.Sprintf(`
+		SELECT 
+			count() as parts_count,
+			sum(rows) as total_rows,
+			max(rows) as max_part_rows
+		FROM system.parts 
+		WHERE database='mysql_import' AND table='%s' AND active
+	`, tableName), "TSV")
+	
+	if err != nil {
+		return fmt.Errorf("failed to check table state: %w", err)
+	}
+	
+	// Parse the result
+	var partsCount int64
+	if result != nil && result.Len() > 0 {
+		fields := strings.Fields(result.String())
+		if len(fields) >= 1 {
+			partsCount, _ = strconv.ParseInt(fields[0], 10, 64)
+		}
+	}
+	
+	// Determine optimization strategy
+	var optimizeQuery string
+	
+	if rowsInserted < 10000 && partsCount < 100 {
+		// For small appends with few parts, skip optimization
+		log.Printf("\n[%s] Skipping optimization for %s (only %d new rows, %d parts)", 
+			time.Now().Format("2006-01-02 15:04:05"), tableName, rowsInserted, partsCount)
+		return nil
+	} else if rowsInserted < 1000000 && partsCount < 1000 {
+		// For medium appends, use partition-based optimization
+		log.Printf("\n[%s] Running partition optimization for %s...", 
+			time.Now().Format("2006-01-02 15:04:05"), tableName)
+		
+		// Find partitions with the most recent data
+		partResult, _ := l.chdbSession.Query(fmt.Sprintf(`
+			SELECT DISTINCT partition
+			FROM system.parts
+			WHERE database='mysql_import' AND table='%s' AND active
+			ORDER BY max_date DESC
+			LIMIT 3
+		`, tableName), "TSV")
+		
+		if partResult != nil && partResult.Len() > 0 {
+			partitions := strings.Split(strings.TrimSpace(partResult.String()), "\n")
+			for _, partition := range partitions {
+				if partition != "" {
+					optimizeQuery = fmt.Sprintf("OPTIMIZE TABLE mysql_import.%s PARTITION %s", 
+						tableName, partition)
+					_, err = l.chdbSession.Query(optimizeQuery, "CSV")
+					if err != nil {
+						log.Printf("Warning: failed to optimize partition %s: %v", partition, err)
+					}
+				}
+			}
+			return nil
+		}
+		
+		// Fallback to regular optimization
+		optimizeQuery = fmt.Sprintf("OPTIMIZE TABLE mysql_import.%s", tableName)
+	} else {
+		// For large appends or many parts, use FINAL optimization
+		log.Printf("\n[%s] Running final optimization for %s (inserted %d rows, %d parts)...", 
+			time.Now().Format("2006-01-02 15:04:05"), tableName, rowsInserted, partsCount)
+		optimizeQuery = fmt.Sprintf("OPTIMIZE TABLE mysql_import.%s FINAL", tableName)
+	}
+	
+	// Run optimization
+	startTime := time.Now()
+	result, err = l.chdbSession.Query(optimizeQuery, "CSV")
+	duration := time.Since(startTime).Seconds()
+	
+	if err != nil {
+		return fmt.Errorf("optimization failed: %w", err)
+	}
+	if result != nil && strings.Contains(result.String(), "Code:") {
+		return fmt.Errorf("optimization error: %s", result.String())
+	}
+	
+	log.Printf("  Optimization completed in %.0f seconds", duration)
+	
+	// Check final state
+	if partsCount > 10 {
+		finalResult, _ := l.chdbSession.Query(fmt.Sprintf(`
+			SELECT count() as parts_after
+			FROM system.parts 
+			WHERE database='mysql_import' AND table='%s' AND active
+		`, tableName), "TSV")
+		
+		if finalResult != nil && finalResult.Len() > 0 {
+			partsAfter, _ := strconv.ParseInt(strings.TrimSpace(finalResult.String()), 10, 64)
+			log.Printf("  Parts reduced from %d to %d", partsCount, partsAfter)
+		}
+	}
+	
+	return nil
+}
+
 func (l *Loader) cleanup() {
 	if l.mysqlDB != nil {
 		l.mysqlDB.Close()
@@ -669,6 +866,7 @@ func main() {
 		skipTexto  = flag.Bool("skip-texto", false, "Skip HISTORICO_TEXTO table")
 		onlyTexto  = flag.Bool("only-texto", false, "Process only HISTORICO_TEXTO table")
 		chdbPath   = flag.String("chdb-path", "/tmp/chdb", "Path for chdb data storage")
+		appendMode = flag.Bool("append", false, "Append mode: only import records newer than last imported date")
 	)
 	flag.Parse()
 	
@@ -687,12 +885,16 @@ func main() {
 		flag.PrintDefaults()
 		fmt.Println("\nAlternative: historico_loader_go <host> <user> <password> <database> [flags]")
 		fmt.Println("\nExample:")
+		fmt.Println("  # Initial load")
 		fmt.Println("  ./historico_loader_go -host localhost -user root -password pass -database mydb -chdb-path /data/chdb")
-		fmt.Println("  ./historico_loader_go localhost root pass mydb -row-count 300266692 -chdb-path /data/chdb")
+		fmt.Println("  ")
+		fmt.Println("  # Append new records (incremental update)")
+		fmt.Println("  ./historico_loader_go -host localhost -user root -password pass -database mydb -chdb-path /data/chdb -append")
 		log.Fatal("\nError: Database name is required")
 	}
 
 	loader := NewLoader()
+	loader.appendMode = *appendMode
 	defer loader.cleanup()
 
 	// Connect to MySQL
@@ -710,9 +912,18 @@ func main() {
 		log.Fatal(err)
 	}
 	
+	// Get last date if in append mode
+	if err := loader.getLastDate(); err != nil {
+		log.Fatal(err)
+	}
+	
 	// Validate flags
 	if *skipTexto && *onlyTexto {
 		log.Fatal("Cannot use both -skip-texto and -only-texto flags")
+	}
+	
+	if *appendMode && *offset > 0 {
+		log.Fatal("Cannot use both -append and -offset flags")
 	}
 	
 	if *skipTexto {
@@ -720,6 +931,14 @@ func main() {
 	}
 	if *onlyTexto {
 		log.Println("Processing only HISTORICO_TEXTO table as requested")
+	}
+	if *appendMode {
+		if loader.lastDate != nil {
+			log.Printf("APPEND MODE: Importing records with DATA > %s", 
+				loader.lastDate.Format("2006-01-02 15:04:05"))
+		} else {
+			log.Println("APPEND MODE: No existing data found, importing all records")
+		}
 	}
 
 	// Get total rows
