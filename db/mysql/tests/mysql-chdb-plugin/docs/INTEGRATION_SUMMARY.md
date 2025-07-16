@@ -40,7 +40,7 @@ MySQL → chdb_query() UDF → TCP Socket → chDB API Server → ClickHouse Dat
 ### Step 1: Prepare Data
 ```bash
 cd mysql-to-chdb-example
-mysql -u root -pteste < setup_mysql.sql
+mysql -u root  < setup_mysql.sql
 ./feed_data_v2
 ```
 
@@ -54,7 +54,7 @@ mysql -u root -pteste < setup_mysql.sql
 cd ../mysql-chdb-plugin
 ./scripts/build_api_udf.sh
 sudo cp build/chdb_api_functions.so /usr/lib/mysql/plugin/
-mysql -u root -pteste < scripts/install_api_udf.sql
+mysql -u root  < scripts/install_api_udf.sql
 ```
 
 ### Step 4: Query from MySQL

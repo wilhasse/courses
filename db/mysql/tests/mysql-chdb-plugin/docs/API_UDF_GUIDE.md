@@ -53,7 +53,7 @@ cd /home/cslog/courses/db/mysql/tests/mysql-chdb-plugin
 sudo cp build/chdb_api_functions.so /usr/lib/mysql/plugin/
 
 # Register the functions in MySQL
-mysql -u root -pteste < scripts/install_api_udf.sql
+mysql -u root  < scripts/install_api_udf.sql
 ```
 
 ## Available Functions
@@ -201,7 +201,7 @@ SELECT chdb_query('
 
 To remove the UDF functions:
 ```bash
-mysql -u root -pteste < scripts/uninstall_api_udf.sql
+mysql -u root  < scripts/uninstall_api_udf.sql
 sudo rm /usr/lib/mysql/plugin/chdb_api_functions.so
 ```
 

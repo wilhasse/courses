@@ -120,7 +120,7 @@ SELECT
 You can run all tests at once:
 
 ```bash
-mysql -u root -pteste < /home/cslog/courses/db/mysql/tests/mysql-chdb-plugin/test_manual.sql
+mysql -u root  < /home/cslog/courses/db/mysql/tests/mysql-chdb-plugin/test_manual.sql
 ```
 
 ## Troubleshooting

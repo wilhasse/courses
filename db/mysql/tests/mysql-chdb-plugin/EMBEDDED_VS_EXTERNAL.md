@@ -54,10 +54,10 @@ chmod +x build_embedded_tvf.sh
 ./build_embedded_tvf.sh
 
 # 2. Install functions in MySQL
-mysql -u root -pteste < install_embedded_functions.sql
+mysql -u root  < install_embedded_functions.sql
 
 # 3. Test
-mysql -u root -pteste -e "SELECT ch_customer_count();"
+mysql -u root  -e "SELECT ch_customer_count();"
 ```
 
 ## Key Differences

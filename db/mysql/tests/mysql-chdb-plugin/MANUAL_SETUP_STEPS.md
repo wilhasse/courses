@@ -37,7 +37,7 @@ sudo cp mysql_chdb_clickhouse_tvf.so /usr/lib/mysql/plugin/
 Connect to MySQL and run:
 
 ```bash
-mysql -u root -pteste
+mysql -u root 
 ```
 
 Then execute these SQL commands:

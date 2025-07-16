@@ -193,7 +193,7 @@ SELECT * FROM test2;
 # Or manually
 ./scripts/build_tvf.sh
 ./scripts/install_tvf.sh
-mysql -u root -pteste < tests/test_tvf_join.sql
+mysql -u root < tests/test_tvf_join.sql
 ```
 
 ## Related Files

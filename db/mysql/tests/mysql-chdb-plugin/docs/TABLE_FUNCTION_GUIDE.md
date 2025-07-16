@@ -49,7 +49,7 @@ cd mysql-chdb-plugin
 
 # Install to MySQL
 sudo cp build/chdb_table_functions.so /usr/lib/mysql/plugin/
-mysql -u root -pteste < scripts/install_table_functions.sql
+mysql -u root  < scripts/install_table_functions.sql
 ```
 
 ## Usage Examples

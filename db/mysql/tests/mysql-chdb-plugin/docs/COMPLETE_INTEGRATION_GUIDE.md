@@ -81,7 +81,7 @@ The goal was to query ClickHouse data directly from MySQL using chDB (embedded C
 cd /home/cslog/courses/db/mysql/tests/mysql-to-chdb-example
 
 # Create MySQL sample data
-mysql -u root -pteste < setup_mysql.sql
+mysql -u root  < setup_mysql.sql
 
 # Load data into ClickHouse format
 ./feed_data_v2
@@ -127,17 +127,17 @@ g++ -Wall -O2 -fPIC -shared \
 sudo cp chdb_api_functions.so /usr/lib/mysql/plugin/
 
 # Register functions in MySQL
-mysql -u root -pteste < scripts/install_api_udf.sql
+mysql -u root  < scripts/install_api_udf.sql
 ```
 
 ### Step 4: Verify Installation
 
 ```bash
 # Check functions are registered
-mysql -u root -pteste -e "SHOW FUNCTION STATUS WHERE Name LIKE 'chdb%'"
+mysql -u root  -e "SHOW FUNCTION STATUS WHERE Name LIKE 'chdb%'"
 
 # Test basic query
-mysql -u root -pteste -e "SELECT CAST(chdb_query('SELECT 1') AS CHAR)"
+mysql -u root  -e "SELECT CAST(chdb_query('SELECT 1') AS CHAR)"
 ```
 
 ## Usage Examples

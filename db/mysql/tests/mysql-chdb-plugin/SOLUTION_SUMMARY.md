@@ -17,7 +17,7 @@ The plugin has already been built successfully (as shown in your earlier output)
 
 ```bash
 # 1. Install the functions in MySQL
-mysql -u root -pteste << 'EOF'
+mysql -u root  << 'EOF'
 DROP FUNCTION IF EXISTS ch_customer_count;
 DROP FUNCTION IF EXISTS ch_get_customer_id;
 DROP FUNCTION IF EXISTS ch_get_customer_name;
@@ -97,8 +97,8 @@ Build and test:
 ```bash
 g++ -shared -fPIC -o test_simple.so test_simple.cpp $(mysql_config --cflags)
 sudo cp test_simple.so /usr/lib/mysql/plugin/
-mysql -u root -pteste -e "CREATE FUNCTION test_simple RETURNS INTEGER SONAME 'test_simple.so';"
-mysql -u root -pteste -e "SELECT test_simple();"
+mysql -u root  -e "CREATE FUNCTION test_simple RETURNS INTEGER SONAME 'test_simple.so';"
+mysql -u root  -e "SELECT test_simple();"
 ```
 
 ## Most Likely Issues

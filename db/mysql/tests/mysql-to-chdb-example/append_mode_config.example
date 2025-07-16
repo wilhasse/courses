@@ -7,9 +7,9 @@
 
 # MySQL connection settings
 MYSQL_HOST="172.16.120.10"
-MYSQL_USER="appl_cslog"
+MYSQL_USER="your_mysql_user"
 MYSQL_PASSWORD="your_password"
-MYSQL_DATABASE="cslog_siscom_prod"
+MYSQL_DATABASE="your_database"
 
 # ClickHouse data storage path
 CHDB_PATH="/data/chdb"

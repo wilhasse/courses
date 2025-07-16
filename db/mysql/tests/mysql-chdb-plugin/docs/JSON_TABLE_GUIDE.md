@@ -38,7 +38,7 @@ cd mysql-chdb-plugin
 chmod +x scripts/build_json_table_functions.sh
 ./scripts/build_json_table_functions.sh
 sudo cp build/chdb_json_table_functions.so /usr/lib/mysql/plugin/
-mysql -u root -pteste < scripts/install_json_table_functions.sql
+mysql -u root  < scripts/install_json_table_functions.sql
 ```
 
 ## Usage Examples

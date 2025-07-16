@@ -112,9 +112,9 @@ Examples:
 # Production usage with all optimizations
 ./historico_loader_go \
     -host 172.16.120.10 \
-    -user appl_cslog \
-    -password 'D981x@a' \
-    -database cslog_siscom_prod \
+    -user your_user \
+    -password 'your_password' \
+    -database your_database \
     -row-count 300266692 \
     -skip-texto \
     -chdb-path /data/chdb
@@ -128,9 +128,9 @@ Examples:
 # Incremental updates (append mode)
 ./historico_loader_go \
     -host 172.16.120.10 \
-    -user appl_cslog \
-    -password 'D981x@a' \
-    -database cslog_siscom_prod \
+    -user your_user \
+    -password 'your_password' \
+    -database your_database \
     -chdb-path /data/chdb \
     -append
 ```
@@ -189,16 +189,16 @@ Options:
 Examples:
 ```bash
 # First run - will perform COUNT(*) query
-./historico_log 172.16.120.10 appl_cslog mypassword cslog_siscom_prod --skip-texto
+./historico_log 172.16.120.10 your_user mypassword your_database --skip-texto
 
 # Subsequent runs - skip COUNT(*) for faster startup
-./historico_log 172.16.120.10 appl_cslog mypassword cslog_siscom_prod --skip-texto --row-count 32424049
+./historico_log 172.16.120.10 your_user mypassword your_database --skip-texto --row-count 32424049
 
 # Resume from row 5,000,000 after interruption
-./historico_log 172.16.120.10 appl_cslog mypassword cslog_siscom_prod --skip-texto --row-count 32424049 --offset 5000000
+./historico_log 172.16.120.10 your_user mypassword your_database --skip-texto --row-count 32424049 --offset 5000000
 
 # Load both tables (HISTORICO and HISTORICO_TEXTO)
-./historico_log 172.16.120.10 appl_cslog mypassword cslog_siscom_prod
+./historico_log 172.16.120.10 your_user mypassword your_database
 ```
 
 Output Example:

@@ -62,7 +62,7 @@ From the project root directory:
 
 3. **Run the tests:**
    ```bash
-   mysql -u root -pteste < tests/test_tvf_join.sql
+   mysql -u root  < tests/test_tvf_join.sql
    ```
 
 4. **Clean up (optional):**
