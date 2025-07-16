@@ -97,9 +97,9 @@ SELECT CAST(chdb_query('
 - [API_UDF_GUIDE.md](API_UDF_GUIDE.md) - MySQL UDF usage guide
 
 ### Historical Documentation
-- [WRAPPER_STRATEGY_EXPLAINED.md](../WRAPPER_STRATEGY_EXPLAINED.md) - External process approach
-- [EMBEDDED_VS_EXTERNAL.md](../EMBEDDED_VS_EXTERNAL.md) - Why embedding failed
-- [CRASH_SOLUTION.md](../CRASH_SOLUTION.md) - Analysis of MySQL crashes
+- [WRAPPER_STRATEGY_EXPLAINED.md](WRAPPER_STRATEGY_EXPLAINED.md) - External process approach
+- [EMBEDDED_VS_EXTERNAL.md](EMBEDDED_VS_EXTERNAL.md) - Why embedding failed
+- [CRASH_SOLUTION.md](CRASH_SOLUTION.md) - Analysis of MySQL crashes
 
 ## Future Enhancements
 

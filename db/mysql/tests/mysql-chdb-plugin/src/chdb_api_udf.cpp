@@ -17,7 +17,40 @@
 // Configuration
 #define CHDB_API_HOST "127.0.0.1"
 #define CHDB_API_PORT 8125
-#define MAX_RESULT_SIZE 10485760  // 10MB max result
+#define INITIAL_BUFFER_SIZE 1048576    // 1MB initial buffer
+#define MAX_ALLOWED_SIZE 1073741824    // 1GB maximum allowed
+#define GROWTH_FACTOR 2                // Double buffer when needed
+
+// Structure to hold dynamic buffer
+struct DynamicBuffer {
+    char* data;
+    size_t capacity;
+    
+    DynamicBuffer() : data(nullptr), capacity(0) {}
+    
+    ~DynamicBuffer() {
+        if (data) free(data);
+    }
+    
+    bool ensure_capacity(size_t required) {
+        if (required > MAX_ALLOWED_SIZE) return false;
+        
+        if (required <= capacity) return true;
+        
+        size_t new_capacity = capacity == 0 ? INITIAL_BUFFER_SIZE : capacity;
+        while (new_capacity < required && new_capacity < MAX_ALLOWED_SIZE) {
+            new_capacity *= GROWTH_FACTOR;
+        }
+        if (new_capacity > MAX_ALLOWED_SIZE) new_capacity = MAX_ALLOWED_SIZE;
+        
+        char* new_data = (char*)realloc(data, new_capacity);
+        if (!new_data) return false;
+        
+        data = new_data;
+        capacity = new_capacity;
+        return true;
+    }
+};
 
 extern "C" {
     bool chdb_api_query_init(UDF_INIT *initid, UDF_ARGS *args, char *message);
@@ -37,22 +70,29 @@ bool send_query(int sock, const std::string& query) {
     return true;
 }
 
-std::string receive_response(int sock) {
+bool receive_response(int sock, DynamicBuffer& buffer, size_t& response_size) {
     uint32_t size;
-    if (read(sock, &size, 4) != 4) return "";
+    if (read(sock, &size, 4) != 4) {
+        response_size = 0;
+        return false;
+    }
     size = ntohl(size);
+    response_size = size;
     
-    if (size > MAX_RESULT_SIZE) return "ERROR: Response too large";
+    // Ensure buffer can hold the response
+    if (!buffer.ensure_capacity(size + 1)) {
+        return false;
+    }
     
-    std::vector<char> buffer(size);
     size_t total_read = 0;
     while (total_read < size) {
-        ssize_t n = read(sock, buffer.data() + total_read, size - total_read);
-        if (n <= 0) return "ERROR: Failed to read response";
+        ssize_t n = read(sock, buffer.data + total_read, size - total_read);
+        if (n <= 0) return false;
         total_read += n;
     }
     
-    return std::string(buffer.data(), size);
+    buffer.data[size] = '\0';
+    return true;
 }
 
 bool chdb_api_query_init(UDF_INIT *initid, UDF_ARGS *args, char *message) {
@@ -66,14 +106,11 @@ bool chdb_api_query_init(UDF_INIT *initid, UDF_ARGS *args, char *message) {
         return 1;
     }
     
-    // Allocate buffer for results
-    initid->ptr = (char*)malloc(MAX_RESULT_SIZE);
-    if (!initid->ptr) {
-        strcpy(message, "Failed to allocate memory");
-        return 1;
-    }
+    // Allocate dynamic buffer structure
+    DynamicBuffer* buffer = new DynamicBuffer();
     
-    initid->max_length = MAX_RESULT_SIZE;
+    initid->ptr = (char*)buffer;
+    initid->max_length = MAX_ALLOWED_SIZE;
     initid->maybe_null = 1;
     initid->const_item = 0;
     
@@ -82,7 +119,8 @@ bool chdb_api_query_init(UDF_INIT *initid, UDF_ARGS *args, char *message) {
 
 void chdb_api_query_deinit(UDF_INIT *initid) {
     if (initid->ptr) {
-        free(initid->ptr);
+        DynamicBuffer* buffer = (DynamicBuffer*)initid->ptr;
+        delete buffer;
         initid->ptr = NULL;
     }
 }
@@ -97,14 +135,19 @@ char* chdb_api_query(UDF_INIT *initid, UDF_ARGS *args, char *result,
         return NULL;
     }
     
+    DynamicBuffer* buffer = (DynamicBuffer*)initid->ptr;
     std::string query(args->args[0], args->lengths[0]);
     
     // Create socket
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
-        strcpy(initid->ptr, "ERROR: Failed to create socket");
-        *length = strlen(initid->ptr);
-        return initid->ptr;
+        const char* err = "ERROR: Failed to create socket";
+        if (buffer->ensure_capacity(strlen(err) + 1)) {
+            strcpy(buffer->data, err);
+            *length = strlen(err);
+            return buffer->data;
+        }
+        return NULL;
     }
     
     // Set timeout
@@ -122,36 +165,44 @@ char* chdb_api_query(UDF_INIT *initid, UDF_ARGS *args, char *result,
     
     if (connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
         close(sock);
-        snprintf(initid->ptr, MAX_RESULT_SIZE, 
-                "ERROR: Cannot connect to chDB API server at %s:%d", 
+        char err[256];
+        snprintf(err, sizeof(err), "ERROR: Cannot connect to chDB API server at %s:%d", 
                 CHDB_API_HOST, CHDB_API_PORT);
-        *length = strlen(initid->ptr);
-        return initid->ptr;
+        if (buffer->ensure_capacity(strlen(err) + 1)) {
+            strcpy(buffer->data, err);
+            *length = strlen(err);
+            return buffer->data;
+        }
+        return NULL;
     }
     
     // Send query
     if (!send_query(sock, query)) {
         close(sock);
-        strcpy(initid->ptr, "ERROR: Failed to send query");
-        *length = strlen(initid->ptr);
-        return initid->ptr;
+        const char* err = "ERROR: Failed to send query";
+        if (buffer->ensure_capacity(strlen(err) + 1)) {
+            strcpy(buffer->data, err);
+            *length = strlen(err);
+            return buffer->data;
+        }
+        return NULL;
     }
     
     // Receive response
-    std::string response = receive_response(sock);
+    size_t response_size;
+    if (!receive_response(sock, *buffer, response_size)) {
+        close(sock);
+        const char* err = response_size > MAX_ALLOWED_SIZE ? 
+            "ERROR: Response too large (>1GB)" : "ERROR: Failed to receive response";
+        if (buffer->ensure_capacity(strlen(err) + 1)) {
+            strcpy(buffer->data, err);
+            *length = strlen(err);
+            return buffer->data;
+        }
+        return NULL;
+    }
     close(sock);
     
-    if (response.empty()) {
-        strcpy(initid->ptr, "ERROR: Empty response from server");
-        *length = strlen(initid->ptr);
-        return initid->ptr;
-    }
-    
-    // Copy response to buffer
-    size_t copy_len = std::min(response.size(), (size_t)MAX_RESULT_SIZE - 1);
-    memcpy(initid->ptr, response.c_str(), copy_len);
-    initid->ptr[copy_len] = '\0';
-    *length = copy_len;
-    
-    return initid->ptr;
+    *length = response_size;
+    return buffer->data;
 }

@@ -23,23 +23,23 @@ This project evolved through multiple approaches, each documented step-by-step:
 - **[docs/TABLE_FUNCTION_GUIDE.md](docs/TABLE_FUNCTION_GUIDE.md)** - Table simulation with recursive CTEs (older MySQL)
 
 ### Core Documentation (Wrapper Approach)
-- **[WRAPPER_STRATEGY_EXPLAINED.md](WRAPPER_STRATEGY_EXPLAINED.md)** - External helper process approach
-- **[SUCCESS_SUMMARY.md](SUCCESS_SUMMARY.md)** - What works and how to use it
-- **[WORKING_EXAMPLE.md](WORKING_EXAMPLE.md)** - Practical examples and code snippets
+- **[docs/WRAPPER_STRATEGY_EXPLAINED.md](docs/WRAPPER_STRATEGY_EXPLAINED.md)** - External helper process approach
+- **[docs/SUCCESS_SUMMARY.md](docs/SUCCESS_SUMMARY.md)** - What works and how to use it
+- **[docs/WORKING_EXAMPLE.md](docs/WORKING_EXAMPLE.md)** - Practical examples and code snippets
 
 ### Journey Documentation (Historical Context)
-1. **[EMBEDDED_VS_EXTERNAL.md](EMBEDDED_VS_EXTERNAL.md)** - Why direct embedding failed
-2. **[CRASH_SOLUTION.md](CRASH_SOLUTION.md)** - How we solved the MySQL crash problem
-3. **[SOLUTION_SUMMARY.md](SOLUTION_SUMMARY.md)** - Technical analysis of the issues
-4. **[docs/api-server-approach.md](docs/api-server-approach.md)** - API server architecture details
+1. **[docs/EMBEDDED_VS_EXTERNAL.md](docs/EMBEDDED_VS_EXTERNAL.md)** - Why direct embedding failed
+2. **[docs/CRASH_SOLUTION.md](docs/CRASH_SOLUTION.md)** - How we solved the MySQL crash problem
+3. **[docs/SOLUTION_SUMMARY.md](docs/SOLUTION_SUMMARY.md)** - Technical analysis of the issues
+4. **[docs/CHDB_SERVER_DESIGN.md](docs/CHDB_SERVER_DESIGN.md)** - API server architecture details
 
 ### Setup Guides
-- **[MANUAL_SETUP_STEPS.md](MANUAL_SETUP_STEPS.md)** - Manual installation instructions
-- **[README_LIBCHDB.md](README_LIBCHDB.md)** - Using libchdb.so directly
-- **[README_TVF_SETUP.md](README_TVF_SETUP.md)** - Table-valued function simulation
+- **[docs/MANUAL_SETUP_STEPS.md](docs/MANUAL_SETUP_STEPS.md)** - Manual installation instructions
+- **[docs/README_LIBCHDB.md](docs/README_LIBCHDB.md)** - Using libchdb.so directly
+- **[docs/README_TVF_SETUP.md](docs/README_TVF_SETUP.md)** - Table-valued function simulation
 
 ### Reference Documentation
-- **[TVF_TEST_README.md](TVF_TEST_README.md)** - Detailed TVF simulation guide
+- **[docs/TVF_TEST_README.md](docs/TVF_TEST_README.md)** - Detailed TVF simulation guide
 - **[CLAUDE.md](CLAUDE.md)** - AI assistant context for this project
 
 ## 🎯 The Working Solution - API Server Approach
@@ -72,22 +72,22 @@ SELECT CAST(chdb_query('
 **Approach**: Load libchdb.so directly into MySQL process  
 **Result**: 💥 MySQL crashed!  
 **Learning**: 722MB is too large for MySQL plugins  
-**Documentation**: [EMBEDDED_VS_EXTERNAL.md](EMBEDDED_VS_EXTERNAL.md)
+**Documentation**: [docs/EMBEDDED_VS_EXTERNAL.md](docs/EMBEDDED_VS_EXTERNAL.md)
 
 ### Step 2: Understanding the Problem
 **Discovery**: libchdb.so contains entire ClickHouse engine  
 **Issue**: Symbol conflicts, memory issues, threading conflicts  
-**Documentation**: [CRASH_SOLUTION.md](CRASH_SOLUTION.md)
+**Documentation**: [docs/CRASH_SOLUTION.md](docs/CRASH_SOLUTION.md)
 
 ### Step 3: The Wrapper Solution
 **Approach**: Lightweight MySQL plugin + external helper program  
 **Result**: ✅ Success! Queries work without crashes  
-**Documentation**: [WRAPPER_STRATEGY_EXPLAINED.md](WRAPPER_STRATEGY_EXPLAINED.md)
+**Documentation**: [docs/WRAPPER_STRATEGY_EXPLAINED.md](docs/WRAPPER_STRATEGY_EXPLAINED.md)
 
 ### Step 4: Integration Testing
 **MySQL UDF**: Partial success (security restrictions)  
 **Direct Usage**: Perfect! Helper program works standalone  
-**Documentation**: [SUCCESS_SUMMARY.md](SUCCESS_SUMMARY.md)
+**Documentation**: [docs/SUCCESS_SUMMARY.md](docs/SUCCESS_SUMMARY.md)
 
 ### Step 5: API Server Solution (Final)
 **Approach**: Persistent server loads chDB once, MySQL connects via socket  
@@ -369,17 +369,20 @@ sudo systemctl restart mysql
 mysql -u root -p < clean_mysql_functions.sql
 ```
 
-### If you get "ERROR: Response too large"
-This means your query result exceeds the current limit. Solutions:
+### If you get "ERROR: Response too large (>1GB)"
+With dynamic buffer allocation, this only happens when results exceed 1GB. Solutions:
 ```bash
 # Option 1: Add LIMIT to your query
-SELECT chdb_api_query_json('SELECT * FROM table LIMIT 1000');
+SELECT chdb_api_query_json('SELECT * FROM table LIMIT 10000');
 
-# Option 2: Increase the result size limit
-./scripts/rebuild_with_limit.sh 50  # Increase to 50MB
-
-# Option 3: Use aggregation to reduce data
+# Option 2: Use aggregation to reduce data
 SELECT chdb_api_query_json('SELECT COUNT(*) FROM table GROUP BY column');
+
+# Option 3: Use sampling for large datasets
+SELECT chdb_api_query_json('SELECT * FROM table SAMPLE 0.1');  # 10% sample
+
+# Option 4: Export data in chunks
+SELECT chdb_api_query_json('SELECT * FROM table WHERE id BETWEEN 1 AND 100000');
 ```
 
 ### If you get "Invalid JSON text" with JSON_TABLE
@@ -423,27 +426,44 @@ make buildlib
 
 ## ⚙️ Configuration
 
-### Adjusting Result Size Limit
+### Dynamic Buffer Allocation
 
-By default, the UDF functions have a 10MB result size limit (increased from the original 1MB). You can adjust this limit based on your needs:
+All chDB API UDF functions now use dynamic buffer allocation to efficiently handle varying result sizes:
 
-```bash
-# Set to 20MB
-./scripts/rebuild_with_limit.sh 20
+**How it works:**
+- **Initial Buffer**: Starts with 1MB to minimize memory usage for small queries
+- **Automatic Growth**: Doubles buffer size as needed (2MB → 4MB → 8MB → etc.)
+- **Maximum Limit**: Capped at 1GB to prevent excessive memory usage
+- **Memory Efficiency**: Only allocates what's needed, reducing waste
 
-# Set to 50MB  
-./scripts/rebuild_with_limit.sh 50
+**Benefits:**
+- No more manual buffer size adjustments
+- Handles small queries efficiently (no wasted memory)
+- Automatically scales for large results
+- Prevents "Response too large" errors up to 1GB
 
-# Set to 100MB (use with caution)
-./scripts/rebuild_with_limit.sh 100
+**Performance Impact:**
+- Small queries: Minimal overhead, uses only 1MB
+- Large queries: Automatic growth with negligible performance cost
+- Memory is released after each query
+
+**Example:**
+```sql
+-- Small query - uses only 1MB buffer
+SELECT CAST(chdb_api_query('SELECT version()') AS CHAR);
+
+-- Large query - buffer grows automatically
+SELECT CAST(chdb_api_query('SELECT * FROM large_table LIMIT 100000') AS CHAR);
+
+-- Very large query - grows up to 1GB max
+SELECT jt.*
+FROM JSON_TABLE(
+    CONVERT(chdb_api_query_json('SELECT * FROM huge_table') USING utf8mb4),
+    '$.data[*]' COLUMNS(...)
+) AS jt;
 ```
 
-**Recommendations:**
-- **10MB** (default): Suitable for most queries
-- **20-50MB**: For large analytical queries
-- **100MB+**: Maximum recommended, may impact MySQL performance
-
-**Note:** After changing the limit, all UDF functions will be rebuilt and reinstalled automatically.
+**Note:** If you still encounter size limits, consider using query optimization (LIMIT, aggregation) or streaming approaches.
 
 ### Connecting to Remote chDB API Servers
 
