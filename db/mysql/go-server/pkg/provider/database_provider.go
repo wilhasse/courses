@@ -97,7 +97,7 @@ func (p *DatabaseProvider) DropDatabase(ctx *sql.Context, name string) error {
 
 	// Drop all tables in the database
 	db := p.databases[key]
-	tables := db.GetTableNames(ctx)
+	tables, _ := db.GetTableNames(ctx)
 	for _, tableName := range tables {
 		if err := p.storage.DropTable(name, tableName); err != nil {
 			return fmt.Errorf("failed to drop table %s: %v", tableName, err)

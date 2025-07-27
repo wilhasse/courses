@@ -2,7 +2,6 @@ package provider
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/dolthub/go-mysql-server/sql"
@@ -30,8 +29,28 @@ func (t *AdvancedTable) WithFilters(ctx *sql.Context, filters []sql.Expression) 
 	}
 }
 
-// WithProjection implements sql.ProjectedTable for column pruning
+// Filters implements sql.FilteredTable
+func (t *AdvancedTable) Filters() []sql.Expression {
+	return nil // No filters by default
+}
+
+// Projections implements sql.ProjectedTable
+func (t *AdvancedTable) Projections() []string {
+	return nil // No projections by default
+}
+
+// HandledFilters implements sql.FilteredTable
+func (t *AdvancedTable) HandledFilters(filters []sql.Expression) []sql.Expression {
+	return nil // Return unhandled filters
+}
+
+// WithProjection implements sql.ProjectedTable for column pruning (deprecated)
 func (t *AdvancedTable) WithProjection(colNames []string) sql.Table {
+	return t.WithProjections(colNames)
+}
+
+// WithProjections implements sql.ProjectedTable for column pruning
+func (t *AdvancedTable) WithProjections(colNames []string) sql.Table {
 	// Create projected schema
 	projectedSchema := make(sql.Schema, 0, len(colNames))
 	for _, colName := range colNames {
@@ -132,18 +151,22 @@ func (ft *FilteredAdvancedTable) convertSingleFilter(expr sql.Expression) *stora
 	case *expression.InTuple:
 		// Handle expressions like "id IN (1, 2, 3)"
 		if col, ok := e.Left().(*expression.GetField); ok {
-			values := make([]interface{}, len(e.Right()))
-			for i, val := range e.Right() {
-				if literal, ok := val.(*expression.Literal); ok {
-					values[i] = literal.Value()
-				} else {
-					return nil // Can't convert complex expressions
+			// Get the tuple expressions
+			tuple := e.Right()
+			if tupleExpr, ok := tuple.(*expression.Tuple); ok {
+				values := make([]interface{}, len(tupleExpr.Children()))
+				for i, val := range tupleExpr.Children() {
+					if literal, ok := val.(*expression.Literal); ok {
+						values[i] = literal.Value()
+					} else {
+						return nil // Can't convert complex expressions
+					}
 				}
-			}
-			return &storage.Filter{
-				Column:   col.Name(),
-				Operator: storage.In,
-				Value:    values,
+				return &storage.Filter{
+					Column:   col.Name(),
+					Operator: storage.In,
+					Value:    values,
+				}
 			}
 		}
 	}

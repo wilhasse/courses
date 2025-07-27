@@ -11,6 +11,7 @@ import (
 	"github.com/dolthub/go-mysql-server/server"
 	"github.com/dolthub/go-mysql-server/sql"
 	"github.com/dolthub/go-mysql-server/sql/analyzer"
+	"github.com/dolthub/go-mysql-server/sql/types"
 	gms "github.com/dolthub/go-mysql-server"
 	"github.com/dolthub/vitess/go/mysql"
 	"github.com/sirupsen/logrus"
@@ -205,14 +206,13 @@ func main() {
 		Address:  "localhost:3306",
 	}
 
-	// Create session factory
+	// Create session factory with debug logging
+	baseSessionFactory := provider.NewSessionFactory()
 	sessionFactory := func(ctx context.Context, conn *mysql.Conn, addr string) (sql.Session, error) {
-		session := sql.NewBaseSession()
-		session.SetClient(sql.Client{
-			User:         conn.User,
-			Address:      addr,
-			Capabilities: 0,
-		})
+		session, err := baseSessionFactory(ctx, conn, addr)
+		if err != nil {
+			return nil, err
+		}
 		logger.WithFields(logrus.Fields{
 			"user":    conn.User,
 			"address": addr,
@@ -220,14 +220,19 @@ func main() {
 		return session, nil
 	}
 
+	// Create context factory
+	contextFactory := func(ctx context.Context, session sql.Session, query string) (*sql.Context, error) {
+		return sql.NewContext(ctx, sql.WithSession(session)), nil
+	}
+
 	// Create server
-	s, err := server.NewServer(config, engine, sessionFactory, sessionFactory, nil)
+	s, err := server.NewServer(config, engine, contextFactory, sessionFactory, nil)
 	if err != nil {
 		log.Fatalf("Failed to create server: %v", err)
 	}
 
 	// Handle shutdown
-	ctx, cancel := context.WithCancel(context.Background())
+	_, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	go func() {
@@ -269,11 +274,11 @@ func addSampleData(store *storage.MemoryStorage, logger *logrus.Logger) {
 
 	// Create orders table to demonstrate more complex joins
 	ordersSchema := sql.Schema{
-		{Name: "id", Type: sql.Int32, Nullable: false, PrimaryKey: true},
-		{Name: "user_id", Type: sql.Int32, Nullable: false},
-		{Name: "product_id", Type: sql.Int32, Nullable: false},
-		{Name: "quantity", Type: sql.Int32, Nullable: false},
-		{Name: "order_date", Type: sql.Timestamp, Nullable: false},
+		{Name: "id", Type: types.Int32, Nullable: false, PrimaryKey: true},
+		{Name: "user_id", Type: types.Int32, Nullable: false},
+		{Name: "product_id", Type: types.Int32, Nullable: false},
+		{Name: "quantity", Type: types.Int32, Nullable: false},
+		{Name: "order_date", Type: types.Timestamp, Nullable: false},
 	}
 
 	store.CreateTable("testdb", "orders", ordersSchema)

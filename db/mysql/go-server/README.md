@@ -19,6 +19,26 @@ mysql-server-example/
 └── go.mod                      # Go module definition
 ```
 
+## Running the Server
+
+1. **Initialize the module:**
+   ```bash
+   cd mysql-server-example
+   # go mod tidy
+   make deps
+   ```
+
+2. **Start the server:**
+   ```bash
+   # go run main.go
+   make run-trace
+   ```
+
+3. **Connect with MySQL client:**
+   ```bash
+   mysql -h localhost -P 3306 -u root
+   ```
+
 ## Key Components
 
 ### 1. Database Provider (`pkg/provider/database_provider.go`)
@@ -50,24 +70,6 @@ mysql-server-example/
 - ✅ INSERT/UPDATE/DELETE/SELECT
 - ✅ Schema definition and validation
 - ✅ Sample data for testing
-
-## Running the Server
-
-1. **Initialize the module:**
-   ```bash
-   cd mysql-server-example
-   go mod tidy
-   ```
-
-2. **Start the server:**
-   ```bash
-   go run main.go
-   ```
-
-3. **Connect with MySQL client:**
-   ```bash
-   mysql -h localhost -P 3306 -u root
-   ```
 
 ## Example Usage
 

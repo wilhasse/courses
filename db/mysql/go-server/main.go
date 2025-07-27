@@ -8,10 +8,8 @@ import (
 	"syscall"
 
 	"github.com/dolthub/go-mysql-server/server"
-	"github.com/dolthub/go-mysql-server/sql"
 	"github.com/dolthub/go-mysql-server/sql/analyzer"
 	gms "github.com/dolthub/go-mysql-server"
-	"github.com/dolthub/vitess/go/mysql"
 	"github.com/sirupsen/logrus"
 
 	"mysql-server-example/pkg/provider"
@@ -44,13 +42,13 @@ func main() {
 	}
 
 	// Create the MySQL server
-	s, err := server.NewServer(config, engine, provider.NewSessionFactory(), provider.NewSessionFactory(), nil)
+	s, err := server.NewServer(config, engine, nil, provider.NewSessionFactory(), nil)
 	if err != nil {
 		log.Fatalf("Failed to create server: %v", err)
 	}
 
 	// Handle graceful shutdown
-	ctx, cancel := context.WithCancel(context.Background())
+	_, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	go func() {

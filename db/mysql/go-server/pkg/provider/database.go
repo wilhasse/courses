@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 
@@ -56,16 +55,16 @@ func (db *Database) GetTableInsensitive(ctx *sql.Context, tblName string) (sql.T
 }
 
 // GetTableNames implements sql.Database
-func (db *Database) GetTableNames(ctx *sql.Context) []string {
+func (db *Database) GetTableNames(ctx *sql.Context) ([]string, error) {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
 
 	// Get tables from storage
-	return db.storage.GetTableNames(db.name)
+	return db.storage.GetTableNames(db.name), nil
 }
 
 // CreateTable implements sql.TableCreator
-func (db *Database) CreateTable(ctx *sql.Context, name string, schema sql.Schema, collation sql.CollationID, comment string) error {
+func (db *Database) CreateTable(ctx *sql.Context, name string, schema sql.PrimaryKeySchema, collation sql.CollationID, comment string) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
@@ -75,12 +74,12 @@ func (db *Database) CreateTable(ctx *sql.Context, name string, schema sql.Schema
 	}
 
 	// Create table in storage
-	if err := db.storage.CreateTable(db.name, name, schema); err != nil {
+	if err := db.storage.CreateTable(db.name, name, schema.Schema); err != nil {
 		return err
 	}
 
 	// Create table object
-	table := NewTable(name, schema, db.storage, db.name)
+	table := NewTable(name, schema.Schema, db.storage, db.name)
 	db.tables[key] = table
 
 	return nil
@@ -123,7 +122,7 @@ func (db *Database) CreateSampleTables() {
 		{Name: "id", Type: types.Int32, Nullable: false, PrimaryKey: true, AutoIncrement: true},
 		{Name: "name", Type: types.Text, Nullable: false},
 		{Name: "email", Type: types.Text, Nullable: false},
-		{Name: "created_at", Type: types.Timestamp, Nullable: false, Default: sql.NewColumnDefaultValue(nil, nil, false, false)},
+		{Name: "created_at", Type: types.Timestamp, Nullable: false},
 	}
 
 	db.storage.CreateTable(db.name, "users", usersSchema)

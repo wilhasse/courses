@@ -144,6 +144,18 @@ func (t *tableInserter) Close(ctx *sql.Context) error {
 	return nil
 }
 
+func (t *tableInserter) DiscardChanges(ctx *sql.Context, errorEncountered error) error {
+	return nil
+}
+
+func (t *tableInserter) StatementBegin(ctx *sql.Context) {
+	// No-op for this implementation
+}
+
+func (t *tableInserter) StatementComplete(ctx *sql.Context) error {
+	return nil
+}
+
 // tableUpdater implements sql.RowUpdater
 type tableUpdater struct {
 	table    *Table
@@ -159,6 +171,18 @@ func (t *tableUpdater) Close(ctx *sql.Context) error {
 	return nil
 }
 
+func (t *tableUpdater) DiscardChanges(ctx *sql.Context, errorEncountered error) error {
+	return nil
+}
+
+func (t *tableUpdater) StatementBegin(ctx *sql.Context) {
+	// No-op for this implementation
+}
+
+func (t *tableUpdater) StatementComplete(ctx *sql.Context) error {
+	return nil
+}
+
 // tableDeleter implements sql.RowDeleter
 type tableDeleter struct {
 	table    *Table
@@ -171,6 +195,18 @@ func (t *tableDeleter) Delete(ctx *sql.Context, row sql.Row) error {
 }
 
 func (t *tableDeleter) Close(ctx *sql.Context) error {
+	return nil
+}
+
+func (t *tableDeleter) DiscardChanges(ctx *sql.Context, errorEncountered error) error {
+	return nil
+}
+
+func (t *tableDeleter) StatementBegin(ctx *sql.Context) {
+	// No-op for this implementation
+}
+
+func (t *tableDeleter) StatementComplete(ctx *sql.Context) error {
 	return nil
 }
 
