@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/dolthub/go-mysql-server/server"
@@ -188,6 +189,24 @@ func main() {
 	baseProvider := provider.NewDatabaseProvider(store)
 	debugProvider := NewDebugDatabaseProvider(baseProvider, logger)
 
+	// Create testdb database
+	ctx := sql.NewEmptyContext()
+	if err := baseProvider.CreateDatabase(ctx, "testdb"); err != nil {
+		// It's ok if it already exists
+		if !strings.Contains(err.Error(), "database exists") {
+			logger.WithError(err).Error("Failed to create testdb")
+		}
+	}
+	
+	// Get the database and create sample tables using the built-in method
+	db, err := baseProvider.Database(ctx, "testdb")
+	if err != nil {
+		logger.WithError(err).Error("Failed to get testdb")
+	} else if providerDB, ok := db.(*provider.Database); ok {
+		providerDB.CreateSampleTables()
+		logger.Info("✅ Created sample tables using built-in method")
+	}
+
 	// Add more sample data for interesting query results
 	addSampleData(store, logger)
 
@@ -203,7 +222,7 @@ func main() {
 	// Configure server
 	config := server.Config{
 		Protocol: "tcp",
-		Address:  "localhost:3306",
+		Address:  "127.0.0.1:3311",
 	}
 
 	// Create session factory with debug logging
@@ -221,8 +240,8 @@ func main() {
 	}
 
 	// Create context factory
-	contextFactory := func(ctx context.Context, session sql.Session, query string) (*sql.Context, error) {
-		return sql.NewContext(ctx, sql.WithSession(session)), nil
+	contextFactory := func(ctx context.Context, options ...sql.ContextOption) *sql.Context {
+		return sql.NewContext(ctx, options...)
 	}
 
 	// Create server
@@ -244,13 +263,13 @@ func main() {
 		s.Close()
 	}()
 
-	logger.Info("🚀 Starting MySQL Debug Server on localhost:3306")
+	logger.Info("🚀 Starting MySQL Debug Server on 127.0.0.1:3311")
 	logger.Info("📋 Sample queries to try:")
 	logger.Info("   SELECT * FROM users;")
 	logger.Info("   SELECT * FROM products WHERE price > 50;")
 	logger.Info("   SELECT u.name, COUNT(o.id) as order_count FROM users u LEFT JOIN orders o ON u.id = o.user_id GROUP BY u.id, u.name;")
 	logger.Info("   EXPLAIN SELECT * FROM products WHERE price > 100;")
-	logger.Info("🔌 Connect with: mysql -h localhost -P 3306 -u root")
+	logger.Info("🔌 Connect with: mysql -h 127.0.0.1 -P 3311 -u root")
 
 	if err := s.Start(); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
@@ -258,14 +277,14 @@ func main() {
 }
 
 func addSampleData(store *storage.MemoryStorage, logger *logrus.Logger) {
-	logger.Info("🔧 Adding sample data for demonstrations...")
+	logger.Info("🔧 Adding extra sample data for demonstrations...")
 
-	// Add more users
+	// Add more users (tables already created by Database.CreateSampleTables())
 	store.InsertRow("testdb", "users", sql.Row{3, "Charlie", "charlie@example.com", "2023-01-03 10:00:00"})
 	store.InsertRow("testdb", "users", sql.Row{4, "David", "david@example.com", "2023-01-04 11:00:00"})
 	store.InsertRow("testdb", "users", sql.Row{5, "Eve", "eve@example.com", "2023-01-05 12:00:00"})
 
-	// Add more products (note: original products table doesn't have user_id, so these are just products)
+	// Add more products
 	store.InsertRow("testdb", "products", sql.Row{4, "Smartphone", 699.99, "Electronics"})
 	store.InsertRow("testdb", "products", sql.Row{5, "Tablet", 399.99, "Electronics"})
 	store.InsertRow("testdb", "products", sql.Row{6, "Headphones", 149.99, "Electronics"})
