@@ -1,0 +1,34 @@
+# Binaries
+lmdb-example
+persistent-example
+*.exe
+*.dll
+*.so
+*.dylib
+*.o
+*.a
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go dependencies
+vendor/
+
+# LMDB C library (downloaded)
+lmdb-lib/
+
+# LMDB database files
+testdb/
+*.mdb
+*.lck
+
+# IDE directories
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
