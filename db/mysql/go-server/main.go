@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/dolthub/go-mysql-server/server"
+	"github.com/dolthub/go-mysql-server/sql"
 	"github.com/dolthub/go-mysql-server/sql/analyzer"
 	gms "github.com/dolthub/go-mysql-server"
 	"github.com/sirupsen/logrus"
@@ -27,6 +28,21 @@ func main() {
 	// Create the database provider
 	dbProvider := provider.NewDatabaseProvider(store)
 
+	// Create testdb database with sample data
+	ctx := sql.NewEmptyContext()
+	if err := dbProvider.CreateDatabase(ctx, "testdb"); err != nil {
+		logger.WithError(err).Warn("Failed to create testdb (may already exist)")
+	}
+	
+	// Get the database and create sample tables
+	db, err := dbProvider.Database(ctx, "testdb")
+	if err == nil {
+		if providerDB, ok := db.(*provider.Database); ok {
+			providerDB.CreateSampleTables()
+			logger.Info("Created sample tables in testdb")
+		}
+	}
+
 	// Create the SQL engine
 	engine := gms.New(
 		analyzer.NewBuilder(dbProvider).Build(),
@@ -38,11 +54,16 @@ func main() {
 	// Configure the MySQL server
 	config := server.Config{
 		Protocol: "tcp",
-		Address:  "localhost:3306",
+		Address:  "127.0.0.1:3306",
+	}
+
+	// Create context factory
+	contextFactory := func(ctx context.Context, options ...sql.ContextOption) *sql.Context {
+		return sql.NewContext(ctx, options...)
 	}
 
 	// Create the MySQL server
-	s, err := server.NewServer(config, engine, nil, provider.NewSessionFactory(), nil)
+	s, err := server.NewServer(config, engine, contextFactory, provider.NewSessionFactory(), nil)
 	if err != nil {
 		log.Fatalf("Failed to create server: %v", err)
 	}
@@ -60,8 +81,8 @@ func main() {
 		s.Close()
 	}()
 
-	logger.Info("Starting MySQL server on localhost:3306")
-	logger.Info("Connect with: mysql -h localhost -P 3306 -u root")
+	logger.Info("Starting MySQL server on 127.0.0.1:3306")
+	logger.Info("Connect with: mysql -h 127.0.0.1 -P 3306 -u root")
 	
 	// Start the server
 	if err := s.Start(); err != nil {
