@@ -86,7 +86,7 @@ func (d *debugRowIter) Next(ctx *sql.Context) (sql.Row, error) {
 		"table": d.table,
 		"row":   d.count,
 		"data":  fmt.Sprintf("%v", row),
-	}).Debug("📄 Reading row")
+	}).Info("📄 Reading row")
 
 	return row, nil
 }
@@ -212,9 +212,9 @@ func main() {
 
 	// Create SQL engine
 	analyzer := analyzer.NewBuilder(debugProvider).Build()
-	// Uncomment these lines to enable analyzer debugging:
-	// analyzer.Debug = true
-	// analyzer.Verbose = true
+	// Enable analyzer debugging to see join optimization:
+	analyzer.Debug = true
+	analyzer.Verbose = true
 
 	engine := gms.New(analyzer, &gms.Config{
 		IsReadOnly: false,
