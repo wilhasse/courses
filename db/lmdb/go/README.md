@@ -73,3 +73,18 @@ The example program demonstrates:
 - Reading values by key
 - Iterating through all entries with a cursor
 - Displaying database statistics
+
+## Performance Benchmarks
+
+This project includes comprehensive benchmarks comparing LMDB with B+ Tree implementations:
+
+```bash
+# Run LMDB benchmarks
+./run_benchmarks.sh
+
+# Compare with B+ Tree benchmarks
+cd /home/cslog/BPlusTree3
+./scripts/run_all_benchmarks.py -v
+```
+
+See [BENCHMARK_GUIDE.md](BENCHMARK_GUIDE.md) for detailed comparison methodology and results.

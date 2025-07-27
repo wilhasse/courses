@@ -8,6 +8,10 @@ persistent-example
 *.o
 *.a
 
+# Benchmark results
+*_benchmark_results.txt
+*_results.txt
+
 # Test binary, built with `go test -c`
 *.test
 
@@ -22,6 +26,7 @@ lmdb-lib/
 
 # LMDB database files
 testdb/
+benchmark_testdb/
 *.mdb
 *.lck
 

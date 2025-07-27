@@ -11,7 +11,7 @@ export CGO_LDFLAGS := -L$(LMDB_LIB) -llmdb
 # Runtime library path
 export LD_LIBRARY_PATH := $(LMDB_LIB):$(LD_LIBRARY_PATH)
 
-.PHONY: all setup build run clean
+.PHONY: all setup build run clean benchmark
 
 all: setup build
 
@@ -49,3 +49,20 @@ go-run:
 
 go-test:
 	CGO_CFLAGS="-I$(LMDB_INCLUDE)" CGO_LDFLAGS="-L$(LMDB_LIB) -llmdb" go test ./...
+
+# Benchmark targets
+benchmark: setup
+	@echo "Running LMDB benchmarks..."
+	@./run_benchmarks.sh
+
+benchmark-standalone: setup
+	@echo "Running standalone benchmark comparison..."
+	@./run_benchmarks.sh --standalone
+
+benchmark-gobench: setup
+	@echo "Running Go benchmark tests..."
+	@./run_benchmarks.sh --gobench
+
+benchmark-comparison: setup
+	@echo "Running comprehensive comparison..."
+	@./run_benchmarks.sh
