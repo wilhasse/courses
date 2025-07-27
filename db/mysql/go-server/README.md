@@ -2,6 +2,14 @@
 
 This is a complete example showing how to build a MySQL-compatible server using go-mysql-server with a custom storage backend.
 
+## Documentation
+
+- [**Complete Guide**](docs/GO_MYSQL_SERVER_GUIDE.md) - Comprehensive guide to understanding and using go-mysql-server
+- [**Implementation Walkthrough**](docs/IMPLEMENTATION_WALKTHROUGH.md) - Detailed explanation of this project's implementation
+- [**Quick Reference**](docs/QUICK_REFERENCE.md) - Quick reference for common patterns and interfaces
+- [**SQL Execution Flow**](docs/sql_execution_flow.md) - How SQL queries are processed
+- [**Storage Abstraction**](docs/storage_abstraction.md) - Storage layer design patterns
+
 ## Architecture
 
 ```
