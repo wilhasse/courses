@@ -210,10 +210,11 @@ func main() {
 	// Add more sample data for interesting query results
 	addSampleData(store, logger)
 
-	// Create SQL engine with debug analyzer
+	// Create SQL engine
 	analyzer := analyzer.NewBuilder(debugProvider).Build()
-	analyzer.Debug = true  // Enable analyzer debugging
-	analyzer.Verbose = true
+	// Uncomment these lines to enable analyzer debugging:
+	// analyzer.Debug = true
+	// analyzer.Verbose = true
 
 	engine := gms.New(analyzer, &gms.Config{
 		IsReadOnly: false,
