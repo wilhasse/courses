@@ -6,17 +6,17 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/dolthub/go-mysql-server/server"
 	"github.com/dolthub/go-mysql-server/sql"
 	"github.com/dolthub/go-mysql-server/sql/analyzer"
-	"github.com/dolthub/go-mysql-server/sql/types"
 	gms "github.com/dolthub/go-mysql-server"
 	"github.com/dolthub/vitess/go/mysql"
+	"github.com/rs/zerolog"
 	"github.com/sirupsen/logrus"
 
+	"mysql-server-example/pkg/initializer"
 	"mysql-server-example/pkg/provider"
 	"mysql-server-example/pkg/storage"
 )
@@ -182,33 +182,25 @@ func main() {
 		ForceColors:   true,
 	})
 
-	// Create storage with extra data for interesting queries
-	store := storage.NewMemoryStorage()
+	// Create LMDB storage backend
+	dbPath := "./data"
+	err := os.MkdirAll(dbPath, 0755)
+	if err != nil {
+		log.Fatalf("Failed to create data directory: %v", err)
+	}
+
+	// Create zerolog logger for LMDB
+	zlogger := zerolog.New(os.Stdout).With().Timestamp().Logger()
+
+	store, err := storage.NewLMDBStorage(dbPath, zlogger)
+	if err != nil {
+		log.Fatalf("Failed to create LMDB storage: %v", err)
+	}
+	defer store.Close()
 	
 	// Create provider with debug wrapper
 	baseProvider := provider.NewDatabaseProvider(store)
 	debugProvider := NewDebugDatabaseProvider(baseProvider, logger)
-
-	// Create testdb database
-	ctx := sql.NewEmptyContext()
-	if err := baseProvider.CreateDatabase(ctx, "testdb"); err != nil {
-		// It's ok if it already exists
-		if !strings.Contains(err.Error(), "database exists") {
-			logger.WithError(err).Error("Failed to create testdb")
-		}
-	}
-	
-	// Get the database and create sample tables using the built-in method
-	db, err := baseProvider.Database(ctx, "testdb")
-	if err != nil {
-		logger.WithError(err).Error("Failed to get testdb")
-	} else if providerDB, ok := db.(*provider.Database); ok {
-		providerDB.CreateSampleTables()
-		logger.Info("✅ Created sample tables using built-in method")
-	}
-
-	// Add more sample data for interesting query results
-	addSampleData(store, logger)
 
 	// Create SQL engine
 	analyzer := analyzer.NewBuilder(debugProvider).Build()
@@ -219,6 +211,18 @@ func main() {
 	engine := gms.New(analyzer, &gms.Config{
 		IsReadOnly: false,
 	})
+
+	// Check if database needs initialization
+	if !initializer.CheckInitialized(engine) {
+		logger.Info("🚀 Database not initialized. Running initialization script...")
+		runner := initializer.NewSQLRunner(engine)
+		if err := runner.ExecuteScript("scripts/init.sql"); err != nil {
+			log.Fatalf("Failed to initialize database: %v", err)
+		}
+		logger.Info("🎉 Database initialization completed successfully")
+	} else {
+		logger.Info("✅ Database already initialized, using existing data")
+	}
 
 	// Configure server
 	config := server.Config{
@@ -277,52 +281,5 @@ func main() {
 	}
 }
 
-func addSampleData(store *storage.MemoryStorage, logger *logrus.Logger) {
-	logger.Info("🔧 Adding extra sample data for demonstrations...")
-
-	// Add more users (tables already created by Database.CreateSampleTables())
-	store.InsertRow("testdb", "users", sql.Row{3, "Charlie", "charlie@example.com", "2023-01-03 10:00:00"})
-	store.InsertRow("testdb", "users", sql.Row{4, "David", "david@example.com", "2023-01-04 11:00:00"})
-	store.InsertRow("testdb", "users", sql.Row{5, "Eve", "eve@example.com", "2023-01-05 12:00:00"})
-
-	// Add more products
-	store.InsertRow("testdb", "products", sql.Row{4, "Smartphone", 699.99, "Electronics"})
-	store.InsertRow("testdb", "products", sql.Row{5, "Tablet", 399.99, "Electronics"})
-	store.InsertRow("testdb", "products", sql.Row{6, "Headphones", 149.99, "Electronics"})
-	store.InsertRow("testdb", "products", sql.Row{7, "Monitor", 299.99, "Electronics"})
-	store.InsertRow("testdb", "products", sql.Row{8, "Keyboard", 89.99, "Electronics"})
-
-	// Create orders table to demonstrate more complex joins
-	ordersSchema := sql.Schema{
-		{Name: "id", Type: types.Int32, Nullable: false, PrimaryKey: true},
-		{Name: "user_id", Type: types.Int32, Nullable: false},
-		{Name: "product_id", Type: types.Int32, Nullable: false},
-		{Name: "quantity", Type: types.Int32, Nullable: false},
-		{Name: "order_date", Type: types.Timestamp, Nullable: false},
-	}
-
-	store.CreateTable("testdb", "orders", ordersSchema)
-
-	// Add sample orders
-	store.InsertRow("testdb", "orders", sql.Row{1, 1, 1, 1, "2023-02-01 09:00:00"}) // Alice bought laptop
-	store.InsertRow("testdb", "orders", sql.Row{2, 1, 4, 1, "2023-02-01 09:05:00"}) // Alice bought smartphone
-	store.InsertRow("testdb", "orders", sql.Row{3, 2, 6, 2, "2023-02-02 14:30:00"}) // Bob bought 2 headphones
-	store.InsertRow("testdb", "orders", sql.Row{4, 3, 7, 1, "2023-02-03 16:15:00"}) // Charlie bought monitor
-	store.InsertRow("testdb", "orders", sql.Row{5, 3, 8, 1, "2023-02-03 16:20:00"}) // Charlie bought keyboard
-
-	logger.WithFields(logrus.Fields{
-		"users":    5,
-		"products": 8,
-		"orders":   5,
-	}).Info("✅ Sample data loaded")
-
-	logger.Info("💡 Try these interesting queries:")
-	logger.Info("   -- Users with their order counts:")
-	logger.Info("   SELECT u.name, COUNT(o.id) as order_count FROM users u LEFT JOIN orders o ON u.id = o.user_id GROUP BY u.id, u.name;")
-	logger.Info("")
-	logger.Info("   -- Products ordered with user info:")
-	logger.Info("   SELECT u.name, p.name, o.quantity, o.order_date FROM users u JOIN orders o ON u.id = o.user_id JOIN products p ON o.product_id = p.id ORDER BY o.order_date;")
-	logger.Info("")
-	logger.Info("   -- High-value orders (products > $200):")
-	logger.Info("   SELECT u.name, p.name, p.price FROM users u JOIN orders o ON u.id = o.user_id JOIN products p ON o.product_id = p.id WHERE p.price > 200;")
-}
+// Sample data creation removed - now handled by SQL initialization scripts
+// The initialization script creates all tables (users, products, orders) with sample data

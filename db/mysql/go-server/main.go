@@ -11,8 +11,10 @@ import (
 	"github.com/dolthub/go-mysql-server/sql"
 	"github.com/dolthub/go-mysql-server/sql/analyzer"
 	gms "github.com/dolthub/go-mysql-server"
+	"github.com/rs/zerolog"
 	"github.com/sirupsen/logrus"
 
+	"mysql-server-example/pkg/initializer"
 	"mysql-server-example/pkg/provider"
 	"mysql-server-example/pkg/storage"
 )
@@ -22,26 +24,24 @@ func main() {
 	logrus.SetLevel(logrus.InfoLevel)
 	logger := logrus.StandardLogger()
 
-	// Create our custom storage backend
-	store := storage.NewMemoryStorage()
+	// Create LMDB storage backend
+	dbPath := "./data"
+	err := os.MkdirAll(dbPath, 0755)
+	if err != nil {
+		log.Fatalf("Failed to create data directory: %v", err)
+	}
+
+	// Create zerolog logger for LMDB
+	zlogger := zerolog.New(os.Stdout).With().Timestamp().Logger()
+
+	store, err := storage.NewLMDBStorage(dbPath, zlogger)
+	if err != nil {
+		log.Fatalf("Failed to create LMDB storage: %v", err)
+	}
+	defer store.Close()
 
 	// Create the database provider
 	dbProvider := provider.NewDatabaseProvider(store)
-
-	// Create testdb database with sample data
-	ctx := sql.NewEmptyContext()
-	if err := dbProvider.CreateDatabase(ctx, "testdb"); err != nil {
-		logger.WithError(err).Warn("Failed to create testdb (may already exist)")
-	}
-	
-	// Get the database and create sample tables
-	db, err := dbProvider.Database(ctx, "testdb")
-	if err == nil {
-		if providerDB, ok := db.(*provider.Database); ok {
-			providerDB.CreateSampleTables()
-			logger.Info("Created sample tables in testdb")
-		}
-	}
 
 	// Create the SQL engine
 	engine := gms.New(
@@ -50,6 +50,18 @@ func main() {
 			IsReadOnly: false,
 		},
 	)
+
+	// Check if database needs initialization
+	if !initializer.CheckInitialized(engine) {
+		logger.Info("Database not initialized. Running initialization script...")
+		runner := initializer.NewSQLRunner(engine)
+		if err := runner.ExecuteScript("scripts/init.sql"); err != nil {
+			log.Fatalf("Failed to initialize database: %v", err)
+		}
+		logger.Info("Database initialization completed successfully")
+	} else {
+		logger.Info("Database already initialized")
+	}
 
 	// Configure the MySQL server
 	config := server.Config{

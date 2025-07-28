@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/dolthub/go-mysql-server/sql"
-	"github.com/dolthub/go-mysql-server/sql/types"
 	"mysql-server-example/pkg/storage"
 )
 
@@ -115,39 +114,7 @@ func (db *Database) loadTableFromStorage(name string) (*Table, error) {
 	return NewTable(name, schema, db.storage, db.name), nil
 }
 
-// CreateSampleTables creates some sample tables for demonstration
-func (db *Database) CreateSampleTables() {
-	// Create users table
-	usersSchema := sql.Schema{
-		{Name: "id", Type: types.Int32, Nullable: false, PrimaryKey: true, AutoIncrement: true},
-		{Name: "name", Type: types.Text, Nullable: false},
-		{Name: "email", Type: types.Text, Nullable: false},
-		{Name: "created_at", Type: types.Timestamp, Nullable: false},
-	}
-
-	db.storage.CreateTable(db.name, "users", usersSchema)
-	db.tables["users"] = NewTable("users", usersSchema, db.storage, db.name)
-
-	// Insert sample data
-	db.storage.InsertRow(db.name, "users", sql.Row{1, "Alice", "alice@example.com", "2023-01-01 00:00:00"})
-	db.storage.InsertRow(db.name, "users", sql.Row{2, "Bob", "bob@example.com", "2023-01-02 00:00:00"})
-
-	// Create products table
-	productsSchema := sql.Schema{
-		{Name: "id", Type: types.Int32, Nullable: false, PrimaryKey: true, AutoIncrement: true},
-		{Name: "name", Type: types.Text, Nullable: false},
-		{Name: "price", Type: types.Float64, Nullable: false},
-		{Name: "category", Type: types.Text, Nullable: true},
-	}
-
-	db.storage.CreateTable(db.name, "products", productsSchema)
-	db.tables["products"] = NewTable("products", productsSchema, db.storage, db.name)
-
-	// Insert sample data
-	db.storage.InsertRow(db.name, "products", sql.Row{1, "Laptop", 999.99, "Electronics"})
-	db.storage.InsertRow(db.name, "products", sql.Row{2, "Book", 19.99, "Education"})
-	db.storage.InsertRow(db.name, "products", sql.Row{3, "Coffee Mug", 12.50, "Kitchen"})
-}
+// Note: Sample data creation removed - now done via SQL initialization scripts
 
 // Ensure we implement the required interfaces
 var _ sql.Database = (*Database)(nil)

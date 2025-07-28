@@ -23,12 +23,7 @@ func NewDatabaseProvider(storage storage.Storage) *DatabaseProvider {
 		databases: make(map[string]*Database),
 	}
 
-	// Create a default database
-	defaultDB := NewDatabase("testdb", storage)
-	provider.databases["testdb"] = defaultDB
-
-	// Add some sample tables
-	defaultDB.CreateSampleTables()
+	// No longer creating default database - handled by SQL initialization
 
 	return provider
 }
@@ -76,6 +71,11 @@ func (p *DatabaseProvider) CreateDatabase(ctx *sql.Context, name string) error {
 	key := strings.ToLower(name)
 	if _, exists := p.databases[key]; exists {
 		return sql.ErrDatabaseExists.New(name)
+	}
+
+	// Create database in storage first
+	if err := p.storage.CreateDatabase(name); err != nil {
+		return err
 	}
 
 	// Create new database

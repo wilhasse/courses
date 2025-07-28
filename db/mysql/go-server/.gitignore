@@ -5,6 +5,7 @@
 *.so
 *.dylib
 mysql-server-example
+lmdb
 
 # Test binary, built with `go test -c`
 *.test
@@ -36,3 +37,6 @@ Thumbs.db
 # Local development files
 .env
 config.local.yaml
+
+# LMDB data directory
+data/
