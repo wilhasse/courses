@@ -23,17 +23,24 @@ docker-compose up mysql-dev       # Development mode with debug tools
 **🔨 Build Commands:**
 ```bash
 make build        # Build main server binary to bin/mysql-server
-make build-debug  # Build debug server binary to bin/mysql-debug-server
-make build-all    # Build both binaries
+make build-all    # Build all binaries (currently just main server)
 ```
 
 **🚀 Run Commands:**
 ```bash
 make run          # Run server directly with go run
+make run-debug    # Run with integrated debug mode (recommended for development)
+make run-debug-port # Run debug mode on port 3311 (avoid port conflicts)
 make run-trace    # Run debug server with detailed execution tracing
-make run-verbose  # Run with verbose logging (LOGLEVEL=debug)
-make start        # Run built binary
+make run-verbose  # Run with verbose logging
+make start        # Build and run the binary
 ```
+
+**🔍 Debug Modes:**
+- **Integrated Debug Mode**: `make run-debug` - Main server with debug features built-in
+- **Legacy Trace Alias**: `make run-trace` - Alias for run-debug (backward compatibility)
+- **Environment Variables**: `DEBUG=true ./bin/mysql-server` or `VERBOSE=true ./bin/mysql-server`
+- **Command Line Flags**: `./bin/mysql-server --debug --port 3311`
 
 **🛠️ Development:**
 ```bash

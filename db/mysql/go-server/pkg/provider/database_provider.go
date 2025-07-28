@@ -23,9 +23,25 @@ func NewDatabaseProvider(storage storage.Storage) *DatabaseProvider {
 		databases: make(map[string]*Database),
 	}
 
-	// No longer creating default database - handled by SQL initialization
+	// Load existing databases from storage
+	provider.loadExistingDatabases()
 
 	return provider
+}
+
+// loadExistingDatabases loads databases that already exist in storage
+func (p *DatabaseProvider) loadExistingDatabases() {
+	// Get list of databases from storage
+	databaseNames := p.storage.GetDatabaseNames()
+	
+	for _, dbName := range databaseNames {
+		key := strings.ToLower(dbName)
+		// Only load if not already in memory
+		if _, exists := p.databases[key]; !exists {
+			db := NewDatabase(dbName, p.storage)
+			p.databases[key] = db
+		}
+	}
 }
 
 // Database implements sql.DatabaseProvider

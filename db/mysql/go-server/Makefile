@@ -2,7 +2,6 @@
 
 # Variables
 BINARY_NAME := mysql-server
-DEBUG_BINARY_NAME := mysql-debug-server
 BIN_DIR := bin
 DATA_DIR := data
 LMDB_DIR := lmdb-lib
@@ -73,40 +72,48 @@ build: check-lmdb
 	@go build -o $(BIN_DIR)/$(BINARY_NAME) main.go
 	@echo "✅ Built: $(BIN_DIR)/$(BINARY_NAME)"
 
-# Build the debug server binary
-build-debug: check-lmdb
-	@echo "🔨 Building debug server binary..."
-	@mkdir -p $(BIN_DIR)
-	@go build -o $(BIN_DIR)/$(DEBUG_BINARY_NAME) cmd/debug-server/main.go
-	@echo "✅ Built: $(BIN_DIR)/$(DEBUG_BINARY_NAME)"
-
-# Build both binaries
-build-all: build build-debug
+# Build all binaries (currently just main server)
+build-all: build
 
 # Run the server directly
 run: check-lmdb
 	@echo "🚀 Running server with go run..."
 	@go run main.go
 
-# Run the debug server with detailed tracing
+# Run the server with detailed tracing (legacy alias for run-debug)
 run-trace: check-lmdb
-	@echo "🔍 Running debug server with detailed tracing..."
-	@go run cmd/debug-server/main.go
+	@echo "🔍 Running server with detailed tracing..."
+	@go run main.go --debug
 
 # Run with verbose logging
 run-verbose: check-lmdb
 	@echo "🚀 Running server with verbose logging..."
-	@LOGLEVEL=debug go run main.go
+	@go run main.go --verbose
+
+# Run with debug mode (integrated debug functionality)
+run-debug: check-lmdb
+	@echo "🔍 Running server with debug mode enabled..."
+	@go run main.go --debug
+
+# Run with debug mode on custom port
+run-debug-port: check-lmdb
+	@echo "🔍 Running server with debug mode on port 3311..."
+	@go run main.go --debug --port 3311
 
 # Build and run binary
 start: build
 	@echo "🚀 Starting built binary..."
 	@./$(BIN_DIR)/$(BINARY_NAME)
 
-# Start debug binary
-start-debug: build-debug
-	@echo "🔍 Starting debug binary..."
-	@./$(BIN_DIR)/$(DEBUG_BINARY_NAME)
+# Start main binary with debug mode
+start-debug: build
+	@echo "🔍 Starting main binary with debug mode..."
+	@./$(BIN_DIR)/$(BINARY_NAME) --debug
+
+# Start main binary with debug mode on custom port
+start-debug-port: build
+	@echo "🔍 Starting main binary with debug mode on port 3311..."
+	@./$(BIN_DIR)/$(BINARY_NAME) --debug --port 3311
 
 # Run tests
 test: check-lmdb
@@ -196,15 +203,17 @@ help:
 	@echo ""
 	@echo "🔨 Building:"
 	@echo "  build              - Build main server binary"
-	@echo "  build-debug        - Build debug server binary"
-	@echo "  build-all          - Build both binaries"
+	@echo "  build-all          - Build all binaries (currently just main server)"
 	@echo ""
 	@echo "🚀 Running:"
 	@echo "  run                - Run with go run"
-	@echo "  run-trace          - Run debug server with tracing"
+	@echo "  run-debug          - Run with integrated debug mode"
+	@echo "  run-debug-port     - Run with debug mode on port 3311"
+	@echo "  run-trace          - Run with detailed tracing (alias for run-debug)"
 	@echo "  run-verbose        - Run with verbose logging"
 	@echo "  start              - Run built main binary"
-	@echo "  start-debug        - Run built debug binary"
+	@echo "  start-debug        - Run built main binary with debug mode"
+	@echo "  start-debug-port   - Run built main binary with debug mode on port 3311"
 	@echo ""
 	@echo "🧪 Testing:"
 	@echo "  test               - Run tests"
