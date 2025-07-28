@@ -8,6 +8,8 @@ import (
 	"sync"
 
 	"github.com/dolthub/go-mysql-server/sql"
+	"github.com/dolthub/go-mysql-server/sql/types"
+	"github.com/dolthub/vitess/go/sqltypes"
 	"github.com/rs/zerolog"
 	"wellquite.org/golmdb"
 )
@@ -17,6 +19,21 @@ type LMDBStorage struct {
 	client *golmdb.LMDBClient
 	logger zerolog.Logger
 	mu     sync.RWMutex
+}
+
+// SerializableColumn represents a column that can be JSON serialized
+type SerializableColumn struct {
+	Name         string `json:"name"`
+	TypeName     string `json:"type_name"`
+	Nullable     bool   `json:"nullable"`
+	PrimaryKey   bool   `json:"primary_key"`
+	AutoIncrement bool  `json:"auto_increment"`
+	Default      string `json:"default,omitempty"`
+}
+
+// SerializableSchema represents a schema that can be JSON serialized
+type SerializableSchema struct {
+	Columns []SerializableColumn `json:"columns"`
 }
 
 // NewLMDBStorage creates a new LMDB storage instance
@@ -44,6 +61,83 @@ func NewLMDBStorage(dbPath string, logger zerolog.Logger) (*LMDBStorage, error) 
 func (s *LMDBStorage) Close() error {
 	s.client.TerminateSync()
 	return nil
+}
+
+// schemaToSerializable converts sql.Schema to SerializableSchema
+func schemaToSerializable(schema sql.Schema) SerializableSchema {
+	serializable := SerializableSchema{
+		Columns: make([]SerializableColumn, len(schema)),
+	}
+	
+	for i, col := range schema {
+		serializable.Columns[i] = SerializableColumn{
+			Name:         col.Name,
+			TypeName:     col.Type.String(),
+			Nullable:     col.Nullable,
+			PrimaryKey:   col.PrimaryKey,
+			AutoIncrement: col.AutoIncrement,
+		}
+		if col.Default != nil {
+			serializable.Columns[i].Default = col.Default.String()
+		}
+	}
+	
+	return serializable
+}
+
+// serializableToSchema converts SerializableSchema to sql.Schema
+func serializableToSchema(serializable SerializableSchema) sql.Schema {
+	schema := make(sql.Schema, len(serializable.Columns))
+	
+	for i, col := range serializable.Columns {
+		sqlType := parseTypeFromString(col.TypeName)
+		schema[i] = &sql.Column{
+			Name:         col.Name,
+			Type:         sqlType,
+			Nullable:     col.Nullable,
+			PrimaryKey:   col.PrimaryKey,
+			AutoIncrement: col.AutoIncrement,
+		}
+		// Note: Default value parsing is complex and often not needed for basic operations
+	}
+	
+	return schema
+}
+
+// parseTypeFromString converts a type string back to sql.Type
+func parseTypeFromString(typeStr string) sql.Type {
+	// Handle common types used in our application
+	switch {
+	case strings.HasPrefix(typeStr, "INT"):
+		return types.Int32
+	case strings.HasPrefix(typeStr, "VARCHAR"):
+		// Extract length if present, default to 255
+		if strings.Contains(typeStr, "(") && strings.Contains(typeStr, ")") {
+			start := strings.Index(typeStr, "(") + 1
+			end := strings.Index(typeStr, ")")
+			if lengthStr := typeStr[start:end]; lengthStr != "" {
+				if length, err := strconv.Atoi(lengthStr); err == nil {
+					return types.MustCreateStringWithDefaults(sqltypes.VarChar, int64(length))
+				}
+			}
+		}
+		return types.MustCreateStringWithDefaults(sqltypes.VarChar, 255)
+	case strings.HasPrefix(typeStr, "TEXT"):
+		return types.Text
+	case strings.HasPrefix(typeStr, "DECIMAL"):
+		return types.Float64
+	case strings.HasPrefix(typeStr, "TIMESTAMP"):
+		return types.Timestamp
+	case strings.HasPrefix(typeStr, "DATETIME"):
+		return types.Datetime
+	case strings.HasPrefix(typeStr, "DATE"):
+		return types.Date
+	case strings.HasPrefix(typeStr, "FLOAT"), strings.HasPrefix(typeStr, "DOUBLE"):
+		return types.Float64
+	default:
+		// Fallback to TEXT for unknown types
+		return types.Text
+	}
 }
 
 // LMDB Key Design:
@@ -253,7 +347,8 @@ func (s *LMDBStorage) CreateTable(database, tableName string, schema sql.Schema)
 
 		// Store table schema
 		schemaKey := fmt.Sprintf("db:%s:table:%s:schema", database, tableName)
-		schemaData, _ := json.Marshal(schema)
+		serializableSchema := schemaToSerializable(schema)
+		schemaData, _ := json.Marshal(serializableSchema)
 		err = txn.Put(db, []byte(schemaKey), schemaData, 0)
 		if err != nil {
 			return err
@@ -383,7 +478,13 @@ func (s *LMDBStorage) GetTableSchema(database, tableName string) (sql.Schema, er
 			return fmt.Errorf("table %s does not exist", tableName)
 		}
 
-		return json.Unmarshal(data, &schema)
+		var serializableSchema SerializableSchema
+		err = json.Unmarshal(data, &serializableSchema)
+		if err != nil {
+			return err
+		}
+		schema = serializableToSchema(serializableSchema)
+		return nil
 	})
 	return schema, err
 }
