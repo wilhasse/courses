@@ -89,6 +89,15 @@ func (r *SQLRunner) executeStatement(statement string) error {
 	
 	_, iter, _, err := r.engine.Query(r.ctx, statement)
 	if err != nil {
+		// Check if this is a duplicate key error for INSERT statements
+		if strings.Contains(strings.ToUpper(statement), "INSERT INTO") && 
+		   (strings.Contains(err.Error(), "duplicate") || 
+		    strings.Contains(err.Error(), "already exists") ||
+		    strings.Contains(err.Error(), "constraint")) {
+			// Skip duplicate key errors for INSERT statements during initialization
+			fmt.Printf("Skipping duplicate row: %s\n", strings.Split(statement, " VALUES")[0])
+			return nil
+		}
 		return err
 	}
 	
@@ -113,15 +122,46 @@ func (r *SQLRunner) executeStatement(statement string) error {
 func CheckInitialized(engine *sqle.Engine) bool {
 	ctx := sql.NewEmptyContext()
 	
-	// Try to query a table that should exist after initialization
-	_, iter, _, err := engine.Query(ctx, "SELECT COUNT(*) FROM testdb.users")
+	// Check if database exists
+	_, iter, _, err := engine.Query(ctx, "SHOW DATABASES LIKE 'testdb'")
+	if err != nil {
+		return false
+	}
+	if iter != nil {
+		row, err := iter.Next(ctx)
+		iter.Close(ctx)
+		if err != nil || row == nil {
+			return false
+		}
+	} else {
+		return false
+	}
+	
+	// Check if tables exist and have data
+	_, iter, _, err = engine.Query(ctx, "SELECT COUNT(*) FROM testdb.users")
 	if err != nil {
 		return false
 	}
 	
 	if iter != nil {
+		row, err := iter.Next(ctx)
 		iter.Close(ctx)
-		return true
+		if err != nil {
+			return false
+		}
+		
+		// Check if users table has data (should have at least 1 row after initialization)
+		if row != nil && len(row) > 0 {
+			if count, ok := row[0].(int64); ok && count > 0 {
+				return true
+			}
+			if count, ok := row[0].(int32); ok && count > 0 {
+				return true
+			}
+			if count, ok := row[0].(int); ok && count > 0 {
+				return true
+			}
+		}
 	}
 	
 	return false

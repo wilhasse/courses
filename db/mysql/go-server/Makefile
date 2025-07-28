@@ -8,6 +8,17 @@ DATA_DIR := data
 LMDB_DIR := lmdb-lib
 SCRIPTS_DIR := scripts
 
+# CGO environment variables for LMDB
+export CGO_CFLAGS := -I$(shell pwd)/$(LMDB_DIR)/include
+export CGO_LDFLAGS := -L$(shell pwd)/$(LMDB_DIR)/lib -llmdb
+
+# Platform-specific library path
+ifeq ($(shell uname -s),Darwin)
+    export DYLD_LIBRARY_PATH := $(shell pwd)/$(LMDB_DIR)/lib:$(DYLD_LIBRARY_PATH)
+else
+    export LD_LIBRARY_PATH := $(shell pwd)/$(LMDB_DIR)/lib:$(LD_LIBRARY_PATH)
+endif
+
 # Default target
 .DEFAULT_GOAL := quick-start
 
@@ -113,6 +124,12 @@ clean:
 	@rm -rf $(BIN_DIR)/
 	@echo "✅ Cleaned $(BIN_DIR)/"
 
+# Clean data directory (reset database)
+clean-data:
+	@echo "🧹 Cleaning database data..."
+	@rm -rf $(DATA_DIR)/
+	@echo "✅ Database reset - next run will reinitialize"
+
 # Clean everything including data and LMDB
 clean-all: clean
 	@echo "🧹 Cleaning all artifacts including data..."
@@ -202,6 +219,7 @@ help:
 	@echo ""
 	@echo "🧹 Cleanup:"
 	@echo "  clean              - Clean build artifacts"
+	@echo "  clean-data         - Reset database (clean data directory)"
 	@echo "  clean-all          - Clean everything including data"
 	@echo ""
 	@echo "🐳 Docker:"
