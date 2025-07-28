@@ -5,8 +5,8 @@
 CREATE DATABASE IF NOT EXISTS testdb;
 USE testdb;
 
--- Create users table
-CREATE TABLE IF NOT EXISTS users (
+-- Create users table (remove IF NOT EXISTS as it may not be supported properly)
+CREATE TABLE users (
     id INT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Create products table  
-CREATE TABLE IF NOT EXISTS products (
+CREATE TABLE products (
     id INT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     price DECIMAL(10,2) NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS products (
 );
 
 -- Create orders table for demonstrating joins
-CREATE TABLE IF NOT EXISTS orders (
+CREATE TABLE orders (
     id INT PRIMARY KEY,
     user_id INT NOT NULL,
     product_id INT NOT NULL,

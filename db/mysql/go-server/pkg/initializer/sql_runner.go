@@ -95,9 +95,16 @@ func (r *SQLRunner) executeStatement(statement string) error {
 		    strings.Contains(err.Error(), "already exists") ||
 		    strings.Contains(err.Error(), "constraint")) {
 			// Skip duplicate key errors for INSERT statements during initialization
-			fmt.Printf("Skipping duplicate row: %s\n", strings.Split(statement, " VALUES")[0])
 			return nil
 		}
+		
+		// Check if this is a table already exists error for CREATE TABLE statements
+		if strings.Contains(strings.ToUpper(statement), "CREATE TABLE") && 
+		   strings.Contains(err.Error(), "already exists") {
+			// Skip table already exists errors during initialization
+			return nil
+		}
+		
 		return err
 	}
 	
@@ -122,47 +129,74 @@ func (r *SQLRunner) executeStatement(statement string) error {
 func CheckInitialized(engine *sqle.Engine) bool {
 	ctx := sql.NewEmptyContext()
 	
-	// Check if database exists
-	_, iter, _, err := engine.Query(ctx, "SHOW DATABASES LIKE 'testdb'")
+	// Check if the testdb database exists and has tables
+	_, iter, _, err := engine.Query(ctx, "SHOW DATABASES")
 	if err != nil {
 		return false
 	}
+	
+	// Look for testdb in the databases list
+	hasTestDB := false
 	if iter != nil {
-		row, err := iter.Next(ctx)
-		iter.Close(ctx)
-		if err != nil || row == nil {
-			return false
+		for {
+			row, err := iter.Next(ctx)
+			if err != nil {
+				if err.Error() == "EOF" {
+					break
+				}
+				iter.Close(ctx)
+				return false
+			}
+			if row != nil && len(row) > 0 {
+				if dbName, ok := row[0].(string); ok && dbName == "testdb" {
+					hasTestDB = true
+					break
+				}
+			}
 		}
-	} else {
+		iter.Close(ctx)
+	}
+	
+	if !hasTestDB {
 		return false
 	}
 	
-	// Check if tables exist and have data
+	// If testdb exists, check if it has the users table with data
 	_, iter, _, err = engine.Query(ctx, "SELECT COUNT(*) FROM testdb.users")
 	if err != nil {
+		// Table doesn't exist or can't be queried
 		return false
 	}
 	
-	if iter != nil {
-		row, err := iter.Next(ctx)
-		iter.Close(ctx)
-		if err != nil {
-			return false
-		}
-		
-		// Check if users table has data (should have at least 1 row after initialization)
-		if row != nil && len(row) > 0 {
-			if count, ok := row[0].(int64); ok && count > 0 {
-				return true
-			}
-			if count, ok := row[0].(int32); ok && count > 0 {
-				return true
-			}
-			if count, ok := row[0].(int); ok && count > 0 {
-				return true
-			}
-		}
+	if iter == nil {
+		return false
 	}
 	
-	return false
+	row, err := iter.Next(ctx)
+	iter.Close(ctx)
+	if err != nil {
+		return false
+	}
+	
+	if row == nil || len(row) == 0 {
+		return false
+	}
+	
+	// Check if we have data (count > 0)
+	switch v := row[0].(type) {
+	case int64:
+		return v > 0
+	case int32:
+		return v > 0
+	case int:
+		return v > 0
+	case uint64:
+		return v > 0
+	case uint32:
+		return v > 0
+	case uint:
+		return v > 0
+	default:
+		return false
+	}
 }
