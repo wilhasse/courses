@@ -13,8 +13,8 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-LMDB_VERSION="0.9.32"
-LMDB_URL="https://github.com/LMDB/lmdb/archive/LMDB_${LMDB_VERSION}.tar.gz"
+LMDB_VERSION="0.9.31"
+LMDB_URL="https://github.com/LMDB/lmdb/archive/refs/tags/LMDB_${LMDB_VERSION}.tar.gz"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 LMDB_DIR="$PROJECT_DIR/lmdb-lib"
@@ -87,12 +87,48 @@ download_lmdb() {
     mkdir -p "$TEMP_DIR"
     cd "$TEMP_DIR"
     
-    if command -v curl &> /dev/null; then
-        curl -L "$LMDB_URL" -o "lmdb.tar.gz"
-    elif command -v wget &> /dev/null; then
-        wget "$LMDB_URL" -O "lmdb.tar.gz"
-    else
-        echo -e "${RED}Error: Neither curl nor wget found${NC}"
+    # Try multiple URL formats
+    local urls=(
+        "https://github.com/LMDB/lmdb/archive/refs/tags/LMDB_${LMDB_VERSION}.tar.gz"
+        "https://github.com/LMDB/lmdb/archive/LMDB_${LMDB_VERSION}.tar.gz"
+        "https://github.com/LMDB/lmdb/releases/download/LMDB_${LMDB_VERSION}/lmdb-LMDB_${LMDB_VERSION}.tar.gz"
+    )
+    
+    local success=false
+    for url in "${urls[@]}"; do
+        echo "Trying: $url"
+        
+        if command -v curl &> /dev/null; then
+            if curl -L "$url" -o "lmdb.tar.gz" && [ -s "lmdb.tar.gz" ]; then
+                # Check if it's actually a gzip file
+                if file "lmdb.tar.gz" | grep -q "gzip"; then
+                    success=true
+                    break
+                else
+                    echo "Downloaded file is not gzip, trying next URL..."
+                    rm -f "lmdb.tar.gz"
+                fi
+            fi
+        elif command -v wget &> /dev/null; then
+            if wget "$url" -O "lmdb.tar.gz" && [ -s "lmdb.tar.gz" ]; then
+                # Check if it's actually a gzip file
+                if file "lmdb.tar.gz" | grep -q "gzip"; then
+                    success=true
+                    break
+                else
+                    echo "Downloaded file is not gzip, trying next URL..."
+                    rm -f "lmdb.tar.gz"
+                fi
+            fi
+        else
+            echo -e "${RED}Error: Neither curl nor wget found${NC}"
+            exit 1
+        fi
+    done
+    
+    if [ "$success" = false ]; then
+        echo -e "${RED}Error: Failed to download LMDB from any URL${NC}"
+        echo "Please check your internet connection or try manual installation"
         exit 1
     fi
     
