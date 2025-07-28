@@ -8,32 +8,48 @@ This is a MySQL-compatible server implementation using go-mysql-server library w
 
 ## Build and Development Commands
 
-**Quick Start:**
+**🚀 One-Command Quick Start:**
 ```bash
-make run-trace    # Run debug server with detailed execution tracing
-make run          # Run server directly with go run
-make run-verbose  # Run with verbose logging (LOGLEVEL=debug)
+make              # Complete setup, build, and run (recommended)
+./setup.sh        # Universal setup script (all platforms)
 ```
 
-**Build Commands:**
+**🐳 Docker (Zero Dependencies):**
+```bash
+docker-compose up mysql-server    # Production mode
+docker-compose up mysql-dev       # Development mode with debug tools
+```
+
+**🔨 Build Commands:**
 ```bash
 make build        # Build main server binary to bin/mysql-server
 make build-debug  # Build debug server binary to bin/mysql-debug-server
-make start        # Build and run the binary
+make build-all    # Build both binaries
 ```
 
-**Development:**
+**🚀 Run Commands:**
 ```bash
-make deps         # Download dependencies (go mod tidy + download)
+make run          # Run server directly with go run
+make run-trace    # Run debug server with detailed execution tracing
+make run-verbose  # Run with verbose logging (LOGLEVEL=debug)
+make start        # Run built binary
+```
+
+**🛠️ Development:**
+```bash
+make dev-setup    # Complete development environment setup
 make test         # Run tests with go test ./...
 make clean        # Clean build artifacts
-make dev-setup    # Set up development environment
+make help         # Show all available commands
 ```
 
-**Testing Connection:**
+**🔌 Testing Connection:**
 ```bash
 mysql -h localhost -P 3306 -u root
+make test-connection    # Automated connection test
 ```
+
+**✨ New Features**: Automatic LMDB installation, embedded CGO configuration, cross-platform support. No manual environment setup required!
 
 ## Architecture
 
@@ -68,7 +84,8 @@ The codebase follows a layered architecture:
 - Multiple database support with CREATE/DROP DATABASE
 - Full table operations: CREATE/DROP TABLE, INSERT/UPDATE/DELETE/SELECT
 - Schema definition and validation
-- Sample data for testing (users, products tables in testdb)
+- **LMDB persistent storage** - data survives server restarts
+- SQL-based initialization system with sample data
 - Graceful shutdown handling
 - Configurable logging levels
 
@@ -78,7 +95,15 @@ The codebase follows a layered architecture:
 - Uses logrus for structured logging
 - No authentication required (connects as root)
 - Debug server (`cmd/debug-server/main.go`) provides detailed execution tracing
-- Storage backend is pluggable - current implementation is in-memory only
+- **LMDB storage backend** provides ACID transactions and persistence
+- **CGO dependency** - requires LMDB C library integration
+
+## Documentation
+
+- **[Build Improvements Guide](docs/BUILD_IMPROVEMENTS.md)** - ⭐ **NEW**: Automated build process overview
+- **[Build and Run Guide](docs/BUILD_AND_RUN.md)** - Complete build instructions and deployment
+- **[LMDB Integration Guide](docs/LMDB_INTEGRATION.md)** - Detailed explanation of persistent storage implementation
+- **[CGO Setup Guide](docs/CGO_SETUP.md)** - Environment configuration (now automated!)
 
 ## Testing
 

@@ -40,3 +40,4 @@ config.local.yaml
 
 # LMDB data directory
 data/
+server.pid

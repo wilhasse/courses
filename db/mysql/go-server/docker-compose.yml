@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # Production MySQL server
+  mysql-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: mysql-server-lmdb
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/app/data
+    environment:
+      - LOGLEVEL=info
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "timeout", "5", "bash", "-c", "</dev/tcp/localhost/3306"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Development server with debug tools
+  mysql-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: mysql-dev-lmdb
+    ports:
+      - "3307:3306"  # Different port to avoid conflicts
+    volumes:
+      - mysql_dev_data:/app/data
+      - .:/app-source:ro  # Mount source for development
+    environment:
+      - LOGLEVEL=debug
+    command: ["./mysql-debug-server"]
+    restart: unless-stopped
+
+  # MySQL client for testing connections
+  mysql-client:
+    image: mysql:8.0
+    container_name: mysql-client
+    depends_on:
+      mysql-server:
+        condition: service_healthy
+    command: >
+      mysql -h mysql-server -P 3306 -u root 
+      -e "SHOW DATABASES; USE testdb; SHOW TABLES; SELECT COUNT(*) FROM users;"
+    profiles:
+      - test
+
+  # Adminer for web-based database management
+  adminer:
+    image: adminer:latest
+    container_name: mysql-adminer
+    ports:
+      - "8080:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=mysql-server:3306
+      - ADMINER_DESIGN=pepa-linha
+    depends_on:
+      mysql-server:
+        condition: service_healthy
+    profiles:
+      - admin
+
+volumes:
+  mysql_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data
+  mysql_dev_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data-dev
+
+networks:
+  default:
+    name: mysql-lmdb-network
