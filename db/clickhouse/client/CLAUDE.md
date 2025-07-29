@@ -46,7 +46,7 @@ The application connects to ClickHouse using:
 - Host: `192.168.20.16`
 - Port: `9000` (native protocol)
 - Username: `root`
-- Password: `07farm`
+- Password: `test123`
 - Database: Creates and uses `test_db`
 
 ## Key Dependencies

@@ -18,7 +18,7 @@ func main() {
 		Auth: clickhouse.Auth{
 			Database: "default",
 			Username: "root",
-			Password: "07farm",
+			Password: "test123",
 		},
 		Debug: true,
 		Settings: clickhouse.Settings{
