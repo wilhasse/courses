@@ -3,7 +3,7 @@ clickhouse:
   port: 9000
   database: "default"
   username: "root"
-  password: "07farm"
+  password: "test123"
   debug: true
   settings:
     max_execution_time: 60
