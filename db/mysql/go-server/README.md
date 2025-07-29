@@ -1,9 +1,20 @@
-# MySQL Server Example using go-mysql-server
+# MySQL Server with Virtual Database Support
 
-This is a complete example showing how to build a MySQL-compatible server using go-mysql-server with a custom storage backend.
+A MySQL-compatible server implementation using go-mysql-server with support for virtual databases that proxy to remote MySQL servers.
+
+## Quick Start
+
+See [**QUICKSTART.md**](QUICKSTART.md) for getting started in 5 minutes.
 
 ## Documentation
 
+### Virtual Database Feature
+- 🚀 [**Quick Start Guide**](QUICKSTART.md) - Get running in 5 minutes
+- 📖 [**Virtual Database User Guide**](docs/VIRTUAL_DATABASE_USER_GUIDE.md) - Complete guide for virtual databases
+- 🔧 [**Remote Database Working Example**](docs/REMOTE_DATABASE_WORKING_EXAMPLE.md) - Real-world configuration example
+- 📚 [**Remote Database Guide**](docs/REMOTE_DATABASE_GUIDE.md) - Technical implementation details
+
+### General Documentation
 - [**Complete Guide**](docs/GO_MYSQL_SERVER_GUIDE.md) - Comprehensive guide to understanding and using go-mysql-server
 - [**Implementation Walkthrough**](docs/IMPLEMENTATION_WALKTHROUGH.md) - Detailed explanation of this project's implementation
 - [**Quick Reference**](docs/QUICK_REFERENCE.md) - Quick reference for common patterns and interfaces

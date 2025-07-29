@@ -56,6 +56,19 @@ mysql -h localhost -P 3306 -u root
 make test-connection    # Automated connection test
 ```
 
+**🌐 External Access:**
+```bash
+# Allow connections from all network interfaces
+./bin/mysql-server --bind 0.0.0.0
+
+# Or use environment variable
+export BIND_ADDR=0.0.0.0
+./bin/mysql-server
+
+# Connect from another machine
+mysql -h <server-ip> -P 3306 -u root
+```
+
 **✨ New Features**: Automatic LMDB installation, embedded CGO configuration, cross-platform support. No manual environment setup required!
 
 ## Architecture
@@ -104,6 +117,26 @@ The codebase follows a layered architecture:
 - Debug server (`cmd/debug-server/main.go`) provides detailed execution tracing
 - **LMDB storage backend** provides ACID transactions and persistence
 - **CGO dependency** - requires LMDB C library integration
+
+## CGO Compilation Instructions
+
+To compile this project with LMDB support, you must set the CGO environment variables:
+
+```bash
+# Set CGO flags to find LMDB headers and libraries
+export CGO_CFLAGS="-I$(pwd)/lmdb-lib/include"
+export CGO_LDFLAGS="-L$(pwd)/lmdb-lib -llmdb"
+
+# Then build normally
+go build -o bin/mysql-server .
+
+# Or use make (which sets these automatically)
+make build
+```
+
+**Important**: The LMDB library is installed locally in `./lmdb-lib/` directory. The CGO flags must point to the absolute paths of:
+- Headers: `./lmdb-lib/include/lmdb.h`
+- Library: `./lmdb-lib/liblmdb.a`
 
 ## Documentation
 

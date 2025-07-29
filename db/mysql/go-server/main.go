@@ -141,11 +141,11 @@ func (dd *DebugDatabase) GetTableInsensitive(ctx *sql.Context, tblName string) (
 
 // DebugDatabaseProvider wraps provider to add tracing
 type DebugDatabaseProvider struct {
-	*provider.DatabaseProvider
+	sql.DatabaseProvider
 	logger *logrus.Logger
 }
 
-func NewDebugDatabaseProvider(provider *provider.DatabaseProvider, logger *logrus.Logger) *DebugDatabaseProvider {
+func NewDebugDatabaseProvider(provider sql.DatabaseProvider, logger *logrus.Logger) *DebugDatabaseProvider {
 	return &DebugDatabaseProvider{
 		DatabaseProvider: provider,
 		logger:           logger,
@@ -170,7 +170,10 @@ func (ddp *DebugDatabaseProvider) Database(ctx *sql.Context, name string) (sql.D
 	if providerDB, ok := db.(*provider.Database); ok {
 		return NewDebugDatabase(providerDB, ddp.logger), nil
 	}
-
+	
+	// Don't wrap RemoteDatabase in debug wrapper for now
+	// as it would interfere with proxy functionality
+	
 	return db, err
 }
 
@@ -179,6 +182,7 @@ func main() {
 	debugMode := flag.Bool("debug", false, "Enable debug mode with detailed execution tracing")
 	verbose := flag.Bool("verbose", false, "Enable verbose logging")
 	port := flag.String("port", "3306", "Server port")
+	bindAddr := flag.String("bind", "127.0.0.1", "Bind address (use 0.0.0.0 for all interfaces)")
 	flag.Parse()
 
 	// Check environment variables
@@ -190,6 +194,9 @@ func main() {
 	}
 	if envPort := os.Getenv("PORT"); envPort != "" {
 		*port = envPort
+	}
+	if envBind := os.Getenv("BIND_ADDR"); envBind != "" {
+		*bindAddr = envBind
 	}
 
 	// Set up logging based on flags
@@ -225,13 +232,15 @@ func main() {
 	}
 	defer store.Close()
 
-	// Create the database provider with optional debug wrapper
+	// Create the database provider with remote database support
 	baseProvider := provider.NewDatabaseProvider(store)
+	remoteHandler := provider.NewRemoteDatabaseHandler(baseProvider)
+	
 	var dbProvider sql.DatabaseProvider
 	if *debugMode {
-		dbProvider = NewDebugDatabaseProvider(baseProvider, logger)
+		dbProvider = NewDebugDatabaseProvider(remoteHandler, logger)
 	} else {
-		dbProvider = baseProvider
+		dbProvider = remoteHandler
 	}
 
 	// Create the SQL engine with optional analyzer debugging
@@ -261,7 +270,7 @@ func main() {
 	}
 
 	// Configure the MySQL server
-	address := fmt.Sprintf("127.0.0.1:%s", *port)
+	address := fmt.Sprintf("%s:%s", *bindAddr, *port)
 	config := server.Config{
 		Protocol: "tcp",
 		Address:  address,
@@ -322,7 +331,12 @@ func main() {
 	}
 	
 	logger.Infof("Server listening on %s", address)
-	logger.Infof("Connect with: mysql -h 127.0.0.1 -P %s -u root", *port)
+	if *bindAddr == "0.0.0.0" {
+		logger.Infof("Connect with: mysql -h <server-ip> -P %s -u root", *port)
+		logger.Warn("Server is accessible from all network interfaces - ensure firewall is properly configured")
+	} else {
+		logger.Infof("Connect with: mysql -h %s -P %s -u root", *bindAddr, *port)
+	}
 	
 	if *debugMode {
 		logger.Info("🔧 Debug mode enabled - detailed execution tracing active")

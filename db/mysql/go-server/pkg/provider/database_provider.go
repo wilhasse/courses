@@ -11,16 +11,18 @@ import (
 
 // DatabaseProvider implements sql.DatabaseProvider and sql.MutableDatabaseProvider
 type DatabaseProvider struct {
-	storage   storage.Storage
-	databases map[string]*Database
-	mu        sync.RWMutex
+	storage         storage.Storage
+	databases       map[string]sql.Database // Changed to interface to support both Database and RemoteDatabase
+	remoteDatabases map[string]*RemoteDatabase // Track remote databases separately for cleanup
+	mu              sync.RWMutex
 }
 
 // NewDatabaseProvider creates a new database provider
 func NewDatabaseProvider(storage storage.Storage) *DatabaseProvider {
 	provider := &DatabaseProvider{
-		storage:   storage,
-		databases: make(map[string]*Database),
+		storage:         storage,
+		databases:       make(map[string]sql.Database),
+		remoteDatabases: make(map[string]*RemoteDatabase),
 	}
 
 	// Load existing databases from storage
@@ -111,16 +113,50 @@ func (p *DatabaseProvider) DropDatabase(ctx *sql.Context, name string) error {
 		return sql.ErrDatabaseNotFound.New(name)
 	}
 
-	// Drop all tables in the database
-	db := p.databases[key]
-	tables, _ := db.GetTableNames(ctx)
-	for _, tableName := range tables {
-		if err := p.storage.DropTable(name, tableName); err != nil {
-			return fmt.Errorf("failed to drop table %s: %v", tableName, err)
+	// Check if it's a remote database
+	if remoteDb, isRemote := p.remoteDatabases[key]; isRemote {
+		// Close the remote connection
+		if err := remoteDb.Close(); err != nil {
+			return fmt.Errorf("failed to close remote database connection: %v", err)
+		}
+		delete(p.remoteDatabases, key)
+		delete(p.databases, key)
+		return nil
+	}
+
+	// For local databases, drop all tables
+	if db, ok := p.databases[key].(*Database); ok {
+		tables, _ := db.GetTableNames(ctx)
+		for _, tableName := range tables {
+			if err := p.storage.DropTable(name, tableName); err != nil {
+				return fmt.Errorf("failed to drop table %s: %v", tableName, err)
+			}
 		}
 	}
 
 	delete(p.databases, key)
+	return nil
+}
+
+// CreateRemoteDatabase creates a new remote database connection
+func (p *DatabaseProvider) CreateRemoteDatabase(ctx *sql.Context, name string, config RemoteConfig) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	key := strings.ToLower(name)
+	if _, exists := p.databases[key]; exists {
+		return sql.ErrDatabaseExists.New(name)
+	}
+
+	// Create remote database connection
+	remoteDb, err := NewRemoteDatabase(name, config)
+	if err != nil {
+		return fmt.Errorf("failed to create remote database: %v", err)
+	}
+
+	p.databases[key] = remoteDb
+	p.remoteDatabases[key] = remoteDb
+
 	return nil
 }
 
