@@ -2,7 +2,6 @@ package hybrid
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/dolthub/vitess/go/vt/sqlparser"
 )
@@ -145,10 +144,7 @@ func (r *QueryRewriter) rewriteSelectExprs(exprs sqlparser.SelectExprs, analysis
 	// If all columns were removed, add a dummy column to make the query valid
 	if len(rewritten) == 0 {
 		rewritten = append(rewritten, &sqlparser.AliasedExpr{
-			Expr: &sqlparser.Literal{
-				Type: sqlparser.IntVal,
-				Val:  "1",
-			},
+			Expr: &sqlparser.SQLVal{Type: sqlparser.IntVal, Val: []byte("1")},
 			As: sqlparser.NewColIdent("dummy"),
 		})
 	}
@@ -177,8 +173,8 @@ func (r *QueryRewriter) rewriteTableExpr(expr sqlparser.TableExpr, analysis *Que
 		if tableName, ok := t.Expr.(sqlparser.TableName); ok {
 			table := tableName.Name.String()
 			database := currentDatabase
-			if tableName.Qualifier.String() != "" {
-				database = tableName.Qualifier.String()
+			if tableName.DbQualifier.String() != "" {
+				database = tableName.DbQualifier.String()
 			}
 			
 			// Check if this table is cached
@@ -213,7 +209,7 @@ func (r *QueryRewriter) rewriteTableExpr(expr sqlparser.TableExpr, analysis *Que
 			LeftExpr:  left,
 			Join:      t.Join,
 			RightExpr: right,
-			Condition: r.rewriteJoinCondition(t.Condition, analysis),
+			Condition: r.rewriteJoinCondition(&t.Condition, analysis),
 		}
 	case *sqlparser.ParenTableExpr:
 		rewritten := r.rewriteTableExprs(t.Exprs, analysis, currentDatabase)
@@ -227,15 +223,15 @@ func (r *QueryRewriter) rewriteTableExpr(expr sqlparser.TableExpr, analysis *Que
 }
 
 // rewriteJoinCondition rewrites join conditions to remove references to cached tables
-func (r *QueryRewriter) rewriteJoinCondition(cond sqlparser.JoinCond, analysis *QueryAnalysis) sqlparser.JoinCond {
-	if cond.On == nil {
-		return cond
+func (r *QueryRewriter) rewriteJoinCondition(cond *sqlparser.JoinCondition, analysis *QueryAnalysis) sqlparser.JoinCondition {
+	if cond == nil || cond.On == nil {
+		return sqlparser.JoinCondition{}
 	}
 
 	// For now, we'll keep the join condition as is
 	// In a more sophisticated implementation, we would filter out conditions
 	// that only involve cached tables
-	return cond
+	return *cond
 }
 
 // rewriteWhere rewrites WHERE clause to remove conditions on cached tables

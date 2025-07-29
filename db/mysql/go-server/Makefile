@@ -151,10 +151,22 @@ test-hybrid-simple: check-lmdb
 	@echo "🧪 Running simple hybrid test..."
 	@go run test/simple_hybrid_test.go
 
+test-hybrid-adaptive: check-lmdb
+	@echo "🧪 Running adaptive hybrid test..."
+	@go run test/adaptive_hybrid.go
+
 # Run hybrid integration tests
 test-hybrid-integration: check-lmdb
 	@echo "🧪 Running hybrid integration tests..."
 	@INTEGRATION_TEST=true go test ./pkg/hybrid -v
+
+test-hybrid-final: check-lmdb
+	@echo "🧪 Running final hybrid test..."
+	@go run test/hybrid_final.go
+
+test-hybrid-working: check-lmdb
+	@echo "🧪 Running working hybrid test..."
+	@go run test/working_hybrid.go
 
 # Clean everything including data and LMDB
 clean-all: clean

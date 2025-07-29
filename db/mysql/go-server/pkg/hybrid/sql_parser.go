@@ -149,7 +149,9 @@ func (p *SQLParser) analyzeSelect(stmt *sqlparser.Select, currentDatabase string
 	}
 
 	// Store WHERE conditions
-	analysis.WhereConditions = stmt.Where
+	if stmt.Where != nil {
+		analysis.WhereConditions = stmt.Where.Expr
+	}
 
 	analysis.RequiresRewrite = analysis.HasCachedTable && len(analysis.RemoteTables) > 0
 	return analysis, nil
@@ -199,8 +201,8 @@ func (p *SQLParser) extractTablesFromTableExpr(tableExpr sqlparser.TableExpr, cu
 				Database: currentDatabase,
 				Table:    e.Name.String(),
 			}
-			if e.Qualifier.String() != "" {
-				table.Database = e.Qualifier.String()
+			if e.DbQualifier.String() != "" {
+				table.Database = e.DbQualifier.String()
 			}
 			if t.As.String() != "" {
 				table.Alias = t.As.String()
@@ -294,8 +296,8 @@ func (p *SQLParser) extractTables(stmt sqlparser.Statement, currentDatabase stri
 					Database: currentDatabase,
 					Table:    n.Name.String(),
 				}
-				if n.Qualifier.String() != "" {
-					table.Database = n.Qualifier.String()
+				if n.DbQualifier.String() != "" {
+					table.Database = n.DbQualifier.String()
 				}
 				tables = append(tables, table)
 			}

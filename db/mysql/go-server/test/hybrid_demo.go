@@ -8,7 +8,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/rs/zerolog"
-	"github.com/wilhasse/courses/db/mysql/go-server/pkg/hybrid"
+	"mysql-server-example/pkg/hybrid"
 )
 
 func main() {

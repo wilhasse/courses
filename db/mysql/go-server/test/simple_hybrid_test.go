@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/rs/zerolog"
-	"github.com/wilhasse/courses/db/mysql/go-server/pkg/hybrid"
+	"mysql-server-example/pkg/hybrid"
 )
 
 func main() {
