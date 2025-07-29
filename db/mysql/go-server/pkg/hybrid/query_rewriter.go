@@ -113,6 +113,17 @@ func (r *QueryRewriter) rewriteSelectStatement(stmt *sqlparser.Select, analysis 
 // rewriteSelectExprs rewrites SELECT expressions to remove references to cached tables
 func (r *QueryRewriter) rewriteSelectExprs(exprs sqlparser.SelectExprs, analysis *QueryAnalysis) sqlparser.SelectExprs {
 	var rewritten sqlparser.SelectExprs
+	var neededJoinColumns []string
+
+	// First, identify join columns we need from remote tables
+	for _, condition := range analysis.JoinConditions {
+		// Check if the right side is from a remote table
+		for _, remoteTable := range analysis.RemoteTables {
+			if condition.RightTable == remoteTable.Table || condition.RightTable == remoteTable.Alias {
+				neededJoinColumns = append(neededJoinColumns, condition.RightColumn)
+			}
+		}
+	}
 
 	for _, expr := range exprs {
 		switch e := expr.(type) {
@@ -136,6 +147,44 @@ func (r *QueryRewriter) rewriteSelectExprs(exprs sqlparser.SelectExprs, analysis
 				tableName := e.TableName.Name.String()
 				if !r.isTableCached(tableName, analysis) {
 					rewritten = append(rewritten, expr)
+				}
+			}
+		}
+	}
+
+	// Add join columns if they're not already included
+	for _, colName := range neededJoinColumns {
+		// Check if this column is already in the rewritten list
+		found := false
+		for _, expr := range rewritten {
+			if aliased, ok := expr.(*sqlparser.AliasedExpr); ok {
+				if col, ok := aliased.Expr.(*sqlparser.ColName); ok {
+					if col.Name.String() == colName {
+						found = true
+						break
+					}
+				}
+			}
+		}
+		
+		if !found {
+			// Add the join column from the remote table
+			for _, remoteTable := range analysis.RemoteTables {
+				for _, condition := range analysis.JoinConditions {
+					if condition.RightColumn == colName && 
+					   (condition.RightTable == remoteTable.Table || condition.RightTable == remoteTable.Alias) {
+						// Create a new column expression for the join column
+						newCol := &sqlparser.AliasedExpr{
+							Expr: &sqlparser.ColName{
+								Name: sqlparser.NewColIdent(colName),
+								Qualifier: sqlparser.TableName{
+									Name: sqlparser.NewTableIdent(remoteTable.Alias),
+								},
+							},
+						}
+						rewritten = append(rewritten, newCol)
+						break
+					}
 				}
 			}
 		}

@@ -227,13 +227,19 @@ func (je *JoinExecutor) performJoin(remoteResult *QueryResult, cachedResults map
 
 	log.Printf("Performing join between remote result (%d rows) and cached table %s (%d rows)",
 		len(remoteResult.Rows), cachedTableName, len(cachedResult.Rows))
+	log.Printf("Join conditions: %+v", strategy.Conditions)
 
 	// Find join columns
 	if len(strategy.Conditions) == 0 {
-		// Cartesian product if no join conditions
-		return je.cartesianProduct(remoteResult, cachedResult)
+		log.Printf("WARNING: No join conditions found, would produce cartesian product")
+		// For now, return an error instead of cartesian product
+		return nil, fmt.Errorf("no join conditions found - this would produce a cartesian product")
 	}
 
+	// Log column information for debugging
+	log.Printf("Remote result columns: %v", remoteResult.Columns)
+	log.Printf("Cached result columns: %v", cachedResult.Columns)
+	
 	// Perform join based on conditions
 	return je.performConditionalJoin(remoteResult, cachedResult, strategy.Conditions)
 }

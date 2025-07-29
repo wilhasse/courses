@@ -75,13 +75,17 @@ func main() {
 	// Now proceed with hybrid test
 	fmt.Println("\n=== Setting up Hybrid Query System ===")
 	
+	// Create cache directory
+	cacheDir := "./adaptive_test_cache"
+	os.MkdirAll(cacheDir, 0755)
+	defer os.RemoveAll(cacheDir)
+	
 	// Create hybrid handler
 	config := hybrid.Config{
 		MySQLDSN: remoteDSN,
-		LMDBPath: "./adaptive_test_cache",
+		LMDBPath: cacheDir,
 		Logger:   logger,
 	}
-	defer os.RemoveAll("./adaptive_test_cache")
 
 	handler, err := hybrid.NewHybridHandler(config)
 	if err != nil {

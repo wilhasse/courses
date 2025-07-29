@@ -23,13 +23,17 @@ func main() {
 	fmt.Println("Remote Table: employee_notes (stays on remote)")
 	fmt.Println()
 
+	// Create cache directory
+	cacheDir := "./final_test_cache"
+	os.MkdirAll(cacheDir, 0755)
+	defer os.RemoveAll(cacheDir)
+	
 	// Create hybrid handler
 	config := hybrid.Config{
 		MySQLDSN: remoteDSN,
-		LMDBPath: "./final_test_cache",
+		LMDBPath: cacheDir,
 		Logger:   logger,
 	}
-	defer os.RemoveAll("./final_test_cache")
 
 	handler, err := hybrid.NewHybridHandler(config)
 	if err != nil {

@@ -168,6 +168,10 @@ test-hybrid-working: check-lmdb
 	@echo "🧪 Running working hybrid test..."
 	@go run test/working_hybrid.go
 
+test-hybrid-clean: check-lmdb
+	@echo "🧪 Running clean hybrid demo..."
+	@go run test/clean_hybrid_demo.go
+
 # Clean everything including data and LMDB
 clean-all: clean
 	@echo "🧹 Cleaning all artifacts including data..."

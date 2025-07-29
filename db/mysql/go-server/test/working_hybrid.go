@@ -21,13 +21,17 @@ func main() {
 	// Remote MySQL server  
 	remoteDSN := "root:@tcp(10.1.0.7:3306)/testdb"
 	
+	// Create cache directory
+	cacheDir := "./working_test_cache"
+	os.MkdirAll(cacheDir, 0755)
+	defer os.RemoveAll(cacheDir)
+	
 	// Create hybrid handler
 	config := hybrid.Config{
 		MySQLDSN: remoteDSN,
-		LMDBPath: "./working_test_cache",
+		LMDBPath: cacheDir,
 		Logger:   logger,
 	}
-	defer os.RemoveAll("./working_test_cache")
 
 	handler, err := hybrid.NewHybridHandler(config)
 	if err != nil {
@@ -58,8 +62,18 @@ func main() {
 		fmt.Printf("   Found %d employees:\n", len(result1.Rows))
 		for _, row := range result1.Rows {
 			id := row[0]
-			firstName := string(row[1].([]byte))
-			lastName := string(row[2].([]byte))
+			firstName := ""
+			if bytes, ok := row[1].([]byte); ok {
+				firstName = string(bytes)
+			} else {
+				firstName = fmt.Sprintf("%v", row[1])
+			}
+			lastName := ""
+			if bytes, ok := row[2].([]byte); ok {
+				lastName = string(bytes)
+			} else {
+				lastName = fmt.Sprintf("%v", row[2])
+			}
 			fmt.Printf("   - Employee #%v: %s %s\n", id, firstName, lastName)
 		}
 	}
@@ -84,6 +98,7 @@ func main() {
 	analysis, _ := handler.SQLParser.AnalyzeQuery(joinQuery, "testdb")
 	fmt.Printf("   - Cached tables: %v\n", analysis.CachedTables)
 	fmt.Printf("   - Remote tables: %v\n", analysis.RemoteTables)
+	fmt.Printf("   - Join conditions: %v\n", analysis.JoinConditions)
 	fmt.Printf("   - Requires rewrite: %v\n", analysis.RequiresRewrite)
 	fmt.Println()
 
@@ -100,9 +115,28 @@ func main() {
 				break
 			}
 			id := row[0]
-			firstName := string(row[1].([]byte))
-			lastName := string(row[2].([]byte))
-			note := string(row[3].([]byte))
+			// Handle type conversion safely
+			firstName := ""
+			if bytes, ok := row[1].([]byte); ok {
+				firstName = string(bytes)
+			} else {
+				firstName = fmt.Sprintf("%v", row[1])
+			}
+			
+			lastName := ""
+			if bytes, ok := row[2].([]byte); ok {
+				lastName = string(bytes)
+			} else {
+				lastName = fmt.Sprintf("%v", row[2])
+			}
+			
+			note := ""
+			if bytes, ok := row[3].([]byte); ok {
+				note = string(bytes)
+			} else {
+				note = fmt.Sprintf("%v", row[3])
+			}
+			
 			fmt.Printf("   - %s %s (ID:%v): %s\n", firstName, lastName, id, note)
 		}
 	}
@@ -118,7 +152,12 @@ func main() {
 		fmt.Printf("   Found %d notes:\n", len(result3.Rows))
 		for _, row := range result3.Rows {
 			empId := row[0]
-			note := string(row[1].([]byte))
+			note := ""
+			if bytes, ok := row[1].([]byte); ok {
+				note = string(bytes)
+			} else {
+				note = fmt.Sprintf("%v", row[1])
+			}
 			fmt.Printf("   - Employee #%v: %s\n", empId, note)
 		}
 	}
