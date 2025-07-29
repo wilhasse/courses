@@ -32,26 +32,34 @@ go vet ./...
 
 ## Architecture
 
-The application consists of a single `main.go` file with the following key functions:
+The application consists of:
 
-- **main()**: Orchestrates the connection and calls other functions in sequence
-- **createDatabase()**: Creates `test_db` database and switches to it
-- **createTable()**: Creates `example_batch` table in test_db with MergeTree engine
-- **batchInsert()**: Inserts 1000 sample rows using batch operations
+### Main Files
+- **main.go**: Core application with connection handling and database operations
+- **config.yaml**: YAML configuration file for all settings
+
+### Key Functions
+- **loadConfig()**: Reads and parses YAML configuration
+- **main()**: Orchestrates the connection and calls other functions in sequence  
+- **createDatabase()**: Creates database and switches to it (names from config)
+- **createTable()**: Creates table with MergeTree engine (names from config)
+- **batchInsert()**: Inserts sample rows using batch operations (size from config)
 - **queryData()**: Performs aggregation queries and displays results
+
+### Configuration Structure
+- **Config struct**: Nested struct matching YAML structure with proper tags
+- **Sections**: clickhouse (connection), database (names), batch (settings)
 
 ## Connection Details
 
-The application connects to ClickHouse using:
-- Host: `192.168.20.16`
-- Port: `9000` (native protocol)
-- Username: `root`
-- Password: `test123`
-- Database: Creates and uses `test_db`
+All connection details are read from `config.yaml`:
+- Default: `192.168.20.16:9000` with credentials `root/test123`
+- Configurable database names, connection pooling, timeouts, compression
 
 ## Key Dependencies
 
 - `github.com/ClickHouse/clickhouse-go/v2`: Official ClickHouse Go driver for native protocol communication
+- `gopkg.in/yaml.v3`: YAML configuration parsing
 
 ## Development Notes
 

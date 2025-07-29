@@ -1,0 +1,24 @@
+clickhouse:
+  host: "192.168.20.16"
+  port: 9000
+  database: "default"
+  username: "root"
+  password: "07farm"
+  debug: true
+  settings:
+    max_execution_time: 60
+  compression:
+    method: "lz4"
+  connection:
+    dial_timeout_seconds: 30
+    max_open_conns: 5
+    max_idle_conns: 5
+    conn_max_lifetime_hours: 1
+    block_buffer_size: 10
+
+database:
+  name: "test_db"
+  table: "example_batch"
+
+batch:
+  size: 1000

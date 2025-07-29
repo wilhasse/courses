@@ -62,19 +62,40 @@ ID	Name		Value		Created At
 
 ## Configuration
 
-To use with your own ClickHouse server, update the connection options in `main.go`:
+The application reads settings from `config.yaml`. To use with your own ClickHouse server, update the configuration file:
 
-```go
-conn, err := clickhouse.Open(&clickhouse.Options{
-    Addr: []string{"your-server:9000"},
-    Auth: clickhouse.Auth{
-        Database: "default",
-        Username: "your-username",
-        Password: "your-password",
-    },
-    // ... other options
-})
+```yaml
+clickhouse:
+  host: "your-server"
+  port: 9000
+  database: "default"
+  username: "your-username"
+  password: "your-password"
+  debug: true
+  settings:
+    max_execution_time: 60
+  compression:
+    method: "lz4"
+  connection:
+    dial_timeout_seconds: 30
+    max_open_conns: 5
+    max_idle_conns: 5
+    conn_max_lifetime_hours: 1
+    block_buffer_size: 10
+
+database:
+  name: "test_db"
+  table: "example_batch"
+
+batch:
+  size: 1000
 ```
+
+### Configuration Options
+
+- **clickhouse**: ClickHouse server connection settings
+- **database**: Target database and table names
+- **batch**: Number of rows to insert in the batch operation
 
 ## Features Demonstrated
 
