@@ -4,7 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a MySQL-compatible server implementation using go-mysql-server library with a custom storage backend. The server provides full MySQL protocol compatibility and can be connected to using standard MySQL clients.
+This is a MySQL-compatible server implementation using go-mysql-server library with LMDB persistent storage and virtual database support. The server provides full MySQL protocol compatibility, persistent data storage, and the ability to create virtual databases that proxy queries to remote MySQL servers.
+
+### Key Technologies
+- **go-mysql-server**: MySQL protocol implementation and SQL engine
+- **LMDB**: Lightning Memory-Mapped Database for persistent storage
+- **CGO**: C bindings for LMDB integration
+- **Virtual Databases**: Proxy functionality for remote MySQL servers
 
 ## Build and Development Commands
 
@@ -100,23 +106,44 @@ The codebase follows a layered architecture:
 
 ## Key Features
 
-- MySQL protocol compatibility (connects with mysql client, HeidiSQL, etc.)
+### Core Functionality
+- MySQL protocol compatibility (connects with mysql client, HeidiSQL, DBeaver, etc.)
 - Multiple database support with CREATE/DROP DATABASE
 - Full table operations: CREATE/DROP TABLE, INSERT/UPDATE/DELETE/SELECT
-- Schema definition and validation
-- **LMDB persistent storage** - data survives server restarts
+- Schema definition and validation with type checking
+- **LMDB persistent storage** - ACID transactions, data survives server restarts
 - SQL-based initialization system with sample data
-- Graceful shutdown handling
-- Configurable logging levels
+- Graceful shutdown handling with proper cleanup
+- Configurable logging levels (debug, verbose, info)
+
+### Virtual Database Features
+- Create database proxies to remote MySQL servers
+- Transparent query forwarding to remote instances
+- Connection pooling for efficient resource usage
+- Schema caching for improved performance
+- Support for multiple simultaneous virtual databases
+- Read-only access patterns for production safety
 
 ## Development Notes
 
-- Server runs on `localhost:3306` by default
+### Server Configuration
+- Default port: `3306` (configurable via `--port` flag or `PORT` env var)
+- Default bind: `localhost` (use `--bind 0.0.0.0` for external access)
+- No authentication required (connects as root with no password)
+- Supports graceful shutdown on SIGINT/SIGTERM
+
+### Logging and Debugging
 - Uses logrus for structured logging
-- No authentication required (connects as root)
-- Debug server (`cmd/debug-server/main.go`) provides detailed execution tracing
+- Debug mode: `--debug` flag or `DEBUG=true` env var
+- Verbose mode: `--verbose` flag or `VERBOSE=true` env var
+- Integrated debug server with execution tracing
+- Log files: `server.log`, `debug.log`
+
+### Storage Implementation
 - **LMDB storage backend** provides ACID transactions and persistence
-- **CGO dependency** - requires LMDB C library integration
+- Data files stored in `./data/` directory
+- Automatic database initialization from `scripts/init.sql`
+- **CGO dependency** - requires LMDB C library (auto-installed by setup)
 
 ## CGO Compilation Instructions
 
@@ -147,15 +174,57 @@ make build
 
 ## Testing
 
+### Sample Data
 The project includes sample data in the default "testdb" database:
 - `users` table with sample user records
 - `products` table with sample product data
 
-Test queries:
+### Test Queries
 ```sql
+-- Basic operations
 SHOW DATABASES;
 USE testdb;
 SHOW TABLES;
 SELECT * FROM users;
 SELECT * FROM products WHERE price > 20;
+
+-- Virtual database testing
+CREATE DATABASE test_remote__remote__localhost__3306__mysql__root__[PASSWORD];
+USE test_remote;
+SHOW TABLES;
 ```
+
+### Running Tests
+```bash
+make test              # Run unit tests
+make test-connection   # Test MySQL connection
+```
+
+## Common Tasks
+
+### Adding New Features
+1. Check existing patterns in `pkg/provider/` and `pkg/storage/`
+2. Follow the layered architecture (provider -> storage)
+3. Add appropriate debug logging for new functionality
+4. Update tests and documentation
+
+### Debugging Issues
+1. Enable debug mode: `make run-debug`
+2. Check log files: `tail -f server.log debug.log`
+3. Use MySQL client for testing: `mysql -h localhost -P 3306 -u root`
+4. For CGO issues, check: `ldd bin/mysql-server`
+
+### Working with Virtual Databases
+1. Format: `name__remote__host__port__database__user__password`
+2. Replace dots with underscores in IP addresses
+3. Replace @ with AT in passwords
+4. Test connection first: `mysql -h <remote> -u <user> -p`
+
+## Security Considerations
+
+⚠️ **Important Security Notes:**
+- Never commit real passwords to the repository
+- Use environment variables or secure vaults for credentials
+- Virtual database names contain passwords - limit access to database listing
+- Consider using SSH tunneling for remote connections
+- Always use read-only credentials for production access

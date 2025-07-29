@@ -41,7 +41,7 @@ mysql -h localhost -P 3306 -u root
 
 -- Create virtual database
 -- Format: name__remote__host__port__database__user__password
-CREATE DATABASE myapp__remote__192_168_1_100__3306__production__readonly__Pass123;
+CREATE DATABASE myapp__remote__192_168_1_100__3306__production__readonly__[PASSWORD];
 ```
 
 ### 3. Use the Virtual Database
@@ -78,13 +78,13 @@ Virtual databases use a special naming format:
 1. **Basic Example**
    ```sql
    -- Remote: mysql://dbuser:pass123@192.168.1.100:3306/myapp
-   CREATE DATABASE app__remote__192_168_1_100__3306__myapp__dbuser__pass123;
+   CREATE DATABASE app__remote__192_168_1_100__3306__myapp__dbuser__[PASSWORD];
    ```
 
 2. **With Special Characters**
    ```sql
    -- Remote: mysql://app_user:P@ss#123@db.example.com:3306/production
-   CREATE DATABASE prod__remote__db_example_com__3306__production__app_user__PATss#123;
+   CREATE DATABASE prod__remote__db_example_com__3306__production__app_user__[PASSWORD];
    ```
 
 3. **Non-Standard Port**
@@ -155,7 +155,7 @@ Mirror production database for local development:
 
 ```sql
 -- Create read-only mirror of production
-CREATE DATABASE prod_mirror__remote__prod_db_host__3306__production__readonly_user__ReadOnly123;
+CREATE DATABASE prod_mirror__remote__prod_db_host__3306__production__readonly_user__[PASSWORD];
 
 USE prod_mirror;
 
@@ -170,13 +170,13 @@ Connect to multiple remote databases:
 
 ```sql
 -- Customer database
-CREATE DATABASE customers__remote__10_1_1_10__3306__customer_db__app__password1;
+CREATE DATABASE customers__remote__10_1_1_10__3306__customer_db__app__[PASSWORD];
 
 -- Orders database  
-CREATE DATABASE orders__remote__10_1_1_20__3306__order_db__app__password2;
+CREATE DATABASE orders__remote__10_1_1_20__3306__order_db__app__[PASSWORD];
 
 -- Analytics database
-CREATE DATABASE analytics__remote__10_1_1_30__3306__analytics_db__reader__password3;
+CREATE DATABASE analytics__remote__10_1_1_30__3306__analytics_db__reader__[PASSWORD];
 
 -- Query across virtual databases (each forwarded separately)
 USE customers;
@@ -192,7 +192,7 @@ Gradual migration from remote to local:
 
 ```sql
 -- Phase 1: Create virtual database
-CREATE DATABASE legacy__remote__old_server__3306__legacy_db__migrator__MigPass123;
+CREATE DATABASE legacy__remote__old_server__3306__legacy_db__migrator__[PASSWORD];
 
 -- Phase 2: Create local database
 CREATE DATABASE legacy_new;
@@ -264,7 +264,7 @@ tail -f server.log | grep -i proxy
 1. **Use Read-Only Credentials**
    ```sql
    -- On remote MySQL, create read-only user
-   CREATE USER 'readonly'@'%' IDENTIFIED BY 'StrongPassword123';
+   CREATE USER 'readonly'@'%' IDENTIFIED BY '[PASSWORD]';
    GRANT SELECT ON production.* TO 'readonly'@'%';
    ```
 

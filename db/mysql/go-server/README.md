@@ -1,10 +1,21 @@
 # MySQL Server with Virtual Database Support
 
-A MySQL-compatible server implementation using go-mysql-server with support for virtual databases that proxy to remote MySQL servers.
+A MySQL-compatible server implementation using go-mysql-server with support for virtual databases that proxy to remote MySQL servers. This server provides a complete MySQL protocol implementation with persistent storage using LMDB and the ability to create virtual databases that transparently forward queries to remote MySQL instances.
 
 ## Quick Start
 
-See [**QUICKSTART.md**](QUICKSTART.md) for getting started in 5 minutes.
+```bash
+# One-command setup, build, and run
+make
+
+# Or use the setup script
+./setup.sh
+
+# Connect with MySQL client
+mysql -h localhost -P 3306 -u root
+```
+
+See [**QUICKSTART.md**](QUICKSTART.md) for detailed getting started guide.
 
 ## Documentation
 
@@ -24,39 +35,63 @@ See [**QUICKSTART.md**](QUICKSTART.md) for getting started in 5 minutes.
 ## Architecture
 
 ```
-mysql-server-example/
-├── main.go                      # Server entry point
+go-server/
+├── main.go                      # Server entry point with debug support
 ├── pkg/
 │   ├── provider/               # go-mysql-server integration layer
-│   │   ├── database_provider.go   # Implements sql.DatabaseProvider
-│   │   ├── database.go            # Implements sql.Database
-│   │   ├── table.go               # Implements sql.Table
+│   │   ├── database_provider.go   # Database management
+│   │   ├── database.go            # Database implementation
+│   │   ├── table.go               # Table operations
+│   │   ├── remote_database.go     # Virtual database proxy
+│   │   ├── remote_database_handler.go # Remote connection handling
 │   │   └── session.go             # Session management
-│   └── storage/                # Custom storage backend
-│       ├── storage.go             # Storage interface
-│       └── memory.go              # In-memory implementation
-└── go.mod                      # Go module definition
+│   ├── storage/                # Storage backends
+│   │   ├── storage.go             # Storage interface
+│   │   ├── lmdb.go               # LMDB persistent storage
+│   │   ├── lmdb_cgo.go           # CGO bindings for LMDB
+│   │   └── memory.go              # In-memory storage
+│   └── initializer/            # Database initialization
+│       └── sql_runner.go          # SQL script execution
+├── scripts/
+│   ├── init.sql                # Default database schema
+│   └── install-lmdb.sh         # LMDB library installer
+└── lmdb-lib/                   # Local LMDB installation
+    ├── include/                # C headers
+    └── lib/                    # Compiled libraries
 ```
 
-## Running the Server
+## Installation & Running
 
-1. **Initialize the module:**
-   ```bash
-   cd mysql-server-example
-   # go mod tidy
-   make deps
-   ```
+### Prerequisites
+- Go 1.24+ (automatic toolchain download)
+- C compiler (gcc/clang) for CGO support
+- MySQL client for testing connections
 
-2. **Start the server:**
-   ```bash
-   # go run main.go
-   make run-trace
-   ```
+### Build and Run
 
-3. **Connect with MySQL client:**
-   ```bash
-   mysql -h localhost -P 3306 -u root
-   ```
+```bash
+# Complete setup, build, and run
+make
+
+# Or step by step:
+make deps          # Install dependencies
+make build         # Build server binary
+make run           # Run the server
+
+# Run with debug mode
+make run-debug     # Port 3306 with debug logging
+make run-debug-port # Port 3311 to avoid conflicts
+```
+
+### Docker Support
+
+```bash
+# Production mode
+docker-compose up mysql-server
+
+# Development mode with debug tools
+docker-compose up mysql-dev
+```
 
 ## Key Components
 
@@ -80,15 +115,24 @@ mysql-server-example/
 - Includes in-memory implementation for demonstration
 - Can be replaced with any storage system (files, databases, etc.)
 
-## Features Implemented
+## Features
 
-- ✅ MySQL protocol compatibility
-- ✅ Multiple databases
-- ✅ CREATE/DROP DATABASE
-- ✅ CREATE/DROP TABLE
-- ✅ INSERT/UPDATE/DELETE/SELECT
-- ✅ Schema definition and validation
-- ✅ Sample data for testing
+### Core Features
+- ✅ **MySQL Protocol Compatibility** - Works with any MySQL client
+- ✅ **Persistent Storage** - LMDB backend for ACID transactions
+- ✅ **Multiple Databases** - Create and manage multiple databases
+- ✅ **Full SQL Support** - CREATE/DROP DATABASE/TABLE, INSERT/UPDATE/DELETE/SELECT
+- ✅ **Schema Validation** - Type checking and constraint enforcement
+- ✅ **Virtual Databases** - Proxy queries to remote MySQL servers
+- ✅ **Auto-initialization** - SQL-based initialization with sample data
+- ✅ **Cross-platform** - Linux, macOS, Windows support
+
+### Virtual Database Features
+- 🔗 **Remote Proxy** - Forward queries to remote MySQL instances
+- 🏢 **Federation** - Query multiple remote databases from one interface
+- 🔒 **Read-only Access** - Safe production database access
+- 🚀 **Connection Pooling** - Efficient remote connection management
+- 💾 **Schema Caching** - Performance optimization for remote tables
 
 ## Example Usage
 
@@ -130,6 +174,14 @@ USE myapp;
 -- Drop tables/databases
 DROP TABLE orders;
 DROP DATABASE myapp;
+
+-- Virtual Database Example
+-- Create a proxy to remote MySQL server
+CREATE DATABASE remote_prod__remote__192_168_1_100__3306__production__readonly__[PASSWORD];
+
+-- Use virtual database (queries forwarded to remote)
+USE remote_prod;
+SELECT * FROM customers LIMIT 10;
 ```
 
 ## Extending the Example
@@ -232,4 +284,63 @@ For production use, consider:
 6. **TLS**: Enable encrypted connections
 7. **Backup/Recovery**: Implement data backup strategies
 
-This example provides a solid foundation for building MySQL-compatible servers with go-mysql-server and can be extended to support any storage backend or use case.
+## Configuration
+
+### Environment Variables
+```bash
+# Server configuration
+export PORT=3306              # Server port (default: 3306)
+export BIND_ADDR=0.0.0.0     # Bind address (default: localhost)
+export DEBUG=true             # Enable debug logging
+export VERBOSE=true           # Enable verbose logging
+
+# Required for LMDB
+export LD_LIBRARY_PATH=$(pwd)/lmdb-lib/lib:$LD_LIBRARY_PATH
+```
+
+### Command Line Flags
+```bash
+./bin/mysql-server --port 3306 --bind 0.0.0.0 --debug
+```
+
+## Development
+
+### Testing
+```bash
+# Run tests
+make test
+
+# Test connection
+make test-connection
+
+# Clean build artifacts
+make clean
+```
+
+### Debug Mode
+The server includes comprehensive debug logging:
+```bash
+# Run with debug tracing
+make run-debug
+
+# View execution flow
+tail -f server.log
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- [go-mysql-server](https://github.com/dolthub/go-mysql-server) - MySQL protocol implementation
+- [LMDB](https://symas.com/lmdb/) - Lightning Memory-Mapped Database
+- [Vitess](https://vitess.io/) - MySQL protocol parsing

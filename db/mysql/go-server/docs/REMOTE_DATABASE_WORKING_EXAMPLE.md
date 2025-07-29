@@ -7,7 +7,7 @@ This document shows a successful configuration and test of the virtual database 
 - **Remote MySQL Server**: 172.16.120.11:3306
 - **Remote Database**: cslog_siscom_prod
 - **User**: appl_cslog
-- **Password**: D981x@a
+- **Password**: [REDACTED]
 
 ## Steps to Configure
 
@@ -21,7 +21,7 @@ export LD_LIBRARY_PATH=$(pwd)/lmdb-lib/lib:$LD_LIBRARY_PATH
 ```bash
 # Format: dbname__remote__host__port__database__user__password
 # Note: Replace dots with underscores in IP address, @ with AT in password
-mysql -h 127.0.0.1 -P 3306 -u root -e "CREATE DATABASE siscom_prod__remote__172_16_120_11__3306__cslog_siscom_prod__appl_cslog__D981xATa;"
+mysql -h 127.0.0.1 -P 3306 -u root -e "CREATE DATABASE siscom_prod__remote__172_16_120_11__3306__cslog_siscom_prod__appl_cslog__[PASSWORD];"
 ```
 
 3. **Use the virtual database**:
