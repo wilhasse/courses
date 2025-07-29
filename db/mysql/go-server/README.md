@@ -25,6 +25,11 @@ See [**QUICKSTART.md**](QUICKSTART.md) for detailed getting started guide.
 - 🔧 [**Remote Database Working Example**](docs/REMOTE_DATABASE_WORKING_EXAMPLE.md) - Real-world configuration example
 - 📚 [**Remote Database Guide**](docs/REMOTE_DATABASE_GUIDE.md) - Technical implementation details
 
+### Hybrid Query System (NEW)
+- 🚀 [**Hybrid Query Complete Guide**](docs/HYBRID_QUERY_COMPLETE_GUIDE.md) - Comprehensive guide to the hybrid query system
+- 📖 [**Hybrid Query System Overview**](docs/HYBRID_QUERY_SYSTEM.md) - Architecture and concepts
+- 🔧 [**Implementation Details**](docs/HYBRID_QUERY_IMPLEMENTATION.md) - Code walkthrough and internals
+
 ### General Documentation
 - [**Complete Guide**](docs/GO_MYSQL_SERVER_GUIDE.md) - Comprehensive guide to understanding and using go-mysql-server
 - [**Implementation Walkthrough**](docs/IMPLEMENTATION_WALKTHROUGH.md) - Detailed explanation of this project's implementation
@@ -50,6 +55,12 @@ go-server/
 │   │   ├── lmdb.go               # LMDB persistent storage
 │   │   ├── lmdb_cgo.go           # CGO bindings for LMDB
 │   │   └── memory.go              # In-memory storage
+│   ├── hybrid/                 # Hybrid query system (NEW)
+│   │   ├── data_loader.go         # Loads tables from MySQL to LMDB
+│   │   ├── sql_parser.go          # Analyzes queries for cached tables
+│   │   ├── query_rewriter.go      # Splits queries between sources
+│   │   ├── join_executor.go       # Performs cross-source joins
+│   │   └── hybrid_handler.go      # Main orchestrator
 │   └── initializer/            # Database initialization
 │       └── sql_runner.go          # SQL script execution
 ├── scripts/
@@ -134,6 +145,13 @@ docker-compose up mysql-dev
 - 🚀 **Connection Pooling** - Efficient remote connection management
 - 💾 **Schema Caching** - Performance optimization for remote tables
 
+### Hybrid Query Features (NEW)
+- 🚀 **Table Caching** - Cache frequently accessed tables from remote MySQL to local LMDB
+- 🔄 **Transparent Queries** - Automatically route queries between cached and remote data
+- 🔗 **Cross-Source JOINs** - Perform JOINs between cached and remote tables
+- ⚡ **Performance Boost** - Reduce network latency for frequently accessed data
+- 🔧 **Simple API** - Easy to configure which tables to cache
+
 ## Example Usage
 
 Once connected, you can use standard MySQL commands:
@@ -182,6 +200,38 @@ CREATE DATABASE remote_prod__remote__192_168_1_100__3306__production__readonly__
 -- Use virtual database (queries forwarded to remote)
 USE remote_prod;
 SELECT * FROM customers LIMIT 10;
+```
+
+### Hybrid Query Example
+
+```go
+// Example using the hybrid query system
+package main
+
+import (
+    "mysql-server-example/pkg/hybrid"
+)
+
+// Configure hybrid handler
+config := hybrid.Config{
+    MySQLDSN: "root:@tcp(10.1.0.7:3306)/testdb",
+    LMDBPath: "./cache",
+    Logger:   logger,
+}
+
+handler, _ := hybrid.NewHybridHandler(config)
+defer handler.Close()
+
+// Cache frequently accessed table
+handler.LoadTable("testdb", "employees")
+
+// Execute JOIN between cached and remote tables
+result, _ := handler.ExecuteQuery(`
+    SELECT e.name, n.note 
+    FROM employees e              -- Cached in LMDB
+    JOIN employee_notes n         -- Remains on remote MySQL
+    ON e.id = n.emp_id
+`, "testdb")
 ```
 
 ## Extending the Example
