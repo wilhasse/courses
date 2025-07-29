@@ -137,6 +137,25 @@ clean-data:
 	@rm -rf $(DATA_DIR)/
 	@echo "✅ Database reset - next run will reinitialize"
 
+# Hybrid query system tests
+test-hybrid-setup:
+	@echo "🔧 Setting up remote test data..."
+	@echo "Please run: mysql -h 10.1.0.7 -u root testdb < test/setup_remote_table.sql"
+	@echo "Or manually create employees table on remote server"
+
+test-hybrid-demo: check-lmdb
+	@echo "🧪 Running hybrid query demo..."
+	@go run test/hybrid_demo.go
+
+test-hybrid-simple: check-lmdb
+	@echo "🧪 Running simple hybrid test..."
+	@go run test/simple_hybrid_test.go
+
+# Run hybrid integration tests
+test-hybrid-integration: check-lmdb
+	@echo "🧪 Running hybrid integration tests..."
+	@INTEGRATION_TEST=true go test ./pkg/hybrid -v
+
 # Clean everything including data and LMDB
 clean-all: clean
 	@echo "🧹 Cleaning all artifacts including data..."

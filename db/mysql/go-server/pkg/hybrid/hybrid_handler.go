@@ -13,13 +13,13 @@ import (
 
 // HybridHandler manages hybrid queries between MySQL and LMDB
 type HybridHandler struct {
-	dataLoader    *DataLoader
-	sqlParser     *SQLParser
-	queryRewriter *QueryRewriter
-	joinExecutor  *JoinExecutor
-	logger        zerolog.Logger
-	mu            sync.RWMutex
-	enabled       bool
+	dataLoader     *DataLoader
+	SQLParser      *SQLParser      // Exported for external use
+	QueryRewriter  *QueryRewriter  // Exported for external use
+	joinExecutor   *JoinExecutor
+	logger         zerolog.Logger
+	mu             sync.RWMutex
+	enabled        bool
 }
 
 // Config contains configuration for the hybrid handler
@@ -70,12 +70,12 @@ func NewHybridHandler(config Config) (*HybridHandler, error) {
 	joinExecutor := NewJoinExecutor(mysqlConn, lmdbClient)
 
 	return &HybridHandler{
-		dataLoader:    dataLoader,
-		sqlParser:     sqlParser,
-		queryRewriter: queryRewriter,
-		joinExecutor:  joinExecutor,
-		logger:        config.Logger,
-		enabled:       true,
+		dataLoader:     dataLoader,
+		SQLParser:      sqlParser,
+		QueryRewriter:  queryRewriter,
+		joinExecutor:   joinExecutor,
+		logger:         config.Logger,
+		enabled:        true,
 	}, nil
 }
 
@@ -117,7 +117,7 @@ func (h *HybridHandler) LoadTable(database, table string) error {
 	}
 
 	// Register the table as cached in the parser
-	h.sqlParser.RegisterCachedTable(database, table)
+	h.SQLParser.RegisterCachedTable(database, table)
 	
 	log.Printf("Successfully loaded table %s.%s to cache", database, table)
 	return nil
@@ -143,7 +143,7 @@ func (h *HybridHandler) ExecuteQuery(query string, currentDatabase string) (*Que
 	log.Printf("Executing hybrid query: %s", query)
 
 	// Analyze the query
-	analysis, err := h.sqlParser.AnalyzeQuery(query, currentDatabase)
+	analysis, err := h.SQLParser.AnalyzeQuery(query, currentDatabase)
 	if err != nil {
 		return nil, fmt.Errorf("failed to analyze query: %w", err)
 	}
@@ -155,7 +155,7 @@ func (h *HybridHandler) ExecuteQuery(query string, currentDatabase string) (*Que
 	}
 
 	// Rewrite the query if needed
-	rewriteResult, err := h.queryRewriter.RewriteQuery(query, currentDatabase)
+	rewriteResult, err := h.QueryRewriter.RewriteQuery(query, currentDatabase)
 	if err != nil {
 		return nil, fmt.Errorf("failed to rewrite query: %w", err)
 	}
@@ -256,8 +256,11 @@ func (h *HybridHandler) GetStats() Stats {
 	// Get list of cached tables
 	// In a real implementation, you'd iterate through LMDB to get this
 	// For now, we'll just return ACORDO_GM if it's registered
-	if h.sqlParser.IsCachedTable("", "ACORDO_GM") {
+	if h.SQLParser.IsCachedTable("", "ACORDO_GM") {
 		stats.CachedTables = append(stats.CachedTables, "ACORDO_GM")
+	}
+	if h.SQLParser.IsCachedTable("", "employees") {
+		stats.CachedTables = append(stats.CachedTables, "employees")
 	}
 
 	return stats
