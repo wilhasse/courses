@@ -5,6 +5,7 @@ go 1.24.0
 toolchain go1.24.5
 
 require (
+	github.com/chdb-io/chdb-go v1.10.0
 	github.com/dolthub/go-mysql-server v0.20.1-0.20250725204146-7bc2294a9cb2
 	github.com/dolthub/vitess v0.0.0-20250611225316-90a5898bfe26
 	github.com/go-sql-driver/mysql v1.9.3
@@ -19,9 +20,10 @@ require (
 	github.com/dolthub/flatbuffers/v23 v23.3.3-dh.2 // indirect
 	github.com/dolthub/go-icu-regex v0.0.0-20250327004329-6799764f2dad // indirect
 	github.com/dolthub/jsonpath v0.0.2-0.20240227200619-19675ab05c71 // indirect
+	github.com/ebitengine/purego v0.8.2 // indirect
 	github.com/go-kit/kit v0.10.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
-	github.com/google/uuid v1.3.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/lestrrat-go/strftime v1.0.4 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect

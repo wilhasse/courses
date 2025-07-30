@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -17,6 +16,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/sirupsen/logrus"
 
+	"mysql-server-example/pkg/config"
 	"mysql-server-example/pkg/initializer"
 	"mysql-server-example/pkg/provider"
 	"mysql-server-example/pkg/storage"
@@ -178,37 +178,24 @@ func (ddp *DebugDatabaseProvider) Database(ctx *sql.Context, name string) (sql.D
 }
 
 func main() {
-	// Parse command line flags
-	debugMode := flag.Bool("debug", false, "Enable debug mode with detailed execution tracing")
-	verbose := flag.Bool("verbose", false, "Enable verbose logging")
-	port := flag.String("port", "3306", "Server port")
-	bindAddr := flag.String("bind", "127.0.0.1", "Bind address (use 0.0.0.0 for all interfaces)")
-	flag.Parse()
-
-	// Check environment variables
-	if os.Getenv("DEBUG") == "true" || os.Getenv("DEBUG") == "1" {
-		*debugMode = true
-	}
-	if os.Getenv("VERBOSE") == "true" || os.Getenv("VERBOSE") == "1" {
-		*verbose = true
-	}
-	if envPort := os.Getenv("PORT"); envPort != "" {
-		*port = envPort
-	}
-	if envBind := os.Getenv("BIND_ADDR"); envBind != "" {
-		*bindAddr = envBind
+	// Load configuration
+	cfg := config.LoadFromFlags()
+	
+	// Validate configuration
+	if err := cfg.Validate(); err != nil {
+		log.Fatalf("Invalid configuration: %v", err)
 	}
 
-	// Set up logging based on flags
+	// Set up logging based on configuration
 	var logger *logrus.Logger
-	if *debugMode {
+	if cfg.Debug {
 		logger = logrus.New()
 		logger.SetLevel(logrus.DebugLevel)
 		logger.SetFormatter(&logrus.TextFormatter{
 			FullTimestamp: true,
 			ForceColors:   true,
 		})
-	} else if *verbose {
+	} else if cfg.Verbose {
 		logrus.SetLevel(logrus.DebugLevel)
 		logger = logrus.StandardLogger()
 	} else {
@@ -216,20 +203,59 @@ func main() {
 		logger = logrus.StandardLogger()
 	}
 
-	// Create LMDB storage backend
-	dbPath := "./data"
-	err := os.MkdirAll(dbPath, 0755)
-	if err != nil {
-		log.Fatalf("Failed to create data directory: %v", err)
-	}
-
-	// Create zerolog logger for LMDB
+	// Create storage backend based on configuration
+	var store storage.Storage
 	zlogger := zerolog.New(os.Stdout).With().Timestamp().Logger()
-
-	store, err := storage.NewLMDBStorage(dbPath, zlogger)
-	if err != nil {
-		log.Fatalf("Failed to create LMDB storage: %v", err)
+	
+	switch cfg.StorageBackend {
+	case "lmdb":
+		err := os.MkdirAll(cfg.LMDBPath, 0755)
+		if err != nil {
+			log.Fatalf("Failed to create LMDB directory: %v", err)
+		}
+		store, err = storage.NewLMDBStorage(cfg.LMDBPath, zlogger)
+		if err != nil {
+			log.Fatalf("Failed to create LMDB storage: %v", err)
+		}
+		logger.Infof("Using LMDB storage backend at %s", cfg.LMDBPath)
+		
+	case "chdb":
+		err := os.MkdirAll(cfg.ChDBPath, 0755)
+		if err != nil {
+			log.Fatalf("Failed to create chDB directory: %v", err)
+		}
+		store, err = storage.NewChDBStorage(cfg.ChDBPath, zlogger)
+		if err != nil {
+			log.Fatalf("Failed to create chDB storage: %v", err)
+		}
+		logger.Infof("Using chDB storage backend at %s", cfg.ChDBPath)
+		
+	case "hybrid":
+		// Create directories for both backends
+		err := os.MkdirAll(cfg.LMDBPath, 0755)
+		if err != nil {
+			log.Fatalf("Failed to create LMDB directory: %v", err)
+		}
+		err = os.MkdirAll(cfg.ChDBPath, 0755)
+		if err != nil {
+			log.Fatalf("Failed to create chDB directory: %v", err)
+		}
+		
+		// Create hybrid storage
+		hybridStorage, err := storage.NewHybridStorage(cfg.LMDBPath, cfg.ChDBPath, zlogger)
+		if err != nil {
+			log.Fatalf("Failed to create hybrid storage: %v", err)
+		}
+		
+		// Configure hybrid storage thresholds
+		hybridStorage.SetThresholds(cfg.HybridConfig.HotDataThreshold, cfg.HybridConfig.AnalyticalThreshold)
+		store = hybridStorage
+		logger.Infof("Using hybrid storage backend (LMDB: %s, chDB: %s)", cfg.LMDBPath, cfg.ChDBPath)
+		
+	default:
+		log.Fatalf("Unknown storage backend: %s", cfg.StorageBackend)
 	}
+	
 	defer store.Close()
 
 	// Create the database provider with remote database support
@@ -237,7 +263,7 @@ func main() {
 	remoteHandler := provider.NewRemoteDatabaseHandler(baseProvider)
 	
 	var dbProvider sql.DatabaseProvider
-	if *debugMode {
+	if cfg.Debug {
 		dbProvider = NewDebugDatabaseProvider(remoteHandler, logger)
 	} else {
 		dbProvider = remoteHandler
@@ -245,7 +271,7 @@ func main() {
 
 	// Create the SQL engine with optional analyzer debugging
 	analyzer := analyzer.NewBuilder(dbProvider).Build()
-	if *debugMode {
+	if cfg.Debug {
 		analyzer.Debug = true
 		analyzer.Verbose = true
 	}
@@ -270,8 +296,8 @@ func main() {
 	}
 
 	// Configure the MySQL server
-	address := fmt.Sprintf("%s:%s", *bindAddr, *port)
-	config := server.Config{
+	address := fmt.Sprintf("%s:%s", cfg.BindAddr, cfg.Port)
+	serverConfig := server.Config{
 		Protocol: "tcp",
 		Address:  address,
 	}
@@ -284,7 +310,7 @@ func main() {
 	// Create session factory with optional debug logging
 	baseSessionFactory := provider.NewSessionFactory()
 	var sessionFactory func(context.Context, *mysql.Conn, string) (sql.Session, error)
-	if *debugMode {
+	if cfg.Debug {
 		sessionFactory = func(ctx context.Context, conn *mysql.Conn, addr string) (sql.Session, error) {
 			session, err := baseSessionFactory(ctx, conn, addr)
 			if err != nil {
@@ -301,7 +327,7 @@ func main() {
 	}
 
 	// Create the MySQL server
-	s, err := server.NewServer(config, engine, contextFactory, sessionFactory, nil)
+	s, err := server.NewServer(serverConfig, engine, contextFactory, sessionFactory, nil)
 	if err != nil {
 		log.Fatalf("Failed to create server: %v", err)
 	}
@@ -319,7 +345,7 @@ func main() {
 		s.Close()
 	}()
 
-	if *debugMode {
+	if cfg.Debug {
 		logger.Info("🚀 Starting MySQL Server with Debug Mode")
 		logger.Info("📋 Sample queries to try:")
 		logger.Info("   SELECT * FROM users;")
@@ -331,14 +357,14 @@ func main() {
 	}
 	
 	logger.Infof("Server listening on %s", address)
-	if *bindAddr == "0.0.0.0" {
-		logger.Infof("Connect with: mysql -h <server-ip> -P %s -u root", *port)
+	if cfg.BindAddr == "0.0.0.0" {
+		logger.Infof("Connect with: mysql -h <server-ip> -P %s -u root", cfg.Port)
 		logger.Warn("Server is accessible from all network interfaces - ensure firewall is properly configured")
 	} else {
-		logger.Infof("Connect with: mysql -h %s -P %s -u root", *bindAddr, *port)
+		logger.Infof("Connect with: mysql -h %s -P %s -u root", cfg.BindAddr, cfg.Port)
 	}
 	
-	if *debugMode {
+	if cfg.Debug {
 		logger.Info("🔧 Debug mode enabled - detailed execution tracing active")
 		logger.Info("💡 To disable debug mode, run without --debug flag or set DEBUG=false")
 	}

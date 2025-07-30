@@ -13,6 +13,7 @@ This guide explains how to build and run the MySQL-compatible server with LMDB p
 ### Dependencies
 The project includes all necessary dependencies:
 - **LMDB Library**: Pre-compiled libraries in `lmdb-lib/`
+- **chDB Library**: Embedded ClickHouse for analytics (optional)
 - **Go Dependencies**: Managed via `go.mod`
 - **CGO**: Required for LMDB bindings
 
@@ -29,8 +30,12 @@ go-server/
 ├── pkg/
 │   ├── storage/
 │   │   ├── lmdb.go          # LMDB storage implementation
-│   │   └── lmdb_cgo.go      # CGO bindings
+│   │   ├── lmdb_cgo.go      # CGO bindings
+│   │   ├── chdb_storage.go  # chDB storage implementation
+│   │   ├── hybrid_storage.go # Intelligent storage routing
+│   │   └── table_metadata.go # Table statistics tracking
 │   ├── provider/            # Database provider layer
+│   ├── config/              # Configuration management
 │   └── initializer/         # SQL initialization system
 ├── scripts/
 │   └── init.sql            # Database initialization script
@@ -124,6 +129,18 @@ export CGO_LDFLAGS="-L$(pwd)/lmdb-lib/lib -llmdb"
 export LD_LIBRARY_PATH="$(pwd)/lmdb-lib/lib:$LD_LIBRARY_PATH"
 ```
 
+## Installing chDB (Optional)
+
+For analytical query support with chDB:
+
+```bash
+# Install chDB library
+./install-chdb.sh
+
+# The script automatically detects CPU capabilities
+# and installs the appropriate version
+```
+
 ## Running the Server
 
 ### Quick Start
@@ -131,11 +148,28 @@ export LD_LIBRARY_PATH="$(pwd)/lmdb-lib/lib:$LD_LIBRARY_PATH"
 # Start server with automatic environment setup
 make run
 
-# Or start with trace logging
-make run-trace
+# Or start with debug logging
+make run-debug
 
 # Or start with verbose logging
 make run-verbose
+```
+
+### Storage Backend Options
+```bash
+# Run with hybrid storage (default - LMDB + chDB)
+./bin/mysql-server --storage hybrid
+
+# Run with LMDB only (transactional)
+./bin/mysql-server --storage lmdb
+
+# Run with chDB only (analytical)
+./bin/mysql-server --storage chdb
+
+# Configure storage thresholds
+./bin/mysql-server \
+  --hot-data-threshold 500000 \
+  --analytical-threshold 5000000
 ```
 
 ### Manual Start
@@ -145,8 +179,8 @@ export CGO_CFLAGS="-I$(pwd)/lmdb-lib/include"
 export CGO_LDFLAGS="-L$(pwd)/lmdb-lib/lib -llmdb"
 export LD_LIBRARY_PATH="$(pwd)/lmdb-lib/lib:$LD_LIBRARY_PATH"
 
-# Run the server
-go run main.go
+# Run the server with options
+go run main.go --storage hybrid --debug
 ```
 
 ### Server Output

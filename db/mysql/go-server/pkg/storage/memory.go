@@ -291,5 +291,10 @@ func (s *MemoryStorage) rowsEqual(row1, row2 sql.Row) bool {
 	return true
 }
 
+// Close closes the storage (no-op for memory storage)
+func (s *MemoryStorage) Close() error {
+	return nil
+}
+
 // Ensure we implement the Storage interface
 var _ Storage = (*MemoryStorage)(nil)

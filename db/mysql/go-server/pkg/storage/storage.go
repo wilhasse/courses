@@ -24,4 +24,7 @@ type Storage interface {
 	UpdateRow(database, tableName string, oldRow, newRow sql.Row) error
 	DeleteRow(database, tableName string, row sql.Row) error
 	GetRows(database, tableName string) ([]sql.Row, error)
+
+	// Lifecycle
+	Close() error
 }
