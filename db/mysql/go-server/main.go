@@ -178,24 +178,22 @@ func (ddp *DebugDatabaseProvider) Database(ctx *sql.Context, name string) (sql.D
 }
 
 func main() {
-	// Load configuration
-	cfg := config.LoadFromFlags()
-	
-	// Validate configuration
-	if err := cfg.Validate(); err != nil {
-		log.Fatalf("Invalid configuration: %v", err)
+	// Load configuration from file, flags, and environment
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
 	// Set up logging based on configuration
 	var logger *logrus.Logger
-	if cfg.Debug {
+	if cfg.Server.Debug {
 		logger = logrus.New()
 		logger.SetLevel(logrus.DebugLevel)
 		logger.SetFormatter(&logrus.TextFormatter{
 			FullTimestamp: true,
 			ForceColors:   true,
 		})
-	} else if cfg.Verbose {
+	} else if cfg.Server.Verbose {
 		logrus.SetLevel(logrus.DebugLevel)
 		logger = logrus.StandardLogger()
 	} else {
@@ -207,53 +205,61 @@ func main() {
 	var store storage.Storage
 	zlogger := zerolog.New(os.Stdout).With().Timestamp().Logger()
 	
-	switch cfg.StorageBackend {
+	switch cfg.Storage.Backend {
+	case "mysql":
+		// Create MySQL passthrough storage
+		store, err = storage.NewMySQLPassthroughStorage(cfg.GetMySQLStorageConfig(), zlogger)
+		if err != nil {
+			log.Fatalf("Failed to create MySQL passthrough storage: %v", err)
+		}
+		logger.Infof("Using MySQL passthrough storage backend (%s:%d)", cfg.Storage.MySQL.Host, cfg.Storage.MySQL.Port)
+		
 	case "lmdb":
-		err := os.MkdirAll(cfg.LMDBPath, 0755)
+		err := os.MkdirAll(cfg.Storage.LMDB.Path, 0755)
 		if err != nil {
 			log.Fatalf("Failed to create LMDB directory: %v", err)
 		}
-		store, err = storage.NewLMDBStorage(cfg.LMDBPath, zlogger)
+		store, err = storage.NewLMDBStorage(cfg.Storage.LMDB.Path, zlogger)
 		if err != nil {
 			log.Fatalf("Failed to create LMDB storage: %v", err)
 		}
-		logger.Infof("Using LMDB storage backend at %s", cfg.LMDBPath)
+		logger.Infof("Using LMDB storage backend at %s", cfg.Storage.LMDB.Path)
 		
 	case "chdb":
-		err := os.MkdirAll(cfg.ChDBPath, 0755)
+		err := os.MkdirAll(cfg.Storage.ChDB.Path, 0755)
 		if err != nil {
 			log.Fatalf("Failed to create chDB directory: %v", err)
 		}
-		store, err = storage.NewChDBStorage(cfg.ChDBPath, zlogger)
+		store, err = storage.NewChDBStorage(cfg.Storage.ChDB.Path, zlogger)
 		if err != nil {
 			log.Fatalf("Failed to create chDB storage: %v", err)
 		}
-		logger.Infof("Using chDB storage backend at %s", cfg.ChDBPath)
+		logger.Infof("Using chDB storage backend at %s", cfg.Storage.ChDB.Path)
 		
 	case "hybrid":
 		// Create directories for both backends
-		err := os.MkdirAll(cfg.LMDBPath, 0755)
+		err := os.MkdirAll(cfg.Storage.LMDB.Path, 0755)
 		if err != nil {
 			log.Fatalf("Failed to create LMDB directory: %v", err)
 		}
-		err = os.MkdirAll(cfg.ChDBPath, 0755)
+		err = os.MkdirAll(cfg.Storage.ChDB.Path, 0755)
 		if err != nil {
 			log.Fatalf("Failed to create chDB directory: %v", err)
 		}
 		
 		// Create hybrid storage
-		hybridStorage, err := storage.NewHybridStorage(cfg.LMDBPath, cfg.ChDBPath, zlogger)
+		hybridStorage, err := storage.NewHybridStorage(cfg.Storage.LMDB.Path, cfg.Storage.ChDB.Path, zlogger)
 		if err != nil {
 			log.Fatalf("Failed to create hybrid storage: %v", err)
 		}
 		
 		// Configure hybrid storage thresholds
-		hybridStorage.SetThresholds(cfg.HybridConfig.HotDataThreshold, cfg.HybridConfig.AnalyticalThreshold)
+		hybridStorage.SetThresholds(cfg.Storage.Hybrid.HotDataThreshold, cfg.Storage.Hybrid.AnalyticalThreshold)
 		store = hybridStorage
-		logger.Infof("Using hybrid storage backend (LMDB: %s, chDB: %s)", cfg.LMDBPath, cfg.ChDBPath)
+		logger.Infof("Using hybrid storage backend (LMDB: %s, chDB: %s)", cfg.Storage.LMDB.Path, cfg.Storage.ChDB.Path)
 		
 	default:
-		log.Fatalf("Unknown storage backend: %s", cfg.StorageBackend)
+		log.Fatalf("Unknown storage backend: %s", cfg.Storage.Backend)
 	}
 	
 	defer store.Close()
@@ -263,7 +269,7 @@ func main() {
 	remoteHandler := provider.NewRemoteDatabaseHandler(baseProvider)
 	
 	var dbProvider sql.DatabaseProvider
-	if cfg.Debug {
+	if cfg.Server.Debug {
 		dbProvider = NewDebugDatabaseProvider(remoteHandler, logger)
 	} else {
 		dbProvider = remoteHandler
@@ -271,7 +277,7 @@ func main() {
 
 	// Create the SQL engine with optional analyzer debugging
 	analyzer := analyzer.NewBuilder(dbProvider).Build()
-	if cfg.Debug {
+	if cfg.Server.Debug {
 		analyzer.Debug = true
 		analyzer.Verbose = true
 	}
@@ -284,7 +290,35 @@ func main() {
 	)
 
 	// Check if database needs initialization
-	if !initializer.CheckInitialized(engine) {
+	if cfg.Storage.Backend == "mysql" {
+		// For MySQL passthrough, mirror all databases from remote MySQL
+		logger.Info("Using MySQL passthrough mode - mirroring remote databases...")
+		
+		// Get all database names from the MySQL passthrough storage
+		dbNames := store.GetDatabaseNames()
+		if len(dbNames) == 0 {
+			logger.Warn("No databases found in remote MySQL server")
+		} else {
+			logger.Infof("Found %d databases to mirror from remote MySQL", len(dbNames))
+			
+			// Create databases in the provider to register them with go-mysql-server
+			ctx := sql.NewEmptyContext()
+			for _, dbName := range dbNames {
+				logger.Infof("  - Registering database: %s", dbName)
+				
+				// Create the database in our provider (which will use the passthrough storage)
+				if err := baseProvider.CreateDatabase(ctx, dbName); err != nil {
+					// It's okay if database already exists
+					if !sql.ErrDatabaseExists.Is(err) {
+						logger.Warnf("Failed to register database %s: %v", dbName, err)
+					}
+				}
+			}
+		}
+		
+		// The MySQL passthrough storage will automatically forward all queries
+		logger.Info("MySQL passthrough initialized - all queries will be forwarded to remote MySQL")
+	} else if !initializer.CheckInitialized(engine) {
 		logger.Info("Database not initialized. Running initialization script...")
 		runner := initializer.NewSQLRunner(engine)
 		if err := runner.ExecuteScript("scripts/init.sql"); err != nil {
@@ -296,7 +330,7 @@ func main() {
 	}
 
 	// Configure the MySQL server
-	address := fmt.Sprintf("%s:%s", cfg.BindAddr, cfg.Port)
+	address := fmt.Sprintf("%s:%s", cfg.Server.BindAddr, cfg.Server.Port)
 	serverConfig := server.Config{
 		Protocol: "tcp",
 		Address:  address,
@@ -310,7 +344,7 @@ func main() {
 	// Create session factory with optional debug logging
 	baseSessionFactory := provider.NewSessionFactory()
 	var sessionFactory func(context.Context, *mysql.Conn, string) (sql.Session, error)
-	if cfg.Debug {
+	if cfg.Server.Debug {
 		sessionFactory = func(ctx context.Context, conn *mysql.Conn, addr string) (sql.Session, error) {
 			session, err := baseSessionFactory(ctx, conn, addr)
 			if err != nil {
@@ -345,7 +379,7 @@ func main() {
 		s.Close()
 	}()
 
-	if cfg.Debug {
+	if cfg.Server.Debug {
 		logger.Info("🚀 Starting MySQL Server with Debug Mode")
 		logger.Info("📋 Sample queries to try:")
 		logger.Info("   SELECT * FROM users;")
@@ -357,14 +391,14 @@ func main() {
 	}
 	
 	logger.Infof("Server listening on %s", address)
-	if cfg.BindAddr == "0.0.0.0" {
-		logger.Infof("Connect with: mysql -h <server-ip> -P %s -u root", cfg.Port)
+	if cfg.Server.BindAddr == "0.0.0.0" {
+		logger.Infof("Connect with: mysql -h <server-ip> -P %s -u root", cfg.Server.Port)
 		logger.Warn("Server is accessible from all network interfaces - ensure firewall is properly configured")
 	} else {
-		logger.Infof("Connect with: mysql -h %s -P %s -u root", cfg.BindAddr, cfg.Port)
+		logger.Infof("Connect with: mysql -h %s -P %s -u root", cfg.Server.BindAddr, cfg.Server.Port)
 	}
 	
-	if cfg.Debug {
+	if cfg.Server.Debug {
 		logger.Info("🔧 Debug mode enabled - detailed execution tracing active")
 		logger.Info("💡 To disable debug mode, run without --debug flag or set DEBUG=false")
 	}

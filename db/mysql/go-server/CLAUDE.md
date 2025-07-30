@@ -9,8 +9,10 @@ This is a MySQL-compatible server implementation using go-mysql-server library w
 ### Key Technologies
 - **go-mysql-server**: MySQL protocol implementation and SQL engine
 - **LMDB**: Lightning Memory-Mapped Database for persistent storage
+- **chDB**: Embedded ClickHouse for analytical queries
 - **CGO**: C bindings for LMDB integration
 - **Virtual Databases**: Proxy functionality for remote MySQL servers
+- **MySQL Passthrough**: Zero-overhead baseline for benchmarking
 
 ## Build and Development Commands
 
@@ -47,6 +49,12 @@ make start        # Build and run the binary
 - **Legacy Trace Alias**: `make run-trace` - Alias for run-debug (backward compatibility)
 - **Environment Variables**: `DEBUG=true ./bin/mysql-server` or `VERBOSE=true ./bin/mysql-server`
 - **Command Line Flags**: `./bin/mysql-server --debug --port 3311`
+
+**📊 Benchmarking:**
+```bash
+./benchmark.sh         # Run performance benchmarks
+./analyze_benchmark.py # Analyze benchmark results
+```
 
 **🛠️ Development:**
 ```bash
@@ -150,10 +158,12 @@ The codebase follows a layered architecture:
 - Log files: `server.log`, `debug.log`
 
 ### Storage Implementation
-- **Hybrid storage system** with intelligent backend selection:
+- **Multiple storage backends** with different performance characteristics:
+  - **MySQL Passthrough** - Direct forwarding to remote MySQL (baseline)
   - **LMDB** (default `./data/`) - For transactional data, dimension tables
   - **chDB** (default `./chdb_data/`) - For analytical data, fact tables
-  - Automatic routing based on table characteristics
+  - **Hybrid** - Intelligent routing based on table characteristics
+- Configuration via `config.yaml` or command-line flags
 - Automatic database initialization from `scripts/init.sql`
 - **CGO dependency** - requires LMDB C library (auto-installed by setup)
 - **chDB integration** - Optional, installed via `./install-chdb.sh`
@@ -185,6 +195,7 @@ make build
 - **[LMDB Integration Guide](docs/LMDB_INTEGRATION.md)** - Detailed explanation of persistent storage implementation
 - **[chDB Integration Guide](docs/CHDB_INTEGRATION.md)** - ⭐ **NEW**: Analytical storage with embedded ClickHouse
 - **[CGO Setup Guide](docs/CGO_SETUP.md)** - Environment configuration (now automated!)
+- **[Benchmarking Guide](docs/BENCHMARKING_GUIDE.md)** - ⭐ **NEW**: Performance measurement and comparison
 
 ## Testing
 

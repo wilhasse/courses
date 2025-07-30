@@ -11,6 +11,7 @@ require (
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/rs/zerolog v1.34.0
 	github.com/sirupsen/logrus v1.9.3
+	gopkg.in/yaml.v3 v3.0.1
 	wellquite.org/golmdb v0.0.0-20250215130419-fec76d4e8d6c
 )
 

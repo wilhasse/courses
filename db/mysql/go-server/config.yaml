@@ -1,0 +1,42 @@
+# MySQL Server Configuration
+server:
+  port: 3306
+  bind: 127.0.0.1
+  debug: false
+  verbose: false
+
+# Storage backend configuration
+storage:
+  # Options: mysql, lmdb, chdb, hybrid
+  backend: mysql
+  
+  # MySQL passthrough configuration (when backend = mysql)
+  mysql:
+    host: localhost
+    port: 3306
+    user: root
+    password: "testpassword"  # Update with your MySQL password
+    database: ""  # Leave empty to mirror all databases
+    # Connection pool settings
+    max_open_conns: 25
+    max_idle_conns: 5
+    conn_max_lifetime: 5m
+  
+  # LMDB configuration (when backend = lmdb or hybrid)
+  lmdb:
+    path: ./data
+  
+  # chDB configuration (when backend = chdb or hybrid)
+  chdb:
+    path: ./chdb_data
+    max_memory: 4G
+    max_threads: 4
+    compression: true
+    compression_method: lz4
+  
+  # Hybrid storage configuration (when backend = hybrid)
+  hybrid:
+    hot_data_threshold: 1000000      # Max rows for LMDB
+    analytical_threshold: 10000000   # Min rows for chDB
+    auto_migration: false
+    migration_check_hours: 24
