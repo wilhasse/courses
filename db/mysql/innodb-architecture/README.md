@@ -35,6 +35,13 @@ The order is bottom-up: each layer only makes sense in terms of the one below it
 | [11](./11-startup-api.md) | Startup, Shutdown & the Embedded API | What happens between `ib_init()` and a usable database? |
 | [12](./12-background-threads.md) | Background Threads & the Insert Buffer | Who does the work transactions defer? |
 
+## Continue the journey
+
+This series covers the storage engine. The companion
+**[MySQL Server Architecture Deep-Dive](../mysql-server-architecture/README.md)** covers
+everything *above* it — connections, parser, optimizer, executor, binlog, replication —
+based on Percona Server 8.0, and meets this series at the handler API.
+
 ## Why this codebase for studying MySQL's early days
 
 This is InnoDB as a **pure storage engine** — no MySQL parser, replication, or optimizer —
