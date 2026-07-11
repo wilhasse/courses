@@ -15,6 +15,9 @@ the hands-on exercises at the end of each chapter.
 ➡️ **[Chapter 0 — Overview: How InnoDB Is Architected](./00-overview.md)** — the big-picture
 map, a five-layer mental model, and how to study with this series.
 
+📖 Also available as a [website](https://wilhasse.github.io/courses/innodb-architecture/)
+and a [PDF](./innodb-architecture.pdf) for offline reading.
+
 ## Chapters
 
 The order is bottom-up: each layer only makes sense in terms of the one below it.

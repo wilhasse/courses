@@ -27,7 +27,7 @@ flowchart TD
     A["row_ins: assign DB_ROW_ID if no user PK"] --> B["for EACH index, clustered first:<br/>row_ins_index_entry (row0ins.c:2160)"]
     B --> C["foreign key checks<br/>(row_ins_check_foreign_constraints)"]
     C --> D["search to leaf: btr_cur_search_to_nth_level<br/>PAGE_CUR_LE, mode BTR_MODIFY_LEAF | BTR_INSERT"]
-    D --> E{leaf cursor lands on<br/>equal key? (unique index)}
+    D --> E{"leaf cursor lands on<br/>equal key? (unique index)"}
     E -- yes --> F["duplicate check:<br/>clustered: row_ins_duplicate_error_in_clust<br/>secondary: S-lock + rescan<br/>→ DB_DUPLICATE_KEY"]
     E -- delete-marked match --> G["resurrect: convert to UPDATE<br/>of the delete-marked record<br/>(row_ins_..._by_modify)"]
     E -- no --> H["btr_cur_optimistic_insert (Ch. 6)"]

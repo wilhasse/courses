@@ -18,6 +18,10 @@ numbers are anchors from 8.0.46 and may drift slightly across releases.
 
 ➡️ **[Chapter 0 — Overview: The Journey of a SQL Statement](./00-overview.md)**
 
+📖 Also available as a
+[website](https://wilhasse.github.io/courses/mysql-server-architecture/) and a
+[PDF](./mysql-server-architecture.pdf) for offline reading.
+
 ## Chapters
 
 | # | Chapter | Question it answers |

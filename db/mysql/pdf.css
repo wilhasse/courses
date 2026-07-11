@@ -1,0 +1,72 @@
+/* Print stylesheet for the course PDFs (rendered via Chrome headless) */
+@page { margin: 18mm 16mm; }
+
+body {
+  font-family: "DejaVu Sans", "Segoe UI", Arial, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.5;
+  color: #1a1a1a;
+  max-width: 100%;
+}
+
+h1 {
+  page-break-before: always;
+  font-size: 20pt;
+  border-bottom: 2px solid #e8500a;
+  padding-bottom: 4px;
+  margin-top: 0;
+}
+header h1.title, #TOC + * h1:first-child { page-break-before: avoid; }
+h1.title { page-break-before: avoid; font-size: 26pt; border: none; }
+h2 { font-size: 14pt; margin-top: 1.4em; color: #222; }
+h3 { font-size: 12pt; }
+h1, h2, h3 { page-break-after: avoid; }
+
+p, li { orphans: 3; widows: 3; }
+
+pre, code {
+  font-family: "DejaVu Sans Mono", Consolas, monospace;
+  font-size: 8.5pt;
+}
+pre {
+  background: #f6f6f6;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  page-break-inside: avoid;
+}
+code { background: #f2f2f2; padding: 0 2px; }
+pre code { background: none; padding: 0; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 9pt;
+  page-break-inside: avoid;
+  margin: 0.8em 0;
+}
+th, td { border: 1px solid #bbb; padding: 4px 7px; text-align: left; vertical-align: top; }
+th { background: #f0f0f0; }
+
+img, svg { max-width: 100%; height: auto; page-break-inside: avoid; }
+p:has(> img) { text-align: center; }
+
+blockquote {
+  border-left: 3px solid #e8500a;
+  margin-left: 0;
+  padding: 2px 14px;
+  color: #444;
+  background: #faf6f3;
+  page-break-inside: avoid;
+}
+
+hr { border: none; border-top: 1px solid #ccc; margin: 1.5em 0; }
+
+a { color: #c2410c; text-decoration: none; }
+
+#TOC { page-break-after: always; }
+#TOC ul { list-style: none; padding-left: 1em; }
+#TOC > ul > li { margin-top: 6px; font-weight: bold; }
+#TOC > ul > li li { font-weight: normal; }
