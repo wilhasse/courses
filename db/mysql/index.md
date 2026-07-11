@@ -8,14 +8,6 @@ diagrams throughout.
 
 <div class="grid cards" markdown>
 
-- **[InnoDB Architecture Deep-Dive](innodb-architecture/README.md)**
-
-    *The storage engine, bottom-up.* Based on Embedded InnoDB 1.0.6 (the pre-Oracle
-    Innobase codebase): tablespaces, pages, buffer pool, redo log & recovery, B+trees,
-    MVCC, locking, and background threads — 13 chapters.
-
-    📄 [PDF version](innodb-architecture/innodb-architecture.pdf)
-
 - **[MySQL Server Architecture Deep-Dive](mysql-server-architecture/README.md)**
 
     *Everything above the engine, top-down.* Based on Percona Server 8.0: connections,
@@ -23,6 +15,14 @@ diagrams throughout.
     replication, and the 8.0 data dictionary — 13 chapters.
 
     📄 [PDF version](mysql-server-architecture/mysql-server-architecture.pdf)
+
+- **[InnoDB Architecture Deep-Dive](innodb-architecture/README.md)**
+
+    *The storage engine, bottom-up.* Based on Embedded InnoDB 1.0.6 (the pre-Oracle
+    Innobase codebase): tablespaces, pages, buffer pool, redo log & recovery, B+trees,
+    MVCC, locking, and background threads — 13 chapters.
+
+    📄 [PDF version](innodb-architecture/innodb-architecture.pdf)
 
 </div>
 
