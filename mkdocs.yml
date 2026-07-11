@@ -59,6 +59,13 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Query Optimization Journey:
+      - The Journey: query-optimization/index.md
+      - "1. The Idea": query-optimization/01-the-idea.md
+      - "2. What I Studied": query-optimization/02-studies.md
+      - "3. Labs & Attempts": query-optimization/03-labs.md
+      - "4. SmartSQL (production)": query-optimization/04-smart-sql.md
+      - "5. cslog-query (next gen)": query-optimization/05-cslog-query.md
   - MySQL Server Architecture:
       - Series Overview: mysql/server-architecture/README.md
       - "0. The Journey of a Statement": mysql/server-architecture/00-overview.md

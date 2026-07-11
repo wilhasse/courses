@@ -4,11 +4,24 @@ Deep-dive courses, project documentation, and study notes — all in one place.
 Each collection below is a self-contained folder in the
 [courses repo](https://github.com/wilhasse/courses); push markdown, and it appears here.
 
+## The Query Optimization Journey
+
+<div class="grid cards" markdown>
+
+- **[Making complex analytical queries fast on MySQL](query-optimization/index.md)**
+
+    The multi-year thread that ties this whole site together: the idea and its
+    constraints, everything studied, the five strategies and labs (TiDB, Doris, InnoDB
+    parsing, PolarDB-X…), and the two systems that emerged — **SmartSQL** (in
+    production) and **cslog-query** (in development).
+
+</div>
+
 ## MySQL Internals
 
 Two step-by-step courses covering a complete MySQL database — from the bytes on disk to
 the replica stream — grounded in real source code with `file.c:line` references and
-diagrams throughout.
+diagrams throughout. Written to consolidate the journey's studies.
 
 <div class="grid cards" markdown>
 
