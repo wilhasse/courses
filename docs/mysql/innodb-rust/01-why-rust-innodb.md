@@ -10,8 +10,11 @@
    objective: either MySQL's `IMPORT TABLESPACE` accepts your pages or it doesn't.
 2. **Tooling that didn't exist.** The [journey](../../query-optimization/index.md)
    repeatedly needed to work with InnoDB files *outside* a running server — parsing them
-   offline (percona-parser), replicating them, one day repairing them. A library that can
-   read **and write** the format enables a whole class of tools: `ibd_create`,
+   offline ([innodb-parser](../innodb-parser/README.md)), replicating them, one day
+   repairing them. But that C tool *linked MySQL's own source* to do it; the natural next
+   question was whether the format could be owned outright, in a memory-safe language, with
+   no server code at all. A library that can read **and write** the format enables a whole
+   class of tools: `ibd_create`,
    `ibd_insert`, `ibd_scan`, `ibd_validate`, and an `ibd2sdi` clone all fell out of it.
 3. **An embedded engine, reborn.** The project exposes the classic **Embedded InnoDB
    `ib_*` API** (~120 functions — a superset of the 2009 original studied in the course).

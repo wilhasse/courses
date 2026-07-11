@@ -41,6 +41,12 @@ diagrams throughout. Written to consolidate the journey's studies.
 
     📄 [PDF version](mysql/innodb-architecture/innodb-architecture.pdf)
 
+- **[InnoDB Parser (C)](mysql/innodb-parser/README.md)**
+
+    *Bending the real source into a tool.* A C/C++ toolkit that reads **encrypted and
+    compressed** InnoDB files offline by linking actual Percona Server code — 4 articles
+    on the build-engineering fight and the decrypt→decompress→parse pipeline.
+
 - **[InnoDB in Rust](mysql/innodb-rust/README.md)**
 
     *Rebuilding the engine.* Documenting a from-scratch Rust reimplementation of
@@ -49,6 +55,10 @@ diagrams throughout. Written to consolidate the journey's studies.
     parity assessment.
 
 </div>
+
+These three form a progression of ownership: **read** the source (courses) →
+**bend** the source into a tool (InnoDB Parser) → **rebuild** it from scratch (InnoDB in
+Rust).
 
 **How to read them:** new to database internals? Start with the InnoDB series — it builds
 a complete storage engine in your head from first principles. Know storage engines and

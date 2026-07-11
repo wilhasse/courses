@@ -38,14 +38,16 @@ must be boring.*
 
 If replication is the problem, read the data files themselves.
 [`db/mysql/parse/`](https://github.com/wilhasse/courses/tree/main/db/mysql/parse)
-(→ [percona-parser](https://github.com/wilhasse/percona-parser)) learned to **decrypt,
-decompress and parse `.ibd` pages offline** — trying four approaches (extending
-innochecksum, gutting XtraBackup, extending innodb-java-reader, inno_space). The
-spectacular proof-of-concept lives in
-[`db/calcite/innodb-example`](https://github.com/wilhasse/courses/tree/main/db/calcite):
-**Apache Calcite running Star Schema Benchmark queries directly against InnoDB files,
-no MySQL server at all**. Deep InnoDB-format knowledge from this thread fed everything
-later (and the [InnoDB course](../mysql/innodb-architecture/README.md)).
+explored four approaches (extending innochecksum, gutting XtraBackup, extending
+innodb-java-reader, inno_space); an early proof-of-concept in
+[`db/calcite/innodb-example`](https://github.com/wilhasse/courses/tree/main/db/calcite)
+ran **Apache Calcite Star Schema Benchmark queries directly against InnoDB files, no
+MySQL server at all**. This matured into [**innodb-parser**](../mysql/innodb-parser/README.md)
+— a C toolkit that reads **encrypted and compressed** `.ibd` files offline by linking
+actual Percona source code (its own [article series](../mysql/innodb-parser/README.md)).
+Deep InnoDB-format knowledge from here fed everything later — the
+[InnoDB course](../mysql/innodb-architecture/README.md) and the
+[Rust reimplementation](../mysql/innodb-rust/README.md).
 
 ### Strategy 4 — Custom storage engine (parked)
 

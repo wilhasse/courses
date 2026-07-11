@@ -96,6 +96,12 @@ nav:
       - "10. The Data Dictionary": mysql/innodb-architecture/10-data-dictionary.md
       - "11. Startup & the Embedded API": mysql/innodb-architecture/11-startup-api.md
       - "12. Background Threads & Insert Buffer": mysql/innodb-architecture/12-background-threads.md
+  - InnoDB Parser (C):
+      - Series Overview: mysql/innodb-parser/README.md
+      - "1. Reading InnoDB Without a Server": mysql/innodb-parser/01-overview.md
+      - "2. The Build Challenge": mysql/innodb-parser/02-build-challenge.md
+      - "3. Decrypt → Decompress → Parse": mysql/innodb-parser/03-pipeline.md
+      - "4. A C ABI & Verification": mysql/innodb-parser/04-c-api-and-verification.md
   - InnoDB in Rust:
       - Series Overview: mysql/innodb-rust/README.md
       - "1. Why Rewrite InnoDB in Rust?": mysql/innodb-rust/01-why-rust-innodb.md

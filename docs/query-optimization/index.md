@@ -32,7 +32,7 @@ flowchart TD
 | 2024-03 | Strategy 1: TiDB evaluation — rejected (FK cascades, cluster ops) |
 | 2024-05 | Down the rabbit hole: MySQL 8 / InnoDB internals study begins |
 | 2024-08 | Columnar survey (DuckDB, MonetDB, CMU course); Strategy 2: Doris + Flink — rejected |
-| 2024-09→11 | Strategies 3-4: parse InnoDB directly (→ percona-parser, Calcite-over-.ibd proof) ; custom storage engine — parked |
+| 2024-09→11 | Strategies 3-4: parse InnoDB directly (→ Calcite-over-.ibd proof, later [innodb-parser](../mysql/innodb-parser/README.md)); custom storage engine — parked |
 | 2024-11→2025-01 | Strategy 5: PolarDB-X SQL-layer extraction over Percona |
 | 2025 | chDB integration saga (UDF crash → API server); go-server hybrid prototype (LMDB + chDB); LMDB benchmarks |
 | 2025→ | **SmartSQL** built and put into production (curated queries) |
