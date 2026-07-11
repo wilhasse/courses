@@ -1,3 +1,10 @@
+# Documentation Site
+
+📖 **https://wilhasse.github.io/courses/** — deep-dive courses and study notes as a
+browsable website (source in [`docs/`](./docs/), built with MkDocs Material, auto-deployed
+by GitHub Actions). Currently featuring the **MySQL Server Architecture** and
+**InnoDB Architecture** deep-dive series, each also available as a PDF.
+
 # Current
 
 Since Nov 2024, I am conducting a self-study project on MySQL optimization through practical projects - including core code analysis, improving query performance, and building a system to help MySQL perform better.

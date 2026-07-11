@@ -1,14 +1,13 @@
-site_name: MySQL Internals Deep-Dive
+site_name: wilhasse's Documentation Hub
 site_url: https://wilhasse.github.io/courses/
 site_description: >-
-  Two step-by-step courses on MySQL internals: the InnoDB storage engine
-  (based on Embedded InnoDB 1.0.6) and the MySQL server layer
-  (based on Percona Server 8.0).
+  Deep-dive courses, project documentation, and study notes — MySQL internals
+  (server layer and InnoDB storage engine) and more.
 repo_url: https://github.com/wilhasse/courses
 repo_name: wilhasse/courses
-edit_uri: edit/main/db/mysql/
+edit_uri: edit/main/docs/
 
-docs_dir: db/mysql
+docs_dir: docs
 site_dir: site
 
 theme:
@@ -58,43 +57,41 @@ markdown_extensions:
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
 
-# Only publish the two course series (db/mysql has many other working folders)
-exclude_docs: |
-  /*/
-  !/innodb-architecture/
-  !/mysql-server-architecture/
-  !/stylesheets/
-  !/assets/
-
 nav:
   - Home: index.md
   - MySQL Server Architecture:
-      - Series Overview: mysql-server-architecture/README.md
-      - "0. The Journey of a Statement": mysql-server-architecture/00-overview.md
-      - "1. Connections & Dispatch": mysql-server-architecture/01-connections-and-dispatch.md
-      - "2. The Parser": mysql-server-architecture/02-parser.md
-      - "3. Resolution & Prepare": mysql-server-architecture/03-resolver-prepare.md
-      - "4. The Optimizer": mysql-server-architecture/04-optimizer.md
-      - "5. The Iterator Executor": mysql-server-architecture/05-executor.md
-      - "6. The Handler API": mysql-server-architecture/06-handler-api.md
-      - "7. MDL & Transaction Coordination": mysql-server-architecture/07-mdl-and-transactions.md
-      - "8. The Binary Log": mysql-server-architecture/08-binlog.md
-      - "9. Replication": mysql-server-architecture/09-replication.md
-      - "10. Data Dictionary & Atomic DDL": mysql-server-architecture/10-data-dictionary.md
-      - "11. What Percona Adds": mysql-server-architecture/11-percona-additions.md
-      - "12. Capstone": mysql-server-architecture/12-journey-capstone.md
+      - Series Overview: mysql/server-architecture/README.md
+      - "0. The Journey of a Statement": mysql/server-architecture/00-overview.md
+      - "1. Connections & Dispatch": mysql/server-architecture/01-connections-and-dispatch.md
+      - "2. The Parser": mysql/server-architecture/02-parser.md
+      - "3. Resolution & Prepare": mysql/server-architecture/03-resolver-prepare.md
+      - "4. The Optimizer": mysql/server-architecture/04-optimizer.md
+      - "5. The Iterator Executor": mysql/server-architecture/05-executor.md
+      - "6. The Handler API": mysql/server-architecture/06-handler-api.md
+      - "7. MDL & Transaction Coordination": mysql/server-architecture/07-mdl-and-transactions.md
+      - "8. The Binary Log": mysql/server-architecture/08-binlog.md
+      - "9. Replication": mysql/server-architecture/09-replication.md
+      - "10. Data Dictionary & Atomic DDL": mysql/server-architecture/10-data-dictionary.md
+      - "11. What Percona Adds": mysql/server-architecture/11-percona-additions.md
+      - "12. Capstone": mysql/server-architecture/12-journey-capstone.md
   - InnoDB Architecture:
-      - Series Overview: innodb-architecture/README.md
-      - "0. Overview & Roadmap": innodb-architecture/00-overview.md
-      - "1. Files & Tablespaces": innodb-architecture/01-file-storage.md
-      - "2. Page & Record Format": innodb-architecture/02-page-format.md
-      - "3. The Buffer Pool": innodb-architecture/03-buffer-pool.md
-      - "4. Mini-Transactions & Latching": innodb-architecture/04-mini-transactions.md
-      - "5. Redo Log & Crash Recovery": innodb-architecture/05-redo-log-recovery.md
-      - "6. The B+Tree": innodb-architecture/06-btree.md
-      - "7. Transactions, Undo & MVCC": innodb-architecture/07-transactions-mvcc.md
-      - "8. The Lock Manager": innodb-architecture/08-locking.md
-      - "9. Row Operations": innodb-architecture/09-row-operations.md
-      - "10. The Data Dictionary": innodb-architecture/10-data-dictionary.md
-      - "11. Startup & the Embedded API": innodb-architecture/11-startup-api.md
-      - "12. Background Threads & Insert Buffer": innodb-architecture/12-background-threads.md
+      - Series Overview: mysql/innodb-architecture/README.md
+      - "0. Overview & Roadmap": mysql/innodb-architecture/00-overview.md
+      - "1. Files & Tablespaces": mysql/innodb-architecture/01-file-storage.md
+      - "2. Page & Record Format": mysql/innodb-architecture/02-page-format.md
+      - "3. The Buffer Pool": mysql/innodb-architecture/03-buffer-pool.md
+      - "4. Mini-Transactions & Latching": mysql/innodb-architecture/04-mini-transactions.md
+      - "5. Redo Log & Crash Recovery": mysql/innodb-architecture/05-redo-log-recovery.md
+      - "6. The B+Tree": mysql/innodb-architecture/06-btree.md
+      - "7. Transactions, Undo & MVCC": mysql/innodb-architecture/07-transactions-mvcc.md
+      - "8. The Lock Manager": mysql/innodb-architecture/08-locking.md
+      - "9. Row Operations": mysql/innodb-architecture/09-row-operations.md
+      - "10. The Data Dictionary": mysql/innodb-architecture/10-data-dictionary.md
+      - "11. Startup & the Embedded API": mysql/innodb-architecture/11-startup-api.md
+      - "12. Background Threads & Insert Buffer": mysql/innodb-architecture/12-background-threads.md
+  - Notes:
+      - Overview: notes/index.md
+      - Current summary: notes/summary.md
+      - 2024 summary: notes/summary_2024.md
+      - 2023 summary: notes/summary_2023.md
+      - Svelte UI list: notes/svelte-ui-list.md
