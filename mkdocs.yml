@@ -96,6 +96,13 @@ nav:
       - "10. The Data Dictionary": mysql/innodb-architecture/10-data-dictionary.md
       - "11. Startup & the Embedded API": mysql/innodb-architecture/11-startup-api.md
       - "12. Background Threads & Insert Buffer": mysql/innodb-architecture/12-background-threads.md
+  - InnoDB in Rust:
+      - Series Overview: mysql/innodb-rust/README.md
+      - "1. Why Rewrite InnoDB in Rust?": mysql/innodb-rust/01-why-rust-innodb.md
+      - "2. Architecture: 23 Crates": mysql/innodb-rust/02-architecture.md
+      - "3. Reading & Writing the Format": mysql/innodb-rust/03-reading-writing-ibd.md
+      - "4. Parity Testing": mysql/innodb-rust/04-parity-testing.md
+      - "5. The State of Parity": mysql/innodb-rust/05-state-of-parity.md
   - Notes:
       - Overview: notes/index.md
       - Current summary: notes/summary.md

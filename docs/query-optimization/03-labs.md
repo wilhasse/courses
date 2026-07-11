@@ -76,6 +76,7 @@ frontend, MySQL underneath, caches in between* — is exactly what shipped later
 | Huawei parallel query | [`db/mysql/opt/`](https://github.com/wilhasse/courses/tree/main/db/mysql/opt) | ported Huawei's Kunpeng parallel-query patch onto Percona 8.0.39 — intra-query parallelism as a within-MySQL alternative (ARM-only upstream) |
 | go-server | [`db/mysql/go-server/`](https://github.com/wilhasse/courses/tree/main/db/mysql/go-server) | the **direct prototype of SmartSQL**: go-mysql-server frontend routing OLTP→LMDB, OLAP→chDB, plus virtual remote databases |
 | doris-rust | private repo | Apache-Doris-parity storage engine in Rust (rowsets, delete vectors, PK index, compaction) — consumed by cslog-db as one of its backends |
+| innodb-rust | private repo — [full article series](../mysql/innodb-rust/README.md) | the study thread's capstone: a Rust reimplementation of InnoDB that **reads and writes the real on-disk format**, round-trip-verified through actual MySQL |
 
 ## The big one: cslog-db, a full analytical replica (failed, instructive)
 

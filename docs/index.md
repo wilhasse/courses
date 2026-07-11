@@ -41,6 +41,13 @@ diagrams throughout. Written to consolidate the journey's studies.
 
     📄 [PDF version](mysql/innodb-architecture/innodb-architecture.pdf)
 
+- **[InnoDB in Rust](mysql/innodb-rust/README.md)**
+
+    *Rebuilding the engine.* Documenting a from-scratch Rust reimplementation of
+    InnoDB that reads **and writes** the real on-disk format — verified by
+    round-tripping tablespaces through actual MySQL — 5 articles including an honest
+    parity assessment.
+
 </div>
 
 **How to read them:** new to database internals? Start with the InnoDB series — it builds

@@ -38,6 +38,7 @@ flowchart TD
 | 2025→ | **SmartSQL** built and put into production (curated queries) |
 | early 2026 | **cslog-db**: 5-week attempt at a full analytical replica — 6 storage backends, updates too slow (see [post-mortem](./03-labs.md#the-big-one-cslog-db-a-full-analytical-replica-failed-instructive)) |
 | 2026 | Restarted as **cslog-query** with narrowed scope; first real report offload in progress |
+| 2026 | **innodb-rust**: reimplementing InnoDB in Rust — read/write format parity round-tripped through real MySQL ([article series](../mysql/innodb-rust/README.md)) |
 | 2026 | Studies consolidated into the [InnoDB](../mysql/innodb-architecture/README.md) and [MySQL Server](../mysql/server-architecture/README.md) deep-dive courses |
 
 ## The principles this journey earned
