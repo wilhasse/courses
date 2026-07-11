@@ -1,0 +1,14 @@
+/* Mermaid diagrams: render at natural size, centered — never stretched
+   to fill the content column (mermaid defaults to width:100%). */
+.mermaid {
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;      /* very wide diagrams scroll instead of overflowing */
+}
+
+.mermaid svg {
+  width: auto !important;
+  max-width: 100% !important;
+  max-height: 34rem;     /* cap tall flowcharts to roughly half a screen */
+  height: auto;
+}
