@@ -11,9 +11,11 @@ the strategy: **take the analytical workload off MySQL entirely.** It maintains 
 read-only analytical copy of the hot tables and answers the slow reports itself — MySQL
 never sees them.
 
-The lineage matters: this is the disciplined restart of an earlier lab (`cslog-db`, which
-grew toward Apache-Doris parity and collapsed under its own generality — see
-[Labs](./03-labs.md)), keeping only the ideas that proved out and none of the sprawl.
+The lineage matters: this is the disciplined restart of an earlier lab — `cslog-db`, which
+tried to replicate the *entire* database into columnar storage and collapsed on the write
+path (row-level updates at ~1/sec; see the
+[post-mortem](./03-labs.md#the-big-one-cslog-db-a-full-analytical-replica-failed-instructive)) —
+keeping only the ideas that proved out and none of the sprawl.
 
 ```
 MySQL snapshot + binlog CDC

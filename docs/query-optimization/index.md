@@ -36,7 +36,8 @@ flowchart TD
 | 2024-11→2025-01 | Strategy 5: PolarDB-X SQL-layer extraction over Percona |
 | 2025 | chDB integration saga (UDF crash → API server); go-server hybrid prototype (LMDB + chDB); LMDB benchmarks |
 | 2025→ | **SmartSQL** built and put into production (curated queries) |
-| 2025→2026 | cslog-db lab → restarted as **cslog-query**; first real report offload in progress |
+| early 2026 | **cslog-db**: 5-week attempt at a full analytical replica — 6 storage backends, updates too slow (see [post-mortem](./03-labs.md#the-big-one-cslog-db-a-full-analytical-replica-failed-instructive)) |
+| 2026 | Restarted as **cslog-query** with narrowed scope; first real report offload in progress |
 | 2026 | Studies consolidated into the [InnoDB](../mysql/innodb-architecture/README.md) and [MySQL Server](../mysql/server-architecture/README.md) deep-dive courses |
 
 ## The principles this journey earned
