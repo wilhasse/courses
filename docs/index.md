@@ -1,6 +1,6 @@
 # wilhasse's Documentation Hub
 
-Deep-dive courses, project documentation, and study notes — all in one place.
+Deep-dive courses and project documentation — all in one place.
 Each collection below is a self-contained folder in the
 [courses repo](https://github.com/wilhasse/courses); push markdown, and it appears here.
 
@@ -66,11 +66,6 @@ want the SQL layer? Start with the server series. The two meet at the **handler 
 (server series, Chapter 6), and the final
 [capstone](mysql/server-architecture/12-journey-capstone.md) traces one UPDATE through
 every layer of both.
-
-## Notes
-
-- [Study notes & yearly summaries](notes/index.md) — course summaries and shorter
-  write-ups.
 
 ## Adding a new collection
 

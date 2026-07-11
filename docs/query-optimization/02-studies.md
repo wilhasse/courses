@@ -65,8 +65,7 @@ concretely in the [LMDB vs B+Tree lab](./03-labs.md).
 
 ## Where the raw notes live
 
-- Yearly study journals (2023–2025): chronological logs of every topic + reference —
-  summarized in [Notes](../notes/index.md).
+- Yearly study journals (2023–2025): chronological logs of every topic + reference.
 - Per-project study docs inside each lab folder in the
   [courses repo](https://github.com/wilhasse/courses) (e.g. `db/polardbx/study/`,
   `db/mysql/study/`).

@@ -10,6 +10,10 @@ edit_uri: edit/main/docs/
 docs_dir: docs
 site_dir: site
 
+# Keep the study-notes folder in the repo but off the published site
+exclude_docs: |
+  /notes/
+
 theme:
   name: material
   palette:
@@ -109,9 +113,3 @@ nav:
       - "3. Reading & Writing the Format": mysql/innodb-rust/03-reading-writing-ibd.md
       - "4. Parity Testing": mysql/innodb-rust/04-parity-testing.md
       - "5. The State of Parity": mysql/innodb-rust/05-state-of-parity.md
-  - Notes:
-      - Overview: notes/index.md
-      - Current summary: notes/summary.md
-      - 2024 summary: notes/summary_2024.md
-      - 2023 summary: notes/summary_2023.md
-      - Svelte UI list: notes/svelte-ui-list.md
